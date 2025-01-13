@@ -1,21 +1,60 @@
 import { Link } from 'react-router-dom';
 import { FaUser, FaShoppingCart, FaPhone, FaStore } from 'react-icons/fa';
 import { IoSearch } from 'react-icons/io5';
+import { FaFacebook } from 'react-icons/fa';
+import { FcGoogle } from 'react-icons/fc';
+import classNames from 'classnames/bind';
 import styles from './Header.module.scss';
 import logo from '~/assets/logo.jpg';
+import { useState, useEffect, useRef } from 'react';
+import LoginForm from './LoginPopup';
+import SignupForm from './SignupPopup';
+
+const cx = classNames.bind(styles);
 
 function Header() {
+    const [showAccountPopup, setShowAccountPopup] = useState(false);
+    const [showLoginForm, setShowLoginForm] = useState(false);
+    const [showSignupForm, setShowSignupForm] = useState(false);
+    const popupRef = useRef(null);
+
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (popupRef.current && !popupRef.current.contains(event.target)) {
+                setShowAccountPopup(false);
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, []);
+
+    const handleAccountClick = () => {
+        setShowAccountPopup(!showAccountPopup);
+    };
+
+    const handleLoginClick = () => {
+        setShowLoginForm(true);
+        setShowAccountPopup(false);
+    };
+
+    const handleSignupClick = () => {
+        setShowSignupForm(true);
+        setShowAccountPopup(false);
+    };
+
     return (
-        <header className={styles.wrapper}>
-            <div className={styles.container}>
-                <Link to="/" className={styles.logo}>
-                    <img src={logo} alt="Hasaki.vn" />
+        <header className={cx('wrapper')}>
+            <div className={cx('container')}>
+                <Link to="/" className={cx('logo')}>
+                    <img src={logo} alt="BeautySkin" />
                 </Link>
 
-                <div className={styles.searchSection}>
-                    {/* Navigation menu */}
-                    <nav className={styles.headerNav}>
-                        <ul className={styles.navMenu}>
+                <div className={cx('searchSection')}>
+                    <nav className={cx('headerNav')}>
+                        <ul className={cx('navMenu')}>
                             <li><Link to="/kem-chong-nang">Kem Chống Nắng</Link></li>
                             <li><Link to="/tay-trang">Tẩy Trang</Link></li>
                             <li><Link to="/toner">Toner</Link></li>
@@ -25,51 +64,100 @@ function Header() {
                         </ul>
                     </nav>
 
-                    {/* Search bar */}
-                    <div className={styles.searchContainer}>
+                    <div className={cx('searchContainer')}>
                         <input 
                             type="text" 
                             placeholder="Giảm 50% Ủ Trắng Các Vùng - Mua 5 Tặng 5"
-                            className={styles.searchInput}
+                            className={cx('searchInput')}
                         />
-                        <button className={styles.searchButton}>
+                        <button className={cx('searchButton')}>
                             <IoSearch />
                         </button>
                     </div>
                 </div>
 
-                {/* Header actions */}
-                <div className={styles.headerActions}>
-                    <div className={styles.actionItem}>
-                        <FaUser className={styles.icon} />
-                        <div className={styles.actionContent}>
+                <div className={cx('headerActions')}>
+                    <div 
+                        ref={popupRef}
+                        className={cx('actionItem', 'accountItem')}
+                        onClick={handleAccountClick}
+                    >
+                        <FaUser className={cx('icon')} />
+                        <div className={cx('actionContent')}>
                             <span>Đăng nhập / Đăng ký</span>
                             <span>Tài khoản</span>
                         </div>
+                        {showAccountPopup && (
+                            <div className={cx('accountPopup')}>
+                                <h3>Đăng nhập với</h3>
+                                <div className={cx('socialButtons')}>
+                                    <button className={cx('facebookBtn')}>
+                                        <FaFacebook />
+                                        Facebook
+                                    </button>
+                                    <button className={cx('googleBtn')}>
+                                        <FcGoogle />
+                                        Google +
+                                    </button>
+                                </div>
+                                <div className={cx('divider')}>
+                                    <span>Hoặc đăng nhập với BeautySkin</span>
+                                </div>
+                                <button className={cx('loginBtn')} onClick={handleLoginClick}>
+                                    Đăng nhập
+                                </button>
+                                <div className={cx('registerLink')}>
+                                    <span>Bạn chưa có tài khoản?</span>
+                                    <button className={cx('signupBtn')} onClick={handleSignupClick}>
+                                        ĐĂNG KÝ NGAY
+                                    </button>
+                                </div>
+                            </div>
+                        )}
                     </div>
                     
-                    <div className={styles.actionItem}>
-                        <FaStore className={styles.icon} />
-                        <div className={styles.actionContent}>
+                    <div className={cx('actionItem')}>
+                        <FaStore className={cx('icon')} />
+                        <div className={cx('actionContent')}>
                             <span>Hệ thống</span>
                             <span>cửa hàng</span>
                         </div>
                     </div>
 
-                    <div className={styles.actionItem}>
-                        <FaPhone className={styles.icon} />
-                        <div className={styles.actionContent}>
+                    <div className={cx('actionItem')}>
+                        <FaPhone className={cx('icon')} />
+                        <div className={cx('actionContent')}>
                             <span>Hỗ trợ</span>
                             <span>khách hàng</span>
                         </div>
                     </div>
 
-                    <div className={`${styles.actionItem} ${styles.cart}`}>
-                        <FaShoppingCart className={styles.icon} />
-                        <span className={styles.cartCount}>0</span>
+                    <div className={cx('actionItem', 'cart')}>
+                        <FaShoppingCart className={cx('icon')} />
+                        <span className={cx('cartCount')}>0</span>
                     </div>
                 </div>
             </div>
+
+            {showLoginForm && (
+                <LoginForm 
+                    onClose={() => setShowLoginForm(false)} 
+                    onShowSignup={() => {
+                        setShowLoginForm(false);
+                        setShowSignupForm(true);
+                    }}
+                />
+            )}
+
+            {showSignupForm && (
+                <SignupForm 
+                    onClose={() => setShowSignupForm(false)} 
+                    onShowLogin={() => {
+                        setShowSignupForm(false);
+                        setShowLoginForm(true);
+                    }}
+                />
+            )}
         </header>
     );
 }

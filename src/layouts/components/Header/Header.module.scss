@@ -94,6 +94,7 @@
     align-items: center;
     gap: 8px;
     cursor: pointer;
+    position: relative;
     
     .icon {
         font-size: 22px;
@@ -136,3 +137,148 @@
         }
     }
 }
+
+.accountItem {
+    position: relative;
+}
+
+.loginPopupWrapper {
+    position: absolute;
+    top: calc(100% + 20px);
+    right: -85px;
+    z-index: 1000;
+}
+
+.accountPopup {
+    position: absolute;
+    top: calc(100% + 20px);
+    right: -85px;
+    width: 300px;
+    background: white;
+    border-radius: 4px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
+    padding: 20px;
+    z-index: 1000;
+
+    &::before {
+        content: '';
+        position: absolute;
+        top: -7px;
+        right: 140px;
+        width: 12px;
+        height: 12px;
+        background: white;
+        transform: rotate(45deg);
+        box-shadow: -2px -2px 5px rgba(0, 0, 0, 0.05);
+    }
+
+    h3 {
+        text-align: center;
+        color: #333;
+        font-size: 14px;
+        margin-bottom: 15px;
+    }
+
+    .socialButtons {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 15px;
+
+        button {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 8px;
+            border: none;
+            border-radius: 4px;
+            color: white;
+            font-size: 13px;
+            cursor: pointer;
+
+            svg {
+                font-size: 16px;
+            }
+        }
+    }
+
+    .facebookBtn {
+        background: #3b5998;
+    }
+
+    .googleBtn {
+        background: #dd4b39;
+    }
+
+    .divider {
+        position: relative;
+        text-align: center;
+        margin: 15px 0;
+        color: #666;
+        font-size: 13px;
+
+        span {
+            background: white;
+            padding: 0 10px;
+            position: relative;
+            z-index: 1;
+            color: #666;
+        }
+
+        &::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: #e5e5e5;
+            z-index: 0;
+        }
+    }
+
+    .loginBtn {
+        width: 100%;
+        padding: 10px;
+        background: #2B7B60;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        font-size: 14px;
+        font-weight: 500;
+        cursor: pointer;
+        margin-bottom: 15px;
+
+        &:hover {
+            background: darken(#2B7B60, 5%);
+        }
+    }
+
+    .registerLink {
+        text-align: center;
+        font-size: 13px;
+        color: #666;
+
+        span {
+            color: #666;
+        }
+
+        .signupBtn {
+            color: #2B7B60;
+            text-decoration: none;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-weight: 500;
+            padding: 0;
+            margin-left: 5px;
+
+            &:hover {
+                text-decoration: underline;
+            }
+        }
+    }
+}
+
+// ... Add other styles from LoginPopup.module.scss that are related to the initial popup ...
