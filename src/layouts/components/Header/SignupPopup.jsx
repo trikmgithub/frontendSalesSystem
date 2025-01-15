@@ -1,25 +1,103 @@
 import classNames from 'classnames/bind';
 import styles from './SignupPopup.module.scss';
 import { Link } from 'react-router-dom';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { FaFacebook } from 'react-icons/fa';
 import { FcGoogle } from 'react-icons/fc';
+import { IoWarning, IoCheckmarkCircle } from "react-icons/io5";
 
 const cx = classNames.bind(styles);
 
 function SignupForm({ onClose, onShowLogin }) {
     const [formData, setFormData] = useState({
         email: '',
-        verificationCode: '',
         password: '',
-        fullName: '',
+        confirmPassword: '',
+        verificationCode: '',
+        name: '',
         gender: '',
         birthDay: '',
         birthMonth: '',
         birthYear: '',
-        agreeToTerms: false,
-        receivePromotions: false
+        acceptTerms: false,
+        acceptNewsletter: false
     });
+    const [error, setError] = useState('');
+    const [success, setSuccess] = useState('');
+    const [countdown, setCountdown] = useState(0);
+    const [isEmailValid, setIsEmailValid] = useState(false);
+
+    const handleSubmit = (e) => {
+        e.preventDefault();
+
+        // Validate email/phone
+        if (!formData.email) {
+            setError('Vui lòng nhập email hoặc số điện thoại');
+            return;
+        }
+
+        // Validate email format
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        const phoneRegex = /^[0-9]{10}$/;
+        
+        if (!emailRegex.test(formData.email) && !phoneRegex.test(formData.email)) {
+            setError('Email hoặc số điện thoại không hợp lệ');
+            return;
+        }
+
+        // Check if email is already registered (example)
+        if (formData.email === 'abc@gmail.com') {
+            setError('Email đã đăng ký, vui lòng đăng ký bằng email khác.');
+            return;
+        }
+
+        // Validate verification code
+        if (!formData.verificationCode) {
+            setError('Vui lòng nhập mã xác thực');
+            return;
+        }
+
+        if (formData.verificationCode.length !== 6) {
+            setError('Nhập mã xác thực 6 số!');
+            return;
+        }
+
+        // Validate password
+        if (!formData.password) {
+            setError('Vui lòng nhập mật khẩu');
+            return;
+        }
+
+        if (formData.password.length < 6) {
+            setError('Mật khẩu phải có ít nhất 6 ký tự');
+            return;
+        }
+
+        // Validate name
+        if (!formData.name) {
+            setError('Vui lòng nhập họ tên');
+            return;
+        }
+
+        // Validate terms acceptance
+        if (!formData.acceptTerms) {
+            setError('Vui lòng đồng ý với điều khoản sử dụng');
+            return;
+        }
+
+        // If all validations pass, proceed with signup
+        // ... signup logic here
+    };
+
+    const validateEmail = (email) => {
+        // More comprehensive email validation
+        const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+        const phoneRegex = /^[0-9]{10}$/;
+        
+        // This will ensure the domain has at least 2 characters after the dot
+        // For example: @gmail.com is valid, but @gmail.c is not
+        return emailRegex.test(email) || phoneRegex.test(email);
+    };
 
     const handleInputChange = (e) => {
         const { name, value, type, checked } = e.target;
@@ -27,15 +105,55 @@ function SignupForm({ onClose, onShowLogin }) {
             ...prev,
             [name]: type === 'checkbox' ? checked : value
         }));
+
+        // Validate email when it changes
+        if (name === 'email') {
+            setIsEmailValid(validateEmail(value));
+        }
+        
+        setError('');
     };
 
-    const handleSubmit = (e) => {
+    const handleGetCode = (e) => {
         e.preventDefault();
-        console.log('Form submitted:', formData);
+        
+        // Validate email first
+        if (!formData.email) {
+            setError('Vui lòng nhập email hoặc số điện thoại');
+            return;
+        }
+
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        const phoneRegex = /^[0-9]{10}$/;
+        
+        if (!emailRegex.test(formData.email) && !phoneRegex.test(formData.email)) {
+            setError('Email hoặc số điện thoại không hợp lệ');
+            return;
+        }
+
+        // Start countdown (10 minutes = 600 seconds)
+        setCountdown(600);
+        // Show success message
+        setSuccess('BeautySkin đã gửi mã xác thực vào Email của bạn vui lòng kiểm tra lại');
+        setError('');
     };
 
-    const handleGetCode = () => {
-        console.log('Getting verification code for:', formData.email);
+    // Countdown timer effect
+    useEffect(() => {
+        let timer;
+        if (countdown > 0) {
+            timer = setInterval(() => {
+                setCountdown(prev => prev - 1);
+            }, 1000);
+        }
+        return () => clearInterval(timer);
+    }, [countdown]);
+
+    // Format countdown time as mm:ss
+    const formatTime = (seconds) => {
+        const minutes = Math.floor(seconds / 60);
+        const remainingSeconds = seconds % 60;
+        return `${String(minutes).padStart(2, '0')}:${String(remainingSeconds).padStart(2, '0')}`;
     };
 
     const handleShowLogin = () => {
@@ -49,6 +167,18 @@ function SignupForm({ onClose, onShowLogin }) {
                 <button className={cx('closeButton')} onClick={onClose}>×</button>
                 <h3>Đăng ký tài khoản</h3>
                 <form className={cx('signupForm')} onSubmit={handleSubmit}>
+                    {error && (
+                        <div className={cx('errorMessage')}>
+                            <IoWarning size={16} />
+                            {error}
+                        </div>
+                    )}
+                    {success && (
+                        <div className={cx('successMessage')}>
+                            <IoCheckmarkCircle size={16} />
+                            {success}
+                        </div>
+                    )}
                     <div className={cx('formGroup')}>
                         <input
                             type="text"
@@ -62,13 +192,24 @@ function SignupForm({ onClose, onShowLogin }) {
                         <input
                             type="text"
                             name="verificationCode"
+                            placeholder="Nhập mã xác thực 6 số"
                             value={formData.verificationCode}
                             onChange={handleInputChange}
-                            placeholder="Nhập mã xác thực 6 số"
                         />
-                        <button type="button" onClick={handleGetCode} className={cx('getCodeBtn')}>
-                            lấy mã
-                        </button>
+                        {countdown > 0 ? (
+                            <button type="button" className={cx('getCodeBtn', 'counting')} disabled>
+                                {formatTime(countdown)}
+                            </button>
+                        ) : (
+                            <button 
+                                type="button" 
+                                className={cx('getCodeBtn', { active: isEmailValid })}
+                                onClick={handleGetCode}
+                                disabled={!isEmailValid}
+                            >
+                                lấy mã
+                            </button>
+                        )}
                     </div>
                     <div className={cx('formGroup')}>
                         <input

@@ -132,6 +132,12 @@
                     display: block;
                 }
             }
+
+            &.boldText {
+                a {
+                    font-weight: 1000;
+                }
+            }
         }
     }
 }
@@ -149,27 +155,33 @@
     border-left: 2px solid #f26522;
 
     .submenuSection {
-        margin-bottom: 25px;
+        margin-bottom: 0;
+        width: 50%;
+        float: left;
+        padding-right: 20px;
 
-        &:last-child {
-            margin-bottom: 0;
+        &.rightColumn {
+            padding-right: 0;
+            padding-left: 20px;
         }
 
         ul {
             margin: 0;
             padding: 0;
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 8px 20px;
+            display: block;
 
             .sectionTitle {
-                grid-column: 1 / -1;
-                margin-bottom: 12px;
+                margin-top: 25px;
+                font-weight: 1000;
+
+                &:first-child {
+                    margin-top: 0;
+                }
 
                 a {
                     color: #333;
                     font-size: 14px;
-                    font-weight: 500;
+                    font-weight: 1000;
                     text-decoration: none;
                     display: block;
 
@@ -181,6 +193,11 @@
 
             li {
                 border: none;
+                margin-bottom: 8px;
+
+                &:last-child {
+                    margin-bottom: 0;
+                }
 
                 a {
                     padding: 0;
@@ -194,7 +211,29 @@
                         background: none;
                     }
                 }
+
+                &.boldText {
+                    a {
+                        color: #333;
+                        font-size: 14px;
+                        font-weight: 1000;
+                    }
+                }
+
+                &.sectionTitle {
+                    margin-top: 25px;
+
+                    &:first-child {
+                        margin-top: 0;
+                    }
+                }
             }
         }
+    }
+
+    &::after {
+        content: '';
+        display: table;
+        clear: both;
     }
 }

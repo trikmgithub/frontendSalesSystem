@@ -80,9 +80,32 @@
             white-space: nowrap;
             font-size: 13px;
             color: #666;
+            min-width: 80px;
+            transition: all 0.2s;
 
-            &:hover {
+            &:hover:not(:disabled) {
                 background: #e0e0e0;
+            }
+
+            &.counting {
+                background: #f5f5f5;
+                color: #999;
+                cursor: not-allowed;
+            }
+
+            &:disabled {
+                cursor: not-allowed;
+                opacity: 0.6;
+            }
+
+            &.active {
+                background: #f26522;
+                border-color: #f26522;
+                color: white;
+
+                &:hover {
+                    background: darken(#f26522, 5%);
+                }
             }
         }
     }
@@ -244,5 +267,89 @@
     to {
         opacity: 1;
         transform: translateY(0);
+    }
+} 
+
+.errorMessage {
+    background-color: #fff2f0;
+    border: 1px solid #ffccc7;
+    border-radius: 2px;
+    color: #ff4d4f;
+    font-size: 13px;
+    margin-bottom: 15px;
+    padding: 8px 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.formGroup {
+    input.error {
+        border-color: #ff4d4f;
+        
+        &:focus {
+            border-color: #ff4d4f;
+        }
+    }
+} 
+
+.successMessage {
+    background-color: #f6ffed;
+    border: 1px solid #b7eb8f;
+    border-radius: 2px;
+    color: #52c41a;
+    font-size: 13px;
+    margin-bottom: 15px;
+    padding: 8px 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.verificationGroup {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 15px;
+
+    input {
+        flex: 1;
+    }
+
+    .getCodeBtn {
+        padding: 0 20px;
+        background: #f0f0f0;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        cursor: pointer;
+        white-space: nowrap;
+        font-size: 13px;
+        color: #666;
+        min-width: 80px;
+        transition: all 0.2s;
+
+        &:hover:not(:disabled) {
+            background: #e0e0e0;
+        }
+
+        &.counting {
+            background: #f5f5f5;
+            color: #999;
+            cursor: not-allowed;
+        }
+
+        &:disabled {
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
+        &.active {
+            background: #f26522;
+            border-color: #f26522;
+            color: white;
+
+            &:hover {
+                background: darken(#f26522, 5%);
+            }
+        }
     }
 } 
