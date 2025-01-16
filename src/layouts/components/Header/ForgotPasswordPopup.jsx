@@ -36,8 +36,8 @@ function ForgotPasswordPopup({ onClose }) {
     };
 
     return (
-        <div className={cx('modalOverlay')} onClick={onClose}>
-            <div className={cx('modalContent')} onClick={e => e.stopPropagation()}>
+        <div className={cx('modalOverlay')} onClick={(e) => e.stopPropagation()}>
+            <div className={cx('modalContent')} onClick={(e) => e.stopPropagation()}>
                 <button className={cx('closeButton')} onClick={onClose}>×</button>
                 <h3>Quên mật khẩu tài khoản</h3>
                 
