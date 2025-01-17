@@ -4,7 +4,7 @@ import Home from '~/pages/Home';
 import Profile from '~/pages/Profile';
 
 const publicRoutes = [
-    { path: config.routes.home, component: Home },
+    { path: config.routes.home, component: Home, layout: HeaderOnly },
     { path: config.routes.profile, component: Profile, layout: HeaderOnly },
 ];
 
