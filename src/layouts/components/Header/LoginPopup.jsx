@@ -6,6 +6,7 @@ import { FaFacebook } from 'react-icons/fa';
 import { FcGoogle } from 'react-icons/fc';
 import { IoWarning } from "react-icons/io5";
 import ForgotPasswordPopup from './ForgotPasswordPopup';
+import { loginAxios } from '~/services/loginAxios';
 
 const cx = classNames.bind(styles);
 
@@ -15,17 +16,17 @@ function LoginForm({ onClose, onShowSignup }) {
     const [error, setError] = useState('');
     const [showForgotPassword, setShowForgotPassword] = useState(false);
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
         
         // Validate empty fields
         if (!email && !password) {
-            setError('Vui lòng nhập tên đăng nhập');
+            setError('Vui lòng nhập email và mật khẩu');
             return;
         }
         
         if (!email) {
-            setError('Vui lòng nhập email hoặc số điện thoại');
+            setError('Vui lòng nhập email');
             return;
         }
 
@@ -36,14 +37,27 @@ function LoginForm({ onClose, onShowSignup }) {
 
         // Validate email format
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        const phoneRegex = /^[0-9]{10}$/;
         
-        if (!emailRegex.test(email) && !phoneRegex.test(email)) {
-            setError('Email hoặc số điện thoại không hợp lệ');
+        if (!emailRegex.test(email)) {
+            setError('Email không hợp lệ');
             return;
         }
 
         // Handle login logic here
+        try {
+            const data = await loginAxios({ username: email, password });
+
+            // Store tokens in local storage
+            localStorage.setItem('accessToken', data.accessToken);
+            localStorage.setItem('refreshToken', data.refreshToken);
+
+            // Handle successful login here
+            console.log('Login successful:', data);
+            // You can redirect the user or perform other actions here
+        } catch (error) {
+            setError(error || 'Đăng nhập thất bại');
+            console.log('Login failed:', error);
+        }
     };
 
     const handleShowSignup = () => {
@@ -84,7 +98,7 @@ function LoginForm({ onClose, onShowSignup }) {
                                 name="email"
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
-                                placeholder="Nhập email hoặc số điện thoại"
+                                placeholder="Nhập email"
                                 className={cx({ error: error && !email })}
                             />
                         </div>
