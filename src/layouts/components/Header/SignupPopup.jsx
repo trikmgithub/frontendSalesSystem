@@ -1,11 +1,10 @@
 import classNames from 'classnames/bind';
 import styles from './SignupPopup.module.scss';
 import { Link } from 'react-router-dom';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { FaFacebook } from 'react-icons/fa';
 import { FcGoogle } from 'react-icons/fc';
 import { IoWarning, IoCheckmarkCircle } from 'react-icons/io5';
-import LoginForm from './LoginPopup';
 import { registerAxios } from '~/services/registerAxios';
 
 const cx = classNames.bind(styles);
@@ -29,37 +28,67 @@ function SignupForm({ onClose, onShowLogin }) {
     const handleSubmit = async (e) => {
         e.preventDefault();
 
-        const { year, month, day, acceptTerms, receivePromotions, ...rest } = formData;
-        const dateOfBirth = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+        const { year, month, day, acceptTerms, ...rest } = formData;
+
+        // Format birth date as YYYY-MM-DD
+        const dateOfBirth = `${year.padStart(2, '0')}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+
+        // Validate required fields
+        if (!formData.email || !formData.password || !formData.name || !formData.address || !formData.gender || !year || !month || !day) {
+            setError('Vui lòng điền đầy đủ thông tin.');
+            return;
+        }
+
+        // Validate email format
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(formData.email)) {
+            setError('Email không hợp lệ.');
+            return;
+        }
+
+        if (!acceptTerms) {
+            setError('Bạn phải đồng ý với điều khoản sử dụng.');
+            return;
+        }
 
         try {
-            if (acceptTerms) {
-                const response = await registerAxios({ ...rest, dateOfBirth });
+            const response = await registerAxios({ ...rest, dateOfBirth });
 
-                // console.log(response);
+            if (response.error) {
+                setError(response.message || 'Đăng ký thất bại.');
+                return;
+            }
 
-                if (response.error) {
-                    setError(response.message);
-                }
+            if (response.message === 'Email already exists') {
+                setError('Email đã được sử dụng, vui lòng chọn email khác.');
+                return;
+            }
 
-                if (response.message === 'Register success') {
+            if (response.message === 'Register success') {
+                setSuccess('Đăng ký thành công! Chuyển hướng sau 3 giây...');
+                setError('');
+
+                // Wait 3 seconds before redirecting
+                setTimeout(() => {
                     handleShowLogin();
-                }
-            } else {
-                setError('Phải đồng ý chính sách');
+                }, 3000);
             }
         } catch (error) {
+            setError('Lỗi kết nối đến máy chủ. Vui lòng thử lại.');
             console.error('Error:', error);
         }
     };
 
     const handleInputChange = (e) => {
         const { name, value, type, checked } = e.target;
+    
         setFormData((prev) => ({
             ...prev,
             [name]: type === 'checkbox' ? checked : value,
         }));
-    };
+    
+        setError(''); // Clear error when the user starts typing
+    };    
 
     const handleShowLogin = () => {
         onClose();
@@ -110,7 +139,7 @@ function SignupForm({ onClose, onShowLogin }) {
                             name="name"
                             value={formData.name}
                             onChange={handleInputChange}
-                            placeholder="Họ tên"
+                            placeholder="Họ và tên"
                         />
                     </div>
                     <div className={cx('formGroup')}>
@@ -194,17 +223,6 @@ function SignupForm({ onClose, onShowLogin }) {
                             </span>
                         </label>
                     </div>
-                    <div className={cx('checkboxGroup')}>
-                        <label>
-                            <input
-                                type="checkbox"
-                                name="receivePromotions"
-                                checked={formData.receivePromotions}
-                                onChange={handleInputChange}
-                            />
-                            <span>Nhận thông tin khuyến mãi qua e-mail</span>
-                        </label>
-                    </div>
                     <button type="submit" className={cx('submitBtn')}>
                         Đăng ký
                     </button>
@@ -216,7 +234,7 @@ function SignupForm({ onClose, onShowLogin }) {
                     </button>
                 </div>
                 <div className={cx('socialLogin')}>
-                    <p>Hoặc đăng nhập với:</p>
+                    <p>Hoặc đăng ký với:</p>
                     <div className={cx('socialButtons')}>
                         <button type="button" className={cx('facebookBtn')}>
                             <FaFacebook />
