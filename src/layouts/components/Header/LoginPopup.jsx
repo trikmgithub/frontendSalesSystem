@@ -21,12 +21,12 @@ function LoginForm({ onClose, onShowSignup }) {
 
         // Validate empty fields
         if (!email && !password) {
-            setError('Vui lòng nhập tên đăng nhập');
+            setError('Vui lòng nhập email và mật khẩu');
             return;
         }
 
         if (!email) {
-            setError('Vui lòng nhập email hoặc số điện thoại');
+            setError('Vui lòng nhập email');
             return;
         }
 
@@ -96,7 +96,7 @@ function LoginForm({ onClose, onShowSignup }) {
                                 name="email"
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
-                                placeholder="Nhập email hoặc số điện thoại"
+                                placeholder="Nhập email"
                                 className={cx({ error: error && !email })}
                             />
                         </div>
