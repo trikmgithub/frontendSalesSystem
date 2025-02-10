@@ -25,7 +25,7 @@ function Navigation() {
                                     <div className={cx('submenu')}>
                                         <div className={cx('submenuSection')}>
                                             <ul>
-                                                <li className={cx('sectionTitle', 'boldText')}>
+                                                <li className={cx('sectionTitle')}>
                                                     <Link to="/nuoc-hoa-cao-cap">Nước Hoa Cao Cấp</Link>
                                                 </li>
                                                 <li><Link to="/calvin-klein">Calvin Klein</Link></li>
@@ -47,7 +47,7 @@ function Navigation() {
                                         </div>
                                         <div className={cx('submenuSection')}>
                                             <ul>
-                                                <li className={cx('sectionTitle', 'boldText')}>
+                                                <li className={cx('sectionTitle')}>
                                                     <Link to="/my-pham-cao-cap">Mỹ Phẩm Cao Cấp</Link>
                                                 </li>
                                                 <li><Link to="/elasten">Elasten</Link></li>
@@ -326,7 +326,7 @@ function Navigation() {
                                                 <li><Link to="/moschino">Moschino</Link></li>
                                                 <li><Link to="/narciso-rodriguez">Narciso Rodriguez</Link></li>
                                                 <li><Link to="/salvatore-ferragamo">Salvatore Ferragamo</Link></li>
-                                                <li><Link to="/tommy">Tommy</Link></li>
+                                                <li><Link to="/tommy-hilfiger">Tommy Hilfiger</Link></li>
                                                 <li><Link to="/versace">Versace</Link></li>
                                                 <li><Link to="/yves-saint-laurent">Yves Saint Laurent</Link></li>
                                                 <li><Link to="/paco-rabanne">Paco Rabanne</Link></li>
@@ -401,12 +401,10 @@ function Navigation() {
                                     </div>
                                 </li>
                                 <li>
-                                    <li className={cx('boldText')}>
-                                        <Link to="/beauty-skin-clinic-spa">
-                                            BeautySkin Clinic & Spa
-                                            <IoIosArrowForward />
-                                        </Link>
-                                    </li>
+                                    <Link to="/beauty-skin-clinic-spa">
+                                        BeautySkin Clinic & Spa
+                                        <IoIosArrowForward />
+                                    </Link>
                                     <div className={cx('submenu')}>
                                         <div className={cx('submenuSection', 'leftColumn')}>
                                             <ul>
@@ -439,12 +437,10 @@ function Navigation() {
                                     </div>
                                 </li>
                                 <li>
-                                    <li className={cx('boldText')}>
-                                        <Link to="/dich-vu-trai-nghiem">
-                                            Dịch Vụ Trải Nghiệm
-                                            <IoIosArrowForward />
-                                        </Link>
-                                    </li>
+                                    <Link to="/dich-vu-trai-nghiem">
+                                        Dịch Vụ Trải Nghiệm
+                                        <IoIosArrowForward />
+                                    </Link>
                                     <div className={cx('submenu')}>
                                         <div className={cx('submenuSection')}>
                                             <ul>
@@ -480,4 +476,4 @@ function Navigation() {
     );
 }
 
-export default Navigation; 
+export default Navigation;
