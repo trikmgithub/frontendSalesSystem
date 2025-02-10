@@ -5,7 +5,7 @@ import { FaFacebook } from 'react-icons/fa';
 import { FcGoogle } from 'react-icons/fc';
 import classNames from 'classnames/bind';
 import styles from './Header.module.scss';
-import logo from '~/assets/logo.jpg';
+import logo from '~/assets/beautySkin.png';
 import { useState, useEffect, useRef } from 'react';
 import LoginForm from './LoginPopup';
 import SignupForm from './SignupPopup';
@@ -128,8 +128,8 @@ function Header() {
                                     <span>{decodedToken.name}</span>
                                 ) : (
                                     <div>
-                                        <span>Đăng nhập / Đăng ký</span>
-                                        <span>Tài khoản</span>
+                                        <div><span>Đăng nhập / Đăng ký</span></div>
+                                        <div><span>Tài khoản</span></div>
                                     </div>
                                 )}
                             </div>
