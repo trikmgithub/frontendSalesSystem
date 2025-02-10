@@ -1,0 +1,29 @@
+.supportHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 20px;
+    background-color: white ;
+}
+
+.logo img {
+    height: 40px;
+}
+
+.actions {
+    display: flex;
+    gap: 20px;
+}
+
+.link {
+    text-decoration: none;
+    color: black;
+    position: relative;
+}
+
+.link:first-child::after {
+    content: '|';
+    position: absolute;
+    right: -15px;
+    color: black;
+}
