@@ -10,6 +10,8 @@ import { useState, useEffect, useRef } from 'react';
 import LoginForm from './LoginPopup';
 import SignupForm from './SignupPopup';
 import Navigation from '../Navigation/Navigation';
+import { jwtDecode } from 'jwt-decode';
+import { logoutAxios } from '~/services/axiosServices';
 //navigation is error right now
 const cx = classNames.bind(styles);
 
@@ -18,6 +20,7 @@ function Header() {
     const [showLoginForm, setShowLoginForm] = useState(false);
     const [showSignupForm, setShowSignupForm] = useState(false);
     const popupRef = useRef(null);
+    const [decodedToken, setDecodedToken] = useState('');
 
     useEffect(() => {
         const handleClickOutside = (event) => {
@@ -41,10 +44,37 @@ function Header() {
         setShowAccountPopup(false);
     };
 
+    const handleSignOutClick = async () => {
+        try {
+            const response = await logoutAxios();
+        } catch (error) {
+            throw new Error(error);
+        }
+    };
+
     const handleSignupClick = () => {
         setShowSignupForm(true);
         setShowAccountPopup(false);
     };
+
+    const getCookie = (name) => {
+        const cookies = document.cookie.split('; ');
+        const cookie = cookies.find((row) => row.startsWith(name + '='));
+        return cookie ? cookie.split('=')[1] : null;
+    };
+
+    const token = getCookie('refresh_token'); // Thay bằng tên cookie của bạn
+
+    useEffect(() => {
+        if (token) {
+            // Giải mã JWT và lưu vào state
+            const decoded = jwtDecode(token);
+            setDecodedToken(decoded);
+            console.log('Decoded JWT:', decoded.name); // Kiểm tra thông tin từ token
+        } else {
+            console.log('Không tìm thấy token!');
+        }
+    }, [token]);
 
     return (
         <>
@@ -57,18 +87,30 @@ function Header() {
                     <div className={cx('searchSection')}>
                         <nav className={cx('headerNav')}>
                             <ul className={cx('navMenu')}>
-                                <li><Link to="/kem-chong-nang">Kem Chống Nắng</Link></li>
-                                <li><Link to="/tay-trang">Tẩy Trang</Link></li>
-                                <li><Link to="/toner">Toner</Link></li>
-                                <li><Link to="/sua-rua-mat">Sữa Rửa Mặt</Link></li>
-                                <li><Link to="/tay-te-bao-chet">Tẩy tế bào chết</Link></li>
-                                <li><Link to="/retinol">Retinol</Link></li>
+                                <li>
+                                    <Link to="/kem-chong-nang">Kem Chống Nắng</Link>
+                                </li>
+                                <li>
+                                    <Link to="/tay-trang">Tẩy Trang</Link>
+                                </li>
+                                <li>
+                                    <Link to="/toner">Toner</Link>
+                                </li>
+                                <li>
+                                    <Link to="/sua-rua-mat">Sữa Rửa Mặt</Link>
+                                </li>
+                                <li>
+                                    <Link to="/tay-te-bao-chet">Tẩy tế bào chết</Link>
+                                </li>
+                                <li>
+                                    <Link to="/retinol">Retinol</Link>
+                                </li>
                             </ul>
                         </nav>
 
                         <div className={cx('searchContainer')}>
-                            <input 
-                                type="text" 
+                            <input
+                                type="text"
                                 placeholder="Giảm 50% Ủ Trắng Các Vùng - Mua 5 Tặng 5"
                                 className={cx('searchInput')}
                             />
@@ -79,45 +121,53 @@ function Header() {
                     </div>
 
                     <div className={cx('headerActions')}>
-                        <div 
-                            ref={popupRef}
-                            className={cx('actionItem', 'accountItem')}
-                            onClick={handleAccountClick}
-                        >
+                        <div ref={popupRef} className={cx('actionItem', 'accountItem')} onClick={handleAccountClick}>
                             <FaUser className={cx('icon')} />
                             <div className={cx('actionContent')}>
-                                <span>Đăng nhập / Đăng ký</span>
-                                <span>Tài khoản</span>
+                                {decodedToken.name ? (
+                                    <span>{decodedToken.name}</span>
+                                ) : (
+                                    <div>
+                                        <span>Đăng nhập / Đăng ký</span>
+                                        <span>Tài khoản</span>
+                                    </div>
+                                )}
                             </div>
-                            {showAccountPopup && (
-                                <div className={cx('accountPopup')}>
-                                    <h3>Đăng nhập với</h3>
-                                    <div className={cx('socialButtons')}>
-                                        <button className={cx('facebookBtn')}>
-                                            <FaFacebook />
-                                            Facebook
-                                        </button>
-                                        <button className={cx('googleBtn')}>
-                                            <FcGoogle />
-                                            Google +
-                                        </button>
+
+                            {showAccountPopup &&
+                                (decodedToken?.name ? (
+                                    <div className={cx('accountPopup')} onClick={handleSignOutClick}>
+                                        logout
                                     </div>
-                                    <div className={cx('divider')}>
-                                        <span>Hoặc đăng nhập với BeautySkin</span>
-                                    </div>
-                                    <button className={cx('loginBtn')} onClick={handleLoginClick}>
-                                        Đăng nhập
-                                    </button>
-                                    <div className={cx('registerLink')}>
-                                        <span>Bạn chưa có tài khoản?</span>
-                                        <button className={cx('signupBtn')} onClick={handleSignupClick}>
-                                            ĐĂNG KÝ NGAY
+                                ) : (
+                                    <div className={cx('accountPopup')}>
+                                        <h3>Đăng nhập với</h3>
+                                        <div className={cx('socialButtons')}>
+                                            <button className={cx('facebookBtn')}>
+                                                <FaFacebook />
+                                                Facebook
+                                            </button>
+                                            <button className={cx('googleBtn')}>
+                                                <FcGoogle />
+                                                Google +
+                                            </button>
+                                        </div>
+                                        <div className={cx('divider')}>
+                                            <span>Hoặc đăng nhập với BeautySkin</span>
+                                        </div>
+                                        <button className={cx('loginBtn')} onClick={handleLoginClick}>
+                                            Đăng nhập
                                         </button>
+                                        <div className={cx('registerLink')}>
+                                            <span>Bạn chưa có tài khoản?</span>
+                                            <button className={cx('signupBtn')} onClick={handleSignupClick}>
+                                                ĐĂNG KÝ NGAY
+                                            </button>
+                                        </div>
                                     </div>
-                                </div>
-                            )}
+                                ))}
                         </div>
-                        
+
                         <div className={cx('actionItem')}>
                             <FaStore className={cx('icon')} />
                             <div className={cx('actionContent')}>
@@ -142,8 +192,8 @@ function Header() {
                 </div>
 
                 {showLoginForm && (
-                    <LoginForm 
-                        onClose={() => setShowLoginForm(false)} 
+                    <LoginForm
+                        onClose={() => setShowLoginForm(false)}
                         onShowSignup={() => {
                             setShowLoginForm(false);
                             setShowSignupForm(true);
@@ -152,8 +202,8 @@ function Header() {
                 )}
 
                 {showSignupForm && (
-                    <SignupForm 
-                        onClose={() => setShowSignupForm(false)} 
+                    <SignupForm
+                        onClose={() => setShowSignupForm(false)}
                         onShowLogin={() => {
                             setShowSignupForm(false);
                             setShowLoginForm(true);
