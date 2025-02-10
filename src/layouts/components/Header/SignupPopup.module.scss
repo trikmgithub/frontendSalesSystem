@@ -58,7 +58,7 @@
 
             &:focus {
                 outline: none;
-                border-color: #2B7B60;
+                border-color: #2b7b60;
             }
         }
     }
@@ -104,7 +104,7 @@
                 color: white;
 
                 &:hover {
-                    background: darken(#f26522, 5%);
+                    background: rgba(230, 96, 32, 0.5);
                 }
             }
         }
@@ -124,7 +124,7 @@
         font-size: 14px;
         color: #666;
 
-        input[type="radio"] {
+        input[type='radio'] {
             margin: 0;
         }
     }
@@ -146,7 +146,7 @@
 
         &:focus {
             outline: none;
-            border-color: #2B7B60;
+            border-color: #2b7b60;
         }
     }
 }
@@ -162,12 +162,12 @@
         cursor: pointer;
         color: #666;
 
-        input[type="checkbox"] {
+        input[type='checkbox'] {
             margin-top: 3px;
         }
 
         a {
-            color: #2B7B60;
+            color: #2b7b60;
             text-decoration: none;
 
             &:hover {
@@ -180,7 +180,7 @@
 .submitBtn {
     width: 100%;
     padding: 12px;
-    background: #2B7B60;
+    background: #2b7b60;
     color: white;
     border: none;
     border-radius: 4px;
@@ -190,7 +190,7 @@
     margin-bottom: 20px;
 
     &:hover {
-        background: darken(#2B7B60, 5%);
+        background: rgba(43, 123, 96, 0.5);
     }
 }
 
@@ -201,7 +201,7 @@
     margin-bottom: 15px;
 
     .loginBtn {
-        color: #2B7B60;
+        color: #2b7b60;
         text-decoration: none;
         background: none;
         border: none;
@@ -220,7 +220,7 @@
     text-align: center;
     border-top: 1px solid #eee;
     padding-top: 15px;
-    
+
     p {
         margin-bottom: 15px;
         color: #666;
@@ -268,7 +268,7 @@
         opacity: 1;
         transform: translateY(0);
     }
-} 
+}
 
 .errorMessage {
     background-color: #fff2f0;
@@ -286,12 +286,12 @@
 .formGroup {
     input.error {
         border-color: #ff4d4f;
-        
+
         &:focus {
             border-color: #ff4d4f;
         }
     }
-} 
+}
 
 .successMessage {
     background-color: #f6ffed;
@@ -348,8 +348,8 @@
             color: white;
 
             &:hover {
-                background: darken(#f26522, 5%);
+                background: rgba(230, 96, 32, 0.5);
             }
         }
     }
-} 
+}

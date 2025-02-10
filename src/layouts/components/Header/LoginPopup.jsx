@@ -4,8 +4,9 @@ import { Link } from 'react-router-dom';
 import { useState } from 'react';
 import { FaFacebook } from 'react-icons/fa';
 import { FcGoogle } from 'react-icons/fc';
-import { IoWarning } from "react-icons/io5";
+import { IoWarning } from 'react-icons/io5';
 import ForgotPasswordPopup from './ForgotPasswordPopup';
+import { loginAxios } from '~/services/axiosServices';
 
 const cx = classNames.bind(styles);
 
@@ -15,17 +16,17 @@ function LoginForm({ onClose, onShowSignup }) {
     const [error, setError] = useState('');
     const [showForgotPassword, setShowForgotPassword] = useState(false);
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        
+
         // Validate empty fields
         if (!email && !password) {
-            setError('Vui lòng nhập tên đăng nhập');
+            setError('Vui lòng nhập email và mật khẩu');
             return;
         }
-        
+
         if (!email) {
-            setError('Vui lòng nhập email hoặc số điện thoại');
+            setError('Vui lòng nhập email');
             return;
         }
 
@@ -37,13 +38,22 @@ function LoginForm({ onClose, onShowSignup }) {
         // Validate email format
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         const phoneRegex = /^[0-9]{10}$/;
-        
+
         if (!emailRegex.test(email) && !phoneRegex.test(email)) {
             setError('Email hoặc số điện thoại không hợp lệ');
             return;
         }
 
         // Handle login logic here
+        try {
+            const response = await loginAxios({ username: email, password });
+
+            if (response.message === 'Login success') {
+                onClose();
+            }
+        } catch (error) {
+            console.log('Login Popup', error);
+        }
     };
 
     const handleShowSignup = () => {
@@ -55,7 +65,9 @@ function LoginForm({ onClose, onShowSignup }) {
         <>
             <div className={cx('modalOverlay')} onClick={(e) => e.stopPropagation()}>
                 <div className={cx('modalContent')} onClick={(e) => e.stopPropagation()}>
-                    <button className={cx('closeButton')} onClick={onClose}>×</button>
+                    <button className={cx('closeButton')} onClick={onClose}>
+                        ×
+                    </button>
                     <h3>Đăng nhập với</h3>
                     <div className={cx('socialButtons')}>
                         <button className={cx('facebookBtn')}>
@@ -77,14 +89,14 @@ function LoginForm({ onClose, onShowSignup }) {
                                 {error}
                             </div>
                         )}
-                        
+
                         <div className={cx('formGroup')}>
                             <input
                                 type="text"
                                 name="email"
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
-                                placeholder="Nhập email hoặc số điện thoại"
+                                placeholder="Nhập email"
                                 className={cx({ error: error && !email })}
                             />
                         </div>
@@ -100,18 +112,15 @@ function LoginForm({ onClose, onShowSignup }) {
                         </div>
                         <div className={cx('formOptions')}>
                             <label className={cx('rememberMe')}>
-                                <input
-                                    type="checkbox"
-                                    name="remember"
-                                />
+                                <input type="checkbox" name="remember" />
                                 <span>Nhớ mật khẩu</span>
                             </label>
-                            <Link 
+                            <Link
                                 onClick={(e) => {
                                     e.preventDefault();
                                     setShowForgotPassword(true);
-                                }} 
-                                to="/forgot-password" 
+                                }}
+                                to="/forgot-password"
                                 className={cx('forgotPassword')}
                             >
                                 Quên mật khẩu
@@ -123,20 +132,15 @@ function LoginForm({ onClose, onShowSignup }) {
                     </form>
                     <div className={cx('registerLink')}>
                         <span>Bạn chưa có tài khoản? </span>
-                        <button 
-                            className={cx('signupBtn')} 
-                            onClick={handleShowSignup}
-                        >
+                        <button className={cx('signupBtn')} onClick={handleShowSignup}>
                             ĐĂNG KÝ NGAY
                         </button>
                     </div>
                 </div>
             </div>
-            {showForgotPassword && (
-                <ForgotPasswordPopup onClose={() => setShowForgotPassword(false)} />
-            )}
+            {showForgotPassword && <ForgotPasswordPopup onClose={() => setShowForgotPassword(false)} />}
         </>
     );
 }
 
-export default LoginForm; 
+export default LoginForm;
