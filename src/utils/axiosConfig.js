@@ -7,9 +7,16 @@ const axiosConfig = axios.create({
     },
 });
 
-export const post = async (path, data, options = {}) => {
-    const response = await axiosConfig.post(path, data, options);
+const post = async (url, data, config = {}) => {
+    const response = await axiosConfig.post(url, data, config);
     return response.data;
 };
+
+const get = async (url, config = {}) => {
+    const response = await axiosConfig.get(url, config);
+    return response.data;
+};
+
+export { post, get };
 
 export default axiosConfig;

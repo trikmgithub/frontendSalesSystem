@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { FaFacebook } from 'react-icons/fa';
 import { FcGoogle } from 'react-icons/fc';
 import { IoWarning, IoCheckmarkCircle } from 'react-icons/io5';
-import { registerAxios } from '~/services/registerAxios';
+import { registerAxios } from '~/services/authAxios';
 
 const cx = classNames.bind(styles);
 
@@ -34,7 +34,16 @@ function SignupForm({ onClose, onShowLogin }) {
         const dateOfBirth = `${year.padStart(2, '0')}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
 
         // Validate required fields
-        if (!formData.email || !formData.password || !formData.name || !formData.address || !formData.gender || !year || !month || !day) {
+        if (
+            !formData.email ||
+            !formData.password ||
+            !formData.name ||
+            !formData.address ||
+            !formData.gender ||
+            !year ||
+            !month ||
+            !day
+        ) {
             setError('Vui lòng điền đầy đủ thông tin.');
             return;
         }
@@ -81,14 +90,14 @@ function SignupForm({ onClose, onShowLogin }) {
 
     const handleInputChange = (e) => {
         const { name, value, type, checked } = e.target;
-    
+
         setFormData((prev) => ({
             ...prev,
             [name]: type === 'checkbox' ? checked : value,
         }));
-    
+
         setError(''); // Clear error when the user starts typing
-    };    
+    };
 
     const handleShowLogin = () => {
         onClose();

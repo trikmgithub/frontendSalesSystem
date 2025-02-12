@@ -10,8 +10,7 @@ import { useState, useEffect, useRef } from 'react';
 import LoginForm from './LoginPopup';
 import SignupForm from './SignupPopup';
 import Navigation from '../Navigation/Navigation';
-import { jwtDecode } from 'jwt-decode';
-import { logoutAxios } from '~/services/axiosServices';
+import { logoutAxios } from '~/services/authAxios';
 //navigation is error right now
 const cx = classNames.bind(styles);
 
@@ -20,7 +19,8 @@ function Header() {
     const [showLoginForm, setShowLoginForm] = useState(false);
     const [showSignupForm, setShowSignupForm] = useState(false);
     const popupRef = useRef(null);
-    const [decodedToken, setDecodedToken] = useState('');
+    const [userInfo, setUserInfo] = useState('');
+    console.log(userInfo);
 
     useEffect(() => {
         const handleClickOutside = (event) => {
@@ -57,24 +57,11 @@ function Header() {
         setShowAccountPopup(false);
     };
 
-    const getCookie = (name) => {
-        const cookies = document.cookie.split('; ');
-        const cookie = cookies.find((row) => row.startsWith(name + '='));
-        return cookie ? cookie.split('=')[1] : null;
-    };
-
-    const token = getCookie('refresh_token'); // Thay bằng tên cookie của bạn
+    const userLocalStorage = JSON.parse(localStorage.getItem('user')) || {};
 
     useEffect(() => {
-        if (token) {
-            // Giải mã JWT và lưu vào state
-            const decoded = jwtDecode(token);
-            setDecodedToken(decoded);
-            console.log('Decoded JWT:', decoded.name); // Kiểm tra thông tin từ token
-        } else {
-            console.log('Không tìm thấy token!');
-        }
-    }, [token]);
+        setUserInfo(userLocalStorage);
+    }, []);
 
     return (
         <>
@@ -124,8 +111,8 @@ function Header() {
                         <div ref={popupRef} className={cx('actionItem', 'accountItem')} onClick={handleAccountClick}>
                             <FaUser className={cx('icon')} />
                             <div className={cx('actionContent')}>
-                                {decodedToken.name ? (
-                                    <span>{decodedToken.name}</span>
+                                {userInfo.name ? (
+                                    <span>{userInfo.name}</span>
                                 ) : (
                                     <div>
                                         <span>Đăng nhập / Đăng ký</span>
@@ -135,7 +122,7 @@ function Header() {
                             </div>
 
                             {showAccountPopup &&
-                                (decodedToken?.name ? (
+                                (userInfo?.name ? (
                                     <div className={cx('accountPopup')} onClick={handleSignOutClick}>
                                         logout
                                     </div>
