@@ -77,6 +77,8 @@
 }
 
 .dropdownContent {
+    position: relative; // Added to establish positioning context
+
     ul {
         list-style: none;
         margin: 0;
@@ -84,7 +86,7 @@
 
         li {
             border-bottom: 1px solid #f5f5f5;
-            position: relative;
+            position: static; // Changed from relative to static
 
             &:last-child {
                 border-bottom: none;
@@ -143,15 +145,15 @@
 }
 
 .submenu {
-    position: fixed;
-    top: 139px;
-    left: 433px;
+    position: absolute;
+    top: 0;
+    left: 100%; // Positions submenu right after the dropdown
     width: 500px;
-    height: 446.5px;
+    min-height: 100%; // Ensures submenu is at least as tall as dropdown
     background: white;
     box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.1);
     display: none;
-    padding: 20px 30px;
+    padding: 15px 30px;
     border-left: 2px solid #f26522;
 
     .submenuSection {
