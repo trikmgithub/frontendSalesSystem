@@ -6,7 +6,7 @@ import { FaFacebook } from 'react-icons/fa';
 import { FcGoogle } from 'react-icons/fc';
 import { IoWarning } from 'react-icons/io5';
 import ForgotPasswordPopup from './ForgotPasswordPopup';
-import { loginAxios } from '~/services/axiosServices';
+import { loginAxios } from '~/services/authAxios';
 
 const cx = classNames.bind(styles);
 

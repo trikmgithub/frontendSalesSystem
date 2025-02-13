@@ -1,0 +1,107 @@
+.support-page {
+  font-family: 'Roboto', Arial, sans-serif;
+  color: #333;
+  line-height: 1.6;
+  background-color: #f9f9f9;
+
+  .support-header {
+      background-color: #00A79D;
+      color: white;
+      text-align: center;
+      padding: 20px;
+
+      p {
+          margin: 5px 0;
+      }
+
+      .support-search {
+          margin: 15px auto;
+          padding: 10px;
+          width: 80%;
+          max-width: 600px;
+          border: none;
+          border-radius: 5px;
+      }
+  }
+
+  .support-links {
+      background-color: white;
+      padding: 20px;
+      margin: 20px auto;
+      border-radius: 10px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+
+      h2 {
+          font-size: 20px;
+          color: #00A79D;
+          margin-bottom: 20px;
+          text-align: center;
+      }
+
+      .link-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+          gap: 20px;
+
+          .support-link {
+              display: flex;
+              flex-direction: column;
+              align-items: center;
+              justify-content: center;
+              text-decoration: none;
+              color: #333;
+              background-color: #f1f1f1;
+              padding: 15px;
+              border-radius: 8px;
+              transition: all 0.3s ease;
+
+              i {
+                  font-size: 30px;
+                  margin-bottom: 10px;
+                  color: #00A79D;
+              }
+
+              &:hover {
+                  background-color: #00A79D;
+                  color: white;
+
+                  i {
+                      color: white;
+                  }
+              }
+          }
+      }
+  }
+
+  .support-content,
+  .support-info {
+      background-color: white;
+      padding: 20px;
+      margin: 20px auto;
+      border-radius: 10px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+
+      h2 {
+          font-size: 20px;
+          color: #00A79D;
+          margin-bottom: 20px;
+      }
+
+      ul {
+          list-style: none;
+          padding: 0;
+
+          li {
+              margin: 10px 0;
+              color: #555;
+              font-size: 16px;
+              cursor: pointer;
+
+              &:hover {
+                  color: #00A79D;
+                  text-decoration: underline;
+              }
+          }
+      }
+  }
+}
