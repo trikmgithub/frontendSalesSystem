@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import styles from './SupportHeader.module.scss';
-import logo from '~/assets/logo2.png';
+import logo from '~/assets/beautySkin1.png';
 
 function SupportHeader() {
     return (
