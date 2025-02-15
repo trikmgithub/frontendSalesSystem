@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useContext } from 'react';
 import { getItemsAxios } from '~/services/itemAxios';
 import classNames from 'classnames/bind';
 import styles from './Home.module.scss';
 import { Link } from 'react-router-dom';
+import { CartContext } from '~/context/CartContext';
 
 const cx = classNames.bind(styles);
 
@@ -11,6 +12,7 @@ function Home() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [currentPage, setCurrentPage] = useState(1);
+    const { addToCart } = useContext(CartContext);
     const itemsPerPage = 18;
 
     useEffect(() => {
@@ -59,6 +61,9 @@ function Home() {
                                     </div>
                                 </div>
                             </Link>
+                            <button onClick={() => addToCart(item)} className={cx('addToCartButton')}>
+                                Thêm vào giỏ hàng
+                            </button>
                         </div>
                     ))}
                 </div>

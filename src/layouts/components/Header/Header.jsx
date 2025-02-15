@@ -6,12 +6,13 @@ import { FcGoogle } from 'react-icons/fc';
 import classNames from 'classnames/bind';
 import styles from './Header.module.scss';
 import logo from '~/assets/beautySkin.png';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useContext } from 'react';
 import LoginForm from './LoginPopup';
 import SignupForm from './SignupPopup';
 import Navigation from '../Navigation/Navigation';
 import { logoutAxios } from '~/services/authAxios';
-//navigation is error right now
+import { CartContext } from '~/context/CartContext';
+
 const cx = classNames.bind(styles);
 
 function Header() {
@@ -20,7 +21,9 @@ function Header() {
     const [showSignupForm, setShowSignupForm] = useState(false);
     const popupRef = useRef(null);
     const [userInfo, setUserInfo] = useState('');
-    console.log(userInfo);
+    const { cartItems } = useContext(CartContext);
+
+    const cartCount = cartItems.reduce((count, item) => count + item.quantity, 0);
 
     useEffect(() => {
         const handleClickOutside = (event) => {
@@ -163,18 +166,18 @@ function Header() {
                             </div>
                         </div>
 
-                        <div className={cx('actionItem')}>
+                        <Link to="/support" className={cx('actionItem')}>
                             <FaPhone className={cx('icon')} />
                             <div className={cx('actionContent')}>
                                 <span>Hỗ trợ</span>
                                 <span>khách hàng</span>
                             </div>
-                        </div>
+                        </Link>
 
-                        <div className={cx('actionItem', 'cart')}>
+                        <Link to="/cart" className={cx('actionItem', 'cart')}>
                             <FaShoppingCart className={cx('icon')} />
-                            <span className={cx('cartCount')}>0</span>
-                        </div>
+                            <span className={cx('cartCount')}>{cartCount}</span>
+                        </Link>
                     </div>
                 </div>
 

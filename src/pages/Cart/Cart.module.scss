@@ -1,0 +1,134 @@
+// Cart.module.scss
+
+$primary-color: #ff6600;
+$discount-color: #999;
+$border-color: #ddd;
+$light-gray: #f8f9fa;
+
+.cartContainer {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 16px;
+}
+
+.cartWrapper {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.cartHeader {
+  display: grid;
+  grid-template-columns: 6fr 2fr 2fr 2fr;
+  background: $light-gray;
+  padding: 12px;
+  font-weight: bold;
+  border-bottom: 1px solid $border-color;
+}
+
+.cartItem {
+  display: grid;
+  grid-template-columns: 6fr 2fr 2fr 2fr;
+  padding: 16px;
+  align-items: center;
+  border-bottom: 1px solid $border-color;
+
+  .productDetails {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+
+    img {
+      width: 80px;
+      height: 80px;
+      object-fit: cover;
+      border-radius: 4px;
+    }
+
+    .productInfo {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+
+      .brand {
+        font-weight: bold;
+        font-size: 14px;
+      }
+
+      .name {
+        font-size: 12px;
+        color: #555;
+      }
+
+      .actions {
+        display: flex;
+        gap: 8px;
+        font-size: 12px;
+        color: #666;
+
+        button {
+          background: none;
+          border: none;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          gap: 4px;
+        }
+      }
+    }
+  }
+}
+
+.price {
+  font-weight: bold;
+  text-align: center;
+
+  .discounted {
+    font-size: 12px;
+    color: $discount-color;
+    text-decoration: line-through;
+    display: block;
+  }
+}
+
+.quantity {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  input {
+    width: 40px;
+    text-align: center;
+    padding: 4px;
+    border: 1px solid $border-color;
+    border-radius: 4px;
+  }
+}
+
+.totalPrice {
+  font-weight: bold;
+  color: $primary-color;
+  text-align: center;
+}
+
+.checkoutSection {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  border-top: 1px solid $border-color;
+}
+
+.checkoutButton {
+  background: $primary-color;
+  color: white;
+  padding: 12px 24px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: 0.3s;
+
+  &:hover {
+    background: darken($primary-color, 10%);
+  }
+}
