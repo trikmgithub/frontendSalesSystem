@@ -52,6 +52,8 @@
     align-items: center;
     background: white;
     position: relative;
+    border-radius: 20px;
+    overflow: visible;
 
     .searchInput {
         flex: 1;
@@ -82,7 +84,6 @@
         font-size: 18px;
     }
 
-    /* Suggestions Dropdown */
     .suggestionsDropdown {
         position: absolute;
         top: 100%;
@@ -306,5 +307,3 @@
         }
     }
 }
-
-// ... Add other styles from LoginPopup.module.scss that are related to the initial popup ...

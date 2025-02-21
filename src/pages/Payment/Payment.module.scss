@@ -1,0 +1,547 @@
+/* PaymentPage.module.scss */
+:root {
+    --primary-color: #356e4e;
+    --primary-light: #356e4e;
+    --accent-color: #ff6b00;
+    --light-bg: #f9f9f9;
+    --border-color: #e0e0e0;
+    --text-dark: #333;
+    --text-light: #777;
+}
+
+body {
+    font-family: 'Roboto', Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f5f5f5;
+}
+
+.payment-container {
+    max-width: 1200px;
+    margin: 70px auto 0;
+    padding: 20px;
+
+    /* Header */
+    .payment-header {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        background-color: var(--primary-color);
+        color: white;
+        display: flex;
+        align-items: center;
+        padding: 10px 20px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        z-index: 1000;
+
+        .logo {
+            height: 80px;
+            margin-right: 20px;
+        }
+
+        h2 {
+            font-size: 18px;
+            font-weight: 500;
+        }
+    }
+
+    /* Content Layout */
+    .payment-content {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 20px;
+        gap: 20px;
+
+        /* Left Section */
+        .payment-left {
+            width: 65%;
+
+            .section {
+                background: white;
+                padding: 20px;
+                border-radius: 8px;
+                margin-bottom: 20px;
+                box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+
+                h3 {
+                    margin-top: 0;
+                    margin-bottom: 15px;
+                    font-size: 16px;
+                    font-weight: 500;
+                    color: var(--text-dark);
+                }
+
+                /* Address Box */
+                .address-box {
+                    background: var(--light-bg);
+                    padding: 15px;
+                    border-radius: 5px;
+                    position: relative;
+
+                    .tag {
+                        background-color: var(--primary-light);
+                        color: white;
+                        padding: 3px 8px;
+                        border-radius: 4px;
+                        font-size: 12px;
+                        margin-right: 8px;
+                        display: inline-block;
+                        margin-bottom: 8px;
+                    }
+
+                    strong {
+                        display: block;
+                        margin-bottom: 5px;
+                        font-size: 15px;
+                    }
+
+                    p {
+                        font-size: 14px;
+                        color: var(--text-light);
+                        margin: 5px 0 0;
+                        line-height: 1.4;
+                    }
+
+                    a {
+                        position: absolute;
+                        top: 15px;
+                        right: 15px;
+                        color: #1890ff;
+                        text-decoration: none;
+                        font-size: 14px;
+                    }
+                }
+
+                /* Payment Method */
+                .payment-method {
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                    background: var(--light-bg);
+                    padding: 15px;
+                    border-radius: 5px;
+
+                    .method-left {
+                        display: flex;
+                        align-items: center;
+                        gap: 10px;
+                    }
+
+                    .icon {
+                        font-size: 18px;
+                    }
+
+                    .payment-icon{
+                        height: 30px;
+                    }
+
+                    a {
+                        color: #1890ff;
+                        text-decoration: none;
+                        font-size: 14px;
+                    }
+                }
+            }
+        }
+
+        /* Right Section */
+        .payment-right {
+            width: 30%;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            align-self: flex-start;
+
+            .order-button {
+                width: 100%;
+                background: var(--primary-light);
+                color: white;
+                padding: 14px;
+                font-size: 16px;
+                border: none;
+                border-radius: 5px;
+                cursor: pointer;
+                font-weight: 500;
+                transition: background-color 0.2s;
+
+                &:hover {
+                    background-color: #2a5a40;
+                }
+            }
+
+            /* Order Summary */
+            .order-summary {
+                margin-top: 20px;
+
+                h3 {
+                    font-size: 16px;
+                    margin-bottom: 15px;
+                    font-weight: 500;
+                }
+
+                .summary-item {
+                    display: flex;
+                    justify-content: space-between;
+                    margin-bottom: 10px;
+                    font-size: 14px;
+                    color: var(--text-dark);
+
+                    &.total {
+                        padding-top: 10px;
+                        border-top: 1px solid var(--border-color);
+                        font-weight: 500;
+                        font-size: 15px;
+                    }
+                }
+
+                .total-price {
+                    color: #f57224;
+                    font-size: 18px;
+                    font-weight: 700;
+                }
+            }
+
+            .note {
+                font-size: 12px;
+                color: var(--text-light);
+                margin-top: 15px;
+                line-height: 1.5;
+
+                a {
+                    color: #1890ff;
+                    text-decoration: none;
+                }
+            }
+        }
+    }
+}
+
+/* Modal Styles */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 2000;
+
+    .address-modal {
+        background: white;
+        width: 600px;
+        border-radius: 8px;
+        overflow: hidden;
+
+        .modal-header {
+            padding: 20px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+
+            h3 {
+                margin: 0;
+                font-size: 18px;
+                font-weight: 500;
+            }
+
+            .close-button {
+                background: none;
+                border: none;
+                font-size: 24px;
+                cursor: pointer;
+                color: var(--text-light);
+            }
+        }
+
+        .address-selection {
+            padding: 20px;
+            max-height: 300px;
+            overflow-y: auto;
+
+            .address-option {
+                display: flex;
+                padding: 15px;
+                border: 1px solid var(--border-color);
+                border-radius: 6px;
+                margin-bottom: 10px;
+
+                &.selected {
+                    border-color: var(--primary-light);
+                    background-color: rgba(47, 94, 78, 0.05);
+                }
+
+                .radio-container {
+                    margin-right: 15px;
+                    display: flex;
+                    align-items: flex-start;
+                    padding-top: 4px;
+
+                    input[type="radio"] {
+                        margin: 0;
+                        transform: scale(1.2);
+                    }
+                }
+
+                .address-details {
+                    flex: 1;
+
+                    .name-actions {
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: center;
+                        margin-bottom: 5px;
+
+                        h4 {
+                            margin: 0;
+                            font-size: 15px;
+                            font-weight: 500;
+                        }
+
+                        .action-buttons {
+                            display: flex;
+                            gap: 10px;
+
+                            .delete-btn,
+                            .edit-btn {
+                                background: none;
+                                border: none;
+                                cursor: pointer;
+                                padding: 5px;
+                            }
+
+                            .delete-btn {
+                                color: #d9534f;
+                            }
+
+                            .edit-btn {
+                                color: #1890ff;
+                            }
+
+                            .trash-icon::before {
+                                content: "🗑️";
+                                font-size: 14px;
+                            }
+                        }
+                    }
+
+                    p {
+                        margin: 5px 0 10px;
+                        font-size: 14px;
+                        color: var(--text-light);
+                        line-height: 1.4;
+                    }
+
+                    .address-tags {
+                        display: flex;
+                        gap: 10px;
+
+                        .address-tag {
+                            font-size: 12px;
+                            padding: 3px 8px;
+                            border-radius: 4px;
+
+                            &.home {
+                                background-color: var(--primary-light);
+                                color: white;
+                            }
+
+                            &.default {
+                                background-color: #fff;
+                                color: #ff6b00;
+                                border: 1px solid #ff6b00;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        .modal-actions {
+            padding: 20px;
+            border-top: 1px solid var(--border-color);
+
+            .add-address-btn {
+                margin-bottom: 15px;
+
+                button {
+                    display: flex;
+                    align-items: center;
+                    color: var(--primary-light);
+                    border: 1px solid var(--primary-light);
+                    background: white;
+                    padding: 8px 15px;
+                    border-radius: 4px;
+                    cursor: pointer;
+                    font-size: 14px;
+
+                    span {
+                        margin-left: 5px;
+                        font-size: 16px;
+                    }
+                }
+            }
+
+            .modal-buttons {
+                display: flex;
+                justify-content: flex-end;
+                gap: 10px;
+
+                .cancel-btn {
+                    background-color: #e8f5f1;
+                    color: var(--primary-light);
+                    border: none;
+                    padding: 10px 20px;
+                    border-radius: 5px;
+                    cursor: pointer;
+                    font-size: 14px;
+                }
+
+                .confirm-btn {
+                    background-color: var(--primary-light);
+                    color: white;
+                    border: none;
+                    padding: 10px 20px;
+                    border-radius: 5px;
+                    cursor: pointer;
+                    font-size: 14px;
+                }
+            }
+        }
+    }
+
+    /* Add these styles to your Payment.module.scss file */
+
+    .payment-modal {
+        background: white;
+        width: 600px;
+        border-radius: 8px;
+        overflow: hidden;
+
+        .modal-header {
+            padding: 20px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+
+            h3 {
+                margin: 0;
+                font-size: 18px;
+                font-weight: 500;
+            }
+
+            .close-button {
+                background: none;
+                border: none;
+                font-size: 24px;
+                cursor: pointer;
+                color: var(--text-light);
+            }
+        }
+
+        .payment-options {
+            padding: 20px;
+            max-height: 400px;
+            overflow-y: auto;
+
+            .payment-option {
+                display: flex;
+                align-items: center;
+                padding: 15px;
+                border: 1px solid var(--border-color);
+                border-radius: 6px;
+                margin-bottom: 10px;
+                cursor: pointer;
+                transition: all 0.2s ease;
+
+                &:hover {
+                    background-color: rgba(47, 94, 78, 0.02);
+                }
+
+                &.selected {
+                    border-color: var(--primary-light);
+                    background-color: rgba(47, 94, 78, 0.05);
+                }
+
+                .radio-container {
+                    margin-right: 15px;
+                    display: flex;
+                    align-items: center;
+
+                    input[type="radio"] {
+                        margin: 0;
+                        transform: scale(1.2);
+                    }
+                }
+
+                .payment-icon {
+                    margin-right: 15px;
+                    font-size: 24px;
+                    width: 10px;
+                    height: 10px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+
+                    .wallet-icon {
+                        height: 30px;
+                    }
+                }
+
+                .payment-details {
+                    flex: 1;
+
+                    h4 {
+                        margin: 0;
+                        font-size: 15px;
+                        font-weight: 500;
+                        margin-bottom: 5px;
+                    }
+
+                    p {
+                        margin: 0;
+                        font-size: 14px;
+                        color: var(--text-light);
+                    }
+                }
+            }
+        }
+
+        .modal-actions {
+            padding: 20px;
+            border-top: 1px solid var(--border-color);
+
+            .modal-buttons {
+                display: flex;
+                justify-content: flex-end;
+                gap: 10px;
+
+                .cancel-btn {
+                    background-color: #e8f5f1;
+                    color: var(--primary-light);
+                    border: none;
+                    padding: 10px 20px;
+                    border-radius: 5px;
+                    cursor: pointer;
+                    font-size: 14px;
+                }
+
+                .confirm-btn {
+                    background-color: var(--primary-light);
+                    color: white;
+                    border: none;
+                    padding: 10px 20px;
+                    border-radius: 5px;
+                    cursor: pointer;
+                    font-size: 14px;
+                }
+            }
+        }
+    }
+}

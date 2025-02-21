@@ -49,6 +49,7 @@ function LoginForm({ onClose, onShowSignup }) {
             const response = await loginAxios({ username: email, password });
 
             if (response.message === 'Login success') {
+                console.log('Login success');
                 onClose();
             }
         } catch (error) {

@@ -10,6 +10,7 @@ import { useState, useEffect, useRef, useContext } from 'react';
 import LoginForm from './LoginPopup';
 import SignupForm from './SignupPopup';
 import Navigation from '../Navigation/Navigation';
+import { getItemsAxios } from '~/services/itemAxios';
 import { logoutAxios } from '~/services/authAxios';
 import { CartContext } from '~/context/CartContext';
 
@@ -28,25 +29,27 @@ function Header() {
 
     const cartCount = cartItems.reduce((count, item) => count + item.quantity, 0);
 
-    // Fetch all items from API
     useEffect(() => {
-        fetch('http://localhost:8000/api/v1/items/all')
-            .then((res) => res.json())
-            .then((data) => {
-                if (data.data && Array.isArray(data.data)) {
-                    setItems(data.data); // ✅ Use "data" instead of "results"
+        const fetchItems = async () => {
+            try {
+                const response = await getItemsAxios();
+    
+                // Check if response is an array (API directly returns items)
+                if (Array.isArray(response.data)) {
+                    setItems(response.data); // ✅ Use response.data directly
                 } else {
-                    console.error("Invalid API response:", data);
-                    setItems([]); // Prevents errors if the structure is wrong
+                    console.error("Invalid API response:", response);
+                    setItems([]); // Prevent errors if response is not an array
                 }
-            })
-            .catch((error) => {
+            } catch (error) {
                 console.error('Error fetching items:', error);
                 setItems([]);
-            });
-    }, []);
+            }
+        };
+    
+        fetchItems();
+    }, []);    
 
-    // Handle input change and filter suggestions
     const handleInputChange = (event) => {
         const value = event.target.value;
         setQuery(value);
