@@ -10,6 +10,7 @@ import { useState, useEffect, useRef, useContext } from 'react';
 import LoginForm from './LoginPopup';
 import SignupForm from './SignupPopup';
 import Navigation from '../Navigation/Navigation';
+import { getItemsAxios } from '~/services/itemAxios';
 import { logoutAxios } from '~/services/authAxios';
 import { CartContext } from '~/context/CartContext';
 
@@ -22,8 +23,48 @@ function Header() {
     const popupRef = useRef(null);
     const [userInfo, setUserInfo] = useState('');
     const { cartItems } = useContext(CartContext);
+    const [query, setQuery] = useState('');
+    const [items, setItems] = useState([]);
+    const [suggestions, setSuggestions] = useState([]);
 
     const cartCount = cartItems.reduce((count, item) => count + item.quantity, 0);
+
+    useEffect(() => {
+        const fetchItems = async () => {
+            try {
+                const response = await getItemsAxios();
+    
+                // Check if response is an array (API directly returns items)
+                if (Array.isArray(response.data)) {
+                    setItems(response.data); // ✅ Use response.data directly
+                } else {
+                    console.error("Invalid API response:", response);
+                    setItems([]); // Prevent errors if response is not an array
+                }
+            } catch (error) {
+                console.error('Error fetching items:', error);
+                setItems([]);
+            }
+        };
+    
+        fetchItems();
+    }, []);    
+
+    const handleInputChange = (event) => {
+        const value = event.target.value;
+        setQuery(value);
+
+        if (value.length > 0) {
+            const filteredResults = items.filter(
+                (item) =>
+                    item.name.toLowerCase().includes(value.toLowerCase()) ||
+                    (item.brand?.name && item.brand.name.toLowerCase().includes(value.toLowerCase()))
+            );
+            setSuggestions(filteredResults);
+        } else {
+            setSuggestions([]);
+        }
+    };
 
     useEffect(() => {
         const handleClickOutside = (event) => {
@@ -101,12 +142,29 @@ function Header() {
                         <div className={cx('searchContainer')}>
                             <input
                                 type="text"
-                                placeholder="Giảm 50% Ủ Trắng Các Vùng - Mua 5 Tặng 5"
+                                value={query}
+                                onChange={handleInputChange}
+                                placeholder="Tìm kiếm sản phẩm..."
                                 className={cx('searchInput')}
                             />
                             <button className={cx('searchButton')}>
                                 <IoSearch />
                             </button>
+
+                            {/* Display search suggestions */}
+                            {suggestions.length > 0 && (
+                                <ul className={cx('suggestionsDropdown')}>
+                                    {suggestions.map((item) => (
+                                        <li
+                                            key={item._id}
+                                            onClick={() => setQuery(item.name)}
+                                            className={cx('suggestionItem')}
+                                        >
+                                            <strong>{item.name}</strong> - {item.brand?.name || "No Brand"}
+                                        </li>
+                                    ))}
+                                </ul>
+                            )}
                         </div>
                     </div>
 

@@ -66,8 +66,12 @@ const Cart = () => {
                 </div>
 
                 <div className={styles.checkoutSection}>
-                    <div className={styles.totalPrice}>Tổng thành tiền: {formatPrice(calculateTotal())}</div>
-                    <button className={styles.checkoutButton}>Tiến hành đặt hàng</button>
+                    <div className={styles.totalPriceRow}>
+                        <div className={styles.totalPrice}>Tổng thành tiền: {formatPrice(calculateTotal())}</div>
+                    </div>
+                    <div className={styles.checkoutButtonRow}>
+                        <button className={styles.checkoutButton}>Tiến hành đặt hàng</button>
+                    </div>
                 </div>
             </div>
         </div>

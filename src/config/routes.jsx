@@ -2,7 +2,8 @@ const routes = {
     home: '/',
     profile: '/profile',
     support: '/support',
-    cart: '/cart'
+    cart: '/cart',
+    payment: '/payment',
 };
 
 export default routes;
