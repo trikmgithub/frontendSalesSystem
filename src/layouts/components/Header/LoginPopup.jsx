@@ -2,7 +2,6 @@ import classNames from 'classnames/bind';
 import styles from './LoginPopup.module.scss';
 import { Link } from 'react-router-dom';
 import { useState } from 'react';
-import { FaFacebook } from 'react-icons/fa';
 import { FcGoogle } from 'react-icons/fc';
 import { IoWarning } from 'react-icons/io5';
 import ForgotPasswordPopup from './ForgotPasswordPopup';
@@ -71,10 +70,6 @@ function LoginForm({ onClose, onShowSignup }) {
                     </button>
                     <h3>Đăng nhập với</h3>
                     <div className={cx('socialButtons')}>
-                        <button className={cx('facebookBtn')}>
-                            <FaFacebook />
-                            Facebook
-                        </button>
                         <button className={cx('googleBtn')}>
                             <FcGoogle />
                             Google +
@@ -112,10 +107,6 @@ function LoginForm({ onClose, onShowSignup }) {
                             />
                         </div>
                         <div className={cx('formOptions')}>
-                            <label className={cx('rememberMe')}>
-                                <input type="checkbox" name="remember" />
-                                <span>Nhớ mật khẩu</span>
-                            </label>
                             <Link
                                 onClick={(e) => {
                                     e.preventDefault();

@@ -51,10 +51,6 @@
     }
 }
 
-.facebookBtn {
-    background: #3b5998;
-}
-
 .googleBtn {
     background: #dd4b39;
 }
@@ -190,22 +186,9 @@
 
 .formOptions {
     display: flex;
-    justify-content: space-between;
+    justify-content: flex-end;
     align-items: center;
     margin-bottom: 15px;
-}
-
-.rememberMe {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    font-size: 13px;
-    color: #666;
-    cursor: pointer;
-
-    input[type='checkbox'] {
-        margin: 0;
-    }
 }
 
 .forgotPassword {

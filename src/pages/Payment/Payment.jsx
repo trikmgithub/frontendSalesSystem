@@ -4,6 +4,8 @@ import classNames from 'classnames/bind';
 import logo from '~/assets/beautySkin.png';
 import zalo from '~/assets/zalo.png';
 import momo from '~/assets/momo.png';
+import { Link } from 'react-router-dom';
+import routes from '~/config/routes'
 
 const cx = classNames.bind(styles);
 
@@ -57,7 +59,7 @@ const Payment = () => {
     <div className={cx('payment-container')}>
       {/* Header */}
       <div className={cx('payment-header')}>
-        <img src={logo} alt="Logo" className={cx('logo')} />
+        <Link to={routes.home}><img src={logo} alt="Logo" className={cx('logo')} /></Link>
         <h2>Thanh toán</h2>
       </div>
 
@@ -86,6 +88,30 @@ const Payment = () => {
               <a href="#" onClick={togglePaymentModal}>Thay đổi</a>
             </div>
           </div>
+
+          {/* Order Item Section */}
+<div className={cx('section')}>
+  <h3>🛒 Thông tin kiện hàng</h3>
+  <div className={cx('order-item')}>
+    <img
+      src="https://via.placeholder.com/50" 
+      alt="La Roche-Posay Serum"
+      className={cx('product-image')}
+    />
+    <div className={cx('item-details')}>
+      <strong className={cx('product-name')}>La Roche-Posay</strong>
+      <p className={cx('product-description')}>
+        Serum Giảm Thâm Nám & Dưỡng Sáng Da 30ml
+      </p>
+      <span className={cx('product-size')}>30ml</span>
+    </div>
+    <div className={cx('item-price')}>
+      <span className={cx('quantity')}>1 x</span>
+      <span className={cx('price')}>911.000 đ</span>
+    </div>
+  </div>
+</div>
+
         </div>
 
         {/* Right Section */}

@@ -1,8 +1,10 @@
 import React, { useContext } from 'react';
+import { Link } from 'react-router-dom';
 import styles from './Cart.module.scss'; // Import SCSS module
-import { Heart, X } from 'lucide-react';
+import { X } from 'lucide-react';
 import { CartContext } from '~/context/CartContext';
 import productImg from '~/assets/product1.png';
+import routes from '~/config/routes';
 
 const Cart = () => {
     const { cartItems, updateCartItemQuantity, removeFromCart } = useContext(CartContext);
@@ -36,10 +38,6 @@ const Cart = () => {
                                     <span className={styles.name}>{item.name}</span>
                                     <span className={styles.description}>{item.description}</span>
                                     <div className={styles.actions}>
-                                        <button>
-                                            <Heart size={14} />
-                                            Yêu thích
-                                        </button>
                                         <button onClick={() => removeFromCart(item._id)}>
                                             <X size={14} />
                                             Xóa
@@ -69,9 +67,9 @@ const Cart = () => {
                     <div className={styles.totalPriceRow}>
                         <div className={styles.totalPrice}>Tổng thành tiền: {formatPrice(calculateTotal())}</div>
                     </div>
-                    <div className={styles.checkoutButtonRow}>
+                    <Link to={routes.payment} className={styles.checkoutButtonRow}>
                         <button className={styles.checkoutButton}>Tiến hành đặt hàng</button>
-                    </div>
+                    </Link>
                 </div>
             </div>
         </div>

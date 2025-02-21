@@ -1,7 +1,6 @@
 import { Link } from 'react-router-dom';
 import { FaUser, FaShoppingCart, FaPhone, FaStore } from 'react-icons/fa';
 import { IoSearch } from 'react-icons/io5';
-import { FaFacebook } from 'react-icons/fa';
 import { FcGoogle } from 'react-icons/fc';
 import classNames from 'classnames/bind';
 import styles from './Header.module.scss';
@@ -13,6 +12,7 @@ import Navigation from '../Navigation/Navigation';
 import { getItemsAxios } from '~/services/itemAxios';
 import { logoutAxios } from '~/services/authAxios';
 import { CartContext } from '~/context/CartContext';
+import routes from '~/config/routes';
 
 const cx = classNames.bind(styles);
 
@@ -111,7 +111,7 @@ function Header() {
         <>
             <header className={cx('wrapper')}>
                 <div className={cx('container')}>
-                    <Link to="/" className={cx('logo')}>
+                    <Link to={routes.home} className={cx('logo')}>
                         <img src={logo} alt="BeautySkin" />
                     </Link>
 
@@ -191,10 +191,6 @@ function Header() {
                                     <div className={cx('accountPopup')}>
                                         <h3>Đăng nhập với</h3>
                                         <div className={cx('socialButtons')}>
-                                            <button className={cx('facebookBtn')}>
-                                                <FaFacebook />
-                                                Facebook
-                                            </button>
                                             <button className={cx('googleBtn')}>
                                                 <FcGoogle />
                                                 Google +
@@ -224,7 +220,7 @@ function Header() {
                             </div>
                         </div>
 
-                        <Link to="/support" className={cx('actionItem')}>
+                        <Link to={routes.support} className={cx('actionItem')}>
                             <FaPhone className={cx('icon')} />
                             <div className={cx('actionContent')}>
                                 <span>Hỗ trợ</span>
@@ -232,7 +228,7 @@ function Header() {
                             </div>
                         </Link>
 
-                        <Link to="/cart" className={cx('actionItem', 'cart')}>
+                        <Link to={routes.cart} className={cx('actionItem', 'cart')}>
                             <FaShoppingCart className={cx('icon')} />
                             <span className={cx('cartCount')}>{cartCount}</span>
                         </Link>
