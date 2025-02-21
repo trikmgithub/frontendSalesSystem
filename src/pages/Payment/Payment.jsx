@@ -6,6 +6,7 @@ import zalo from '~/assets/zalo.png';
 import momo from '~/assets/momo.png';
 import { Link } from 'react-router-dom';
 import routes from '~/config/routes'
+import img from '~/assets/product1.png';
 
 const cx = classNames.bind(styles);
 
@@ -90,28 +91,27 @@ const Payment = () => {
           </div>
 
           {/* Order Item Section */}
-<div className={cx('section')}>
-  <h3>🛒 Thông tin kiện hàng</h3>
-  <div className={cx('order-item')}>
-    <img
-      src="https://via.placeholder.com/50" 
-      alt="La Roche-Posay Serum"
-      className={cx('product-image')}
-    />
-    <div className={cx('item-details')}>
-      <strong className={cx('product-name')}>La Roche-Posay</strong>
-      <p className={cx('product-description')}>
-        Serum Giảm Thâm Nám & Dưỡng Sáng Da 30ml
-      </p>
-      <span className={cx('product-size')}>30ml</span>
-    </div>
-    <div className={cx('item-price')}>
-      <span className={cx('quantity')}>1 x</span>
-      <span className={cx('price')}>911.000 đ</span>
-    </div>
-  </div>
-</div>
-
+          <div className={cx('section')}>
+            <h3>🛒 Thông tin kiện hàng</h3>
+            <div className={cx('order-item')}>
+              <img
+                src={img}
+                alt="La Roche-Posay Serum"
+                className={cx('product-image')}
+              />
+              <div className={cx('item-details')}>
+                <strong className={cx('product-name')}>La Roche-Posay</strong>
+                <p className={cx('product-description')}>
+                  Serum Giảm Thâm Nám & Dưỡng Sáng Da 30ml
+                </p>
+                <span className={cx('product-size')}>30ml</span>
+              </div>
+              <div className={cx('item-price')}>
+                <span className={cx('quantity')}>1 x</span>
+                <span className={cx('price')}>911.000 đ</span>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Right Section */}
