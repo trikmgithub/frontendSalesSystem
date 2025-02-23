@@ -3,14 +3,14 @@ import * as axiosConfig from '~/utils/axiosConfig';
 // Get
 
 // Get items
-const getItemsAxios = async () => {
+const getUsersAxios = async () => {
     try {
-        const res = await axiosConfig.get('items/all');
+        const res = await axiosConfig.get('users/all');
         return res;
     } catch (error) {
-        console.log('Error at itemAxios.js');
+        console.log('Error at userAxios.js');
         throw new Error(error);
     }
 };
 
-export { getItemsAxios };
+export { getUsersAxios };

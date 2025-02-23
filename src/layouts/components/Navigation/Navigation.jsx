@@ -5,6 +5,7 @@ import { FaBars } from 'react-icons/fa';
 import { IoIosArrowForward } from 'react-icons/io';
 import { HiOutlineLocationMarker } from 'react-icons/hi';
 import { useState, useEffect, useRef } from 'react';
+import LoginForm from '~/layouts/components/Header/LoginPopup';
 
 const cx = classNames.bind(styles);
 
@@ -81,6 +82,7 @@ const locationData = {
 };
 
 function Navigation() {
+    const [showLoginForm, setShowLoginForm] = useState(false);
     const [isLocationOpen, setIsLocationOpen] = useState(false);
     const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
     const locationSelectorRef = useRef(null);
@@ -97,6 +99,17 @@ function Navigation() {
         district: "",
         ward: ""
     });
+
+    const handleChangeAddress = () => {
+        const storedUser = localStorage.getItem('user');
+        const user = storedUser && storedUser !== "null" ? JSON.parse(storedUser) : null;
+    
+        if (!user) {
+            setShowLoginForm(true); // Show login popup if user is not logged in
+            return;
+        }
+        setIsAddressModalOpen(true); // Proceed to open address modal if logged in
+    };
 
     useEffect(() => {
         function handleClickOutside(event) {
@@ -148,7 +161,7 @@ function Navigation() {
             setIsLocationOpen(false);
             clearForm();
         }
-    };
+    };    
 
     const clearForm = () => {
         setTemporarySelectedRegion("");
@@ -632,13 +645,14 @@ function Navigation() {
                                     <HiOutlineLocationMarker className={cx('locationIcon')} />
                                     <span className={cx('locationText')}>{confirmedAddress}</span>
                                 </div>
-                                <button className={cx('changeLocation')} onClick={() => setIsAddressModalOpen(true)}>
+                                <button className={cx('changeLocation')} onClick={handleChangeAddress}>
                                     Đổi địa chỉ
                                 </button>
                             </div>
                         </div>
                     )}
                 </div>
+                {showLoginForm && <LoginForm onClose={() => setShowLoginForm(false)} />}
 
                 {isAddressModalOpen && (
                     <div className={cx('modalOverlay')} onClick={() => { setIsAddressModalOpen(false); clearForm(); }}>

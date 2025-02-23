@@ -1,7 +1,6 @@
-import { Link } from 'react-router-dom';
-import { FaUser, FaShoppingCart, FaPhone, FaStore } from 'react-icons/fa';
+import { Link, useLocation } from 'react-router-dom';
+import { FaUser, FaShoppingCart, FaPhone, FaStore, FaClipboardList, FaHeart, FaMapMarkerAlt, FaSignOutAlt } from 'react-icons/fa';
 import { IoSearch } from 'react-icons/io5';
-import { FaFacebook } from 'react-icons/fa';
 import { FcGoogle } from 'react-icons/fc';
 import classNames from 'classnames/bind';
 import styles from './Header.module.scss';
@@ -11,8 +10,9 @@ import LoginForm from './LoginPopup';
 import SignupForm from './SignupPopup';
 import Navigation from '../Navigation/Navigation';
 import { getItemsAxios } from '~/services/itemAxios';
-import { logoutAxios } from '~/services/authAxios';
+import { googleLoginAxios, googleRedirectAxios, logoutAxios } from '~/services/authAxios';
 import { CartContext } from '~/context/CartContext';
+import routes from '~/config/routes';
 
 const cx = classNames.bind(styles);
 
@@ -26,6 +26,7 @@ function Header() {
     const [query, setQuery] = useState('');
     const [items, setItems] = useState([]);
     const [suggestions, setSuggestions] = useState([]);
+    const location = useLocation(); // ✅ Get current URL
 
     const cartCount = cartItems.reduce((count, item) => count + item.quantity, 0);
 
@@ -33,7 +34,7 @@ function Header() {
         const fetchItems = async () => {
             try {
                 const response = await getItemsAxios();
-    
+
                 // Check if response is an array (API directly returns items)
                 if (Array.isArray(response.data)) {
                     setItems(response.data); // ✅ Use response.data directly
@@ -46,19 +47,41 @@ function Header() {
                 setItems([]);
             }
         };
-    
+
         fetchItems();
-    }, []);    
+    }, []);
+
+    useEffect(() => {
+        // ✅ Handle Google OAuth Redirection
+        const handleGoogleRedirect = async () => {
+            if (location.pathname.includes("auth/google/redirect")) {
+                try {
+                    await googleRedirectAxios();
+                } catch (error) {
+                    console.error("Google Redirect Error:", error);
+                }
+            }
+        };
+        handleGoogleRedirect();
+    }, [location]);
+
+    const handleGoogleLogin = async () => {
+        try {
+            await googleLoginAxios();
+        } catch (error) {
+            console.error("Google Login Error:", error);
+        }
+    };
 
     const handleInputChange = (event) => {
-        const value = event.target.value;
+        const value = event.target.value.toLowerCase();
         setQuery(value);
 
         if (value.length > 0) {
             const filteredResults = items.filter(
                 (item) =>
-                    item.name.toLowerCase().includes(value.toLowerCase()) ||
-                    (item.brand?.name && item.brand.name.toLowerCase().includes(value.toLowerCase()))
+                    item.name.toLowerCase().startsWith(value) ||
+                    (item.brand?.name && item.brand.name.toLowerCase().startsWith(value))
             );
             setSuggestions(filteredResults);
         } else {
@@ -101,17 +124,15 @@ function Header() {
         setShowAccountPopup(false);
     };
 
-    const userLocalStorage = JSON.parse(localStorage.getItem('user')) || {};
-
     useEffect(() => {
-        setUserInfo(userLocalStorage);
+        setUserInfo(JSON.parse(localStorage.getItem('user')) || {});
     }, []);
 
     return (
         <>
             <header className={cx('wrapper')}>
                 <div className={cx('container')}>
-                    <Link to="/" className={cx('logo')}>
+                    <Link to={routes.home} className={cx('logo')}>
                         <img src={logo} alt="BeautySkin" />
                     </Link>
 
@@ -173,7 +194,10 @@ function Header() {
                             <FaUser className={cx('icon')} />
                             <div className={cx('actionContent')}>
                                 {userInfo.name ? (
-                                    <span>{userInfo.name}</span>
+                                    <div>
+                                        <div><span>Chào {userInfo.name}</span></div>
+                                        <div><span>Tài khoản</span></div>
+                                    </div>
                                 ) : (
                                     <div>
                                         <div><span>Đăng nhập / Đăng ký</span></div>
@@ -184,18 +208,20 @@ function Header() {
 
                             {showAccountPopup &&
                                 (userInfo?.name ? (
-                                    <div className={cx('accountPopup')} onClick={handleSignOutClick}>
-                                        logout
+                                    <div className={cx('accountPopupAfter')}>
+                                        <ul>
+                                            <li><FaUser /> Tài khoản của bạn</li>
+                                            <li><FaClipboardList /> Quản lý đơn hàng</li>
+                                            <li><FaHeart /> Sản phẩm yêu thích</li>
+                                            <li><FaMapMarkerAlt /> Địa chỉ giao hàng</li>
+                                            <li onClick={handleSignOutClick}><FaSignOutAlt /> Thoát</li>
+                                        </ul>
                                     </div>
                                 ) : (
                                     <div className={cx('accountPopup')}>
                                         <h3>Đăng nhập với</h3>
                                         <div className={cx('socialButtons')}>
-                                            <button className={cx('facebookBtn')}>
-                                                <FaFacebook />
-                                                Facebook
-                                            </button>
-                                            <button className={cx('googleBtn')}>
+                                            <button className={cx('googleBtn')} onClick={handleGoogleLogin}>
                                                 <FcGoogle />
                                                 Google +
                                             </button>
@@ -224,7 +250,7 @@ function Header() {
                             </div>
                         </div>
 
-                        <Link to="/support" className={cx('actionItem')}>
+                        <Link to={routes.support} className={cx('actionItem')}>
                             <FaPhone className={cx('icon')} />
                             <div className={cx('actionContent')}>
                                 <span>Hỗ trợ</span>
@@ -232,7 +258,7 @@ function Header() {
                             </div>
                         </Link>
 
-                        <Link to="/cart" className={cx('actionItem', 'cart')}>
+                        <Link to={routes.cart} className={cx('actionItem', 'cart')}>
                             <FaShoppingCart className={cx('icon')} />
                             <span className={cx('cartCount')}>{cartCount}</span>
                         </Link>

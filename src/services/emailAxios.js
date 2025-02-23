@@ -1,0 +1,25 @@
+import * as axiosConfig from '~/utils/axiosConfig';
+
+// ✅ Send OTP to Email
+const sendOtpAxios = async (email) => {
+    try {
+        const res = await axiosConfig.post('email/send-otp', { email }, { withCredentials: true });
+        return res.data;
+    } catch (error) {
+        console.error('Send OTP Error:', error);
+        throw new Error('Failed to send OTP.');
+    }
+};
+
+// ✅ Verify OTP
+const verifyOtpAxios = async (email, otp) => {
+    try {
+        const res = await axiosConfig.post('email/verify-otp', { email, otp }, { withCredentials: true });
+        return res.data;
+    } catch (error) {
+        console.error('Verify OTP Error:', error);
+        throw new Error('Invalid OTP. Please try again.');
+    }
+};
+
+export { sendOtpAxios, verifyOtpAxios };
