@@ -2,7 +2,6 @@ import classNames from 'classnames/bind';
 import styles from './SignupPopup.module.scss';
 import { Link } from 'react-router-dom';
 import { useState } from 'react';
-import { FaFacebook } from 'react-icons/fa';
 import { FcGoogle } from 'react-icons/fc';
 import { IoWarning, IoCheckmarkCircle } from 'react-icons/io5';
 import { registerAxios } from '~/services/authAxios';
@@ -27,6 +26,8 @@ function SignupForm({ onClose, onShowLogin }) {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        setError("");
+        setSuccess("");
 
         const { year, month, day, acceptTerms, ...rest } = formData;
 
@@ -52,6 +53,11 @@ function SignupForm({ onClose, onShowLogin }) {
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(formData.email)) {
             setError('Email không hợp lệ.');
+            return;
+        }
+
+        if (formData.password.length < 6 || formData.password.length > 32) {
+            setError("Mật khẩu phải có từ 6 đến 32 ký tự.");
             return;
         }
 
@@ -245,10 +251,6 @@ function SignupForm({ onClose, onShowLogin }) {
                 <div className={cx('socialLogin')}>
                     <p>Hoặc đăng ký với:</p>
                     <div className={cx('socialButtons')}>
-                        <button type="button" className={cx('facebookBtn')}>
-                            <FaFacebook />
-                            Facebook
-                        </button>
                         <button type="button" className={cx('googleBtn')}>
                             <FcGoogle />
                             Google +

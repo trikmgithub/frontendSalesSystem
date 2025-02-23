@@ -27,6 +27,42 @@ const loginAxios = async (userData) => {
     }
 };
 
+// Google Login API (Redirect to Google's OAuth page)
+const googleLoginAxios = async () => {
+    try {
+        // Redirect the user to Google login page
+        window.location.href = "http://localhost:8000/api/v1/auth/google/login";
+    } catch (error) {
+        console.error("Google Login Error:", error);
+        throw new Error("Google login failed.");
+    }
+};
+
+// Google Redirect API (Handles OAuth response)
+const googleRedirectAxios = async () => {
+    try {
+        const res = await axiosConfig.get('auth/google/redirect', { withCredentials: true });
+
+        if (res.data?.access_token) {
+            localStorage.setItem('access_token', res.data.access_token);
+            localStorage.setItem(
+                'user',
+                JSON.stringify({
+                    _id: res.data._id,
+                    name: res.data.name,
+                    email: res.data.email,
+                }),
+            );
+        }
+
+        window.location.reload();
+        return res;
+    } catch (error) {
+        console.error('Google Redirect Error:', error);
+        throw new Error('Failed to authenticate with Google.');
+    }
+};
+
 // Logout API
 const logoutAxios = async () => {
     try {
@@ -71,4 +107,4 @@ const registerAxios = async (userData) => {
     }
 };
 
-export { loginAxios, logoutAxios, registerAxios };
+export { loginAxios, googleLoginAxios, googleRedirectAxios, logoutAxios, registerAxios };

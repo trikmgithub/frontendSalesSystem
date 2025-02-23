@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { FaUser, FaShoppingCart, FaPhone, FaStore } from 'react-icons/fa';
 import { IoSearch } from 'react-icons/io5';
 import { FcGoogle } from 'react-icons/fc';
@@ -10,7 +10,7 @@ import LoginForm from './LoginPopup';
 import SignupForm from './SignupPopup';
 import Navigation from '../Navigation/Navigation';
 import { getItemsAxios } from '~/services/itemAxios';
-import { logoutAxios } from '~/services/authAxios';
+import { googleLoginAxios, googleRedirectAxios, logoutAxios } from '~/services/authAxios';
 import { CartContext } from '~/context/CartContext';
 import routes from '~/config/routes';
 
@@ -26,6 +26,7 @@ function Header() {
     const [query, setQuery] = useState('');
     const [items, setItems] = useState([]);
     const [suggestions, setSuggestions] = useState([]);
+    const location = useLocation(); // ✅ Get current URL
 
     const cartCount = cartItems.reduce((count, item) => count + item.quantity, 0);
 
@@ -33,7 +34,7 @@ function Header() {
         const fetchItems = async () => {
             try {
                 const response = await getItemsAxios();
-    
+
                 // Check if response is an array (API directly returns items)
                 if (Array.isArray(response.data)) {
                     setItems(response.data); // ✅ Use response.data directly
@@ -46,19 +47,41 @@ function Header() {
                 setItems([]);
             }
         };
-    
+
         fetchItems();
-    }, []);    
+    }, []);
+
+    useEffect(() => {
+        // ✅ Handle Google OAuth Redirection
+        const handleGoogleRedirect = async () => {
+            if (location.pathname.includes("auth/google/redirect")) {
+                try {
+                    await googleRedirectAxios();
+                } catch (error) {
+                    console.error("Google Redirect Error:", error);
+                }
+            }
+        };
+        handleGoogleRedirect();
+    }, [location]);
+
+    const handleGoogleLogin = async () => {
+        try {
+            await googleLoginAxios();
+        } catch (error) {
+            console.error("Google Login Error:", error);
+        }
+    };
 
     const handleInputChange = (event) => {
-        const value = event.target.value;
+        const value = event.target.value.toLowerCase();
         setQuery(value);
 
         if (value.length > 0) {
             const filteredResults = items.filter(
                 (item) =>
-                    item.name.toLowerCase().includes(value.toLowerCase()) ||
-                    (item.brand?.name && item.brand.name.toLowerCase().includes(value.toLowerCase()))
+                    item.name.toLowerCase().startsWith(value) ||
+                    (item.brand?.name && item.brand.name.toLowerCase().startsWith(value))
             );
             setSuggestions(filteredResults);
         } else {
@@ -101,10 +124,8 @@ function Header() {
         setShowAccountPopup(false);
     };
 
-    const userLocalStorage = JSON.parse(localStorage.getItem('user')) || {};
-
     useEffect(() => {
-        setUserInfo(userLocalStorage);
+        setUserInfo(JSON.parse(localStorage.getItem('user')) || {});
     }, []);
 
     return (
@@ -191,7 +212,7 @@ function Header() {
                                     <div className={cx('accountPopup')}>
                                         <h3>Đăng nhập với</h3>
                                         <div className={cx('socialButtons')}>
-                                            <button className={cx('googleBtn')}>
+                                            <button className={cx('googleBtn')} onClick={handleGoogleLogin}>
                                                 <FcGoogle />
                                                 Google +
                                             </button>

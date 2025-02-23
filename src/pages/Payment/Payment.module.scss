@@ -21,6 +21,43 @@ body {
     margin: 80px auto 0;
     padding: 20px;
 
+    .payment-success {
+        background: #f0fff0;
+        border: 1px solid #2e7d32;
+        color: #2e7d32;
+        padding: 15px;
+        text-align: center;
+        border-radius: 8px;
+        margin: 20px auto;
+        max-width: 400px;
+    }
+
+    .payment-success h3 {
+        font-size: 20px;
+        font-weight: bold;
+        margin-bottom: 10px;
+    }
+
+    .payment-success p {
+        font-size: 14px;
+        margin-bottom: 5px;
+    }
+
+    .payment-success .back-home {
+        display: inline-block;
+        margin-top: 10px;
+        padding: 8px 15px;
+        background: #2e7d32;
+        color: white;
+        text-decoration: none;
+        border-radius: 5px;
+        font-weight: bold;
+    }
+
+    .payment-success .back-home:hover {
+        background: #276a2b;
+    }
+
     /* Header */
     .payment-header {
         position: fixed;
@@ -53,7 +90,7 @@ body {
         justify-content: space-between;
         margin-top: 20px;
         gap: 20px;
-
+        
         /* Left Section */
         .payment-left {
             width: 65%;
@@ -175,11 +212,6 @@ body {
                     color: #555;
                 }
 
-                .product-size {
-                    font-size: 12px;
-                    color: #888;
-                }
-
                 .item-price {
                     text-align: right;
                 }
@@ -223,6 +255,22 @@ body {
                 }
             }
 
+            .order-agreement {
+                font-size: 12px;
+                color: #666;
+                margin-top: 8px;
+                text-align: center;
+
+                a {
+                    color: #007bff;
+                    text-decoration: none;
+                }
+
+                a:hover {
+                    text-decoration: underline;
+                }
+            }
+
             /* Order Summary */
             .order-summary {
                 margin-top: 20px;
@@ -252,6 +300,22 @@ body {
                     color: #f57224;
                     font-size: 18px;
                     font-weight: 700;
+                }
+
+                .order-summary-title {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                }
+
+                .cart-link {
+                    font-size: 14px;
+                    color: #007bff;
+                    text-decoration: none;
+                }
+
+                .cart-link:hover {
+                    text-decoration: underline;
                 }
             }
 
@@ -369,6 +433,7 @@ body {
 
                             .delete-btn {
                                 color: #d9534f;
+                                font-style: normal;
                             }
 
                             .edit-btn {
