@@ -86,7 +86,8 @@ const logoutAxios = async () => {
 
         // Sau khi logout thành công, xóa token và thông tin người dùng khỏi localStorage
         localStorage.removeItem('access_token');
-        localStorage.removeItem('user');
+        localStorage.removeItem('confirmedAddress');
+        localStorage.setItem('user', 'null');
 
         // Làm mới lại trang sau khi logout
         window.location.reload();

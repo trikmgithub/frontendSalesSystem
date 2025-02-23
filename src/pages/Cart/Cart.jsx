@@ -1,4 +1,4 @@
-import React, { useContext } from 'react';
+import React, { useContext, useState } from 'react';
 import { Link } from 'react-router-dom';
 import classNames from 'classnames/bind';
 import styles from './Cart.module.scss'; // Import SCSS module
@@ -7,11 +7,24 @@ import { CartContext } from '~/context/CartContext';
 import productImg from '~/assets/product1.png';
 import emptyCartIcon from '~/assets/cart.png'; // Replace with actual path
 import routes from '~/config/routes';
+import LoginForm from '~/layouts/components/Header/LoginPopup';
 
 const cx = classNames.bind(styles);
 
 const Cart = () => {
     const { cartItems, updateCartItemQuantity, removeFromCart } = useContext(CartContext);
+    const [showLoginForm, setShowLoginForm] = useState(false);
+
+    const handleProceedToCheckout = () => {
+        const user = JSON.parse(localStorage.getItem('user'));
+
+        if (!user || user === null) {
+            setShowLoginForm(true); // Show login popup
+            return;
+        }
+        window.location.href = routes.payment; // Redirect to payment
+    };
+
 
     const formatPrice = (price) => new Intl.NumberFormat('vi-VN').format(price) + ' ₫';
     const calculateTotal = () => cartItems.reduce((total, item) => total + item.price * item.quantity, 0);
@@ -87,10 +100,13 @@ const Cart = () => {
                                     Tổng thành tiền (Đã VAT): {formatPrice(calculateTotal())}
                                 </div>
                             </div>
-                            <Link to={routes.payment} className={cx('checkoutButtonRow')}>
-                                <button className={cx('checkoutButton')}>Tiến hành đặt hàng</button>
+                            <Link className={cx('checkoutButtonRow')}>
+                                <button className={cx('checkoutButton')} onClick={handleProceedToCheckout}>
+                                    Tiến hành đặt hàng
+                                </button>
                             </Link>
                         </div>
+                        {showLoginForm && <LoginForm onClose={() => setShowLoginForm(false)} />}
                     </>
                 )}
             </div>
