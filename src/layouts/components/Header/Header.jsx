@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { FaUser, FaShoppingCart, FaPhone, FaStore } from 'react-icons/fa';
+import { FaUser, FaShoppingCart, FaPhone, FaStore, FaClipboardList, FaHeart, FaMapMarkerAlt, FaSignOutAlt } from 'react-icons/fa';
 import { IoSearch } from 'react-icons/io5';
 import { FcGoogle } from 'react-icons/fc';
 import classNames from 'classnames/bind';
@@ -194,7 +194,10 @@ function Header() {
                             <FaUser className={cx('icon')} />
                             <div className={cx('actionContent')}>
                                 {userInfo.name ? (
-                                    <span>{userInfo.name}</span>
+                                    <div>
+                                        <div><span>Chào {userInfo.name}</span></div>
+                                        <div><span>Tài khoản</span></div>
+                                    </div>
                                 ) : (
                                     <div>
                                         <div><span>Đăng nhập / Đăng ký</span></div>
@@ -205,8 +208,14 @@ function Header() {
 
                             {showAccountPopup &&
                                 (userInfo?.name ? (
-                                    <div className={cx('accountPopup')} onClick={handleSignOutClick}>
-                                        logout
+                                    <div className={cx('accountPopupAfter')}>
+                                        <ul>
+                                            <li><FaUser /> Tài khoản của bạn</li>
+                                            <li><FaClipboardList /> Quản lý đơn hàng</li>
+                                            <li><FaHeart /> Sản phẩm yêu thích</li>
+                                            <li><FaMapMarkerAlt /> Địa chỉ giao hàng</li>
+                                            <li onClick={handleSignOutClick}><FaSignOutAlt /> Thoát</li>
+                                        </ul>
                                     </div>
                                 ) : (
                                     <div className={cx('accountPopup')}>
