@@ -8,8 +8,8 @@ import { Link } from 'react-router-dom';
 import routes from '~/config/routes'
 import productImg from '~/assets/product1.png';
 import { CartContext } from "~/context/CartContext";
-// import { momoPayAxios, zaloPayAxios } from "~/services/paymentAxios";
 import { useNavigate } from "react-router-dom";
+import { zaloPayAxios } from "~/services/paymentAxios";
 
 const cx = classNames.bind(styles);
 
@@ -25,27 +25,32 @@ const Payment = () => {
   const navigate = useNavigate();
 
   // ✅ Handle All Payment Success
-  const handlePayment = () => {
-    setShowSuccessMessage(true);
-    setTimeout(() => {
-      navigate(routes.home);
-    }, 5000); // Redirect to homepage after 3 seconds
-  };
+  const handlePayment = async () => {
+    if (selectedPayment === "zalopay") {
+      try {
+        const paymentData = {
+          amount: calculateTotal(), // Send total order amount
+          description: "Thanh toán đơn hàng", // Optional
+        };
 
-  // // ✅ Function to Handle Payment
-  // const handlePayment = async () => {
-  //   try {
-  //     if (selectedPayment === 'momo') {
-  //       await momoPayAxios({ totalAmount: calculateTotal() }); // Call Momo API
-  //     } else if (selectedPayment === 'zalopay') {
-  //       await zaloPayAxios({ totalAmount: calculateTotal() }); // Call ZaloPay API
-  //     } else {
-  //       alert("Đơn hàng đã được đặt thành công!");
-  //     }
-  //   } catch (error) {
-  //     console.error("Payment Error:", error);
-  //   }
-  // };
+        const res = await zaloPayAxios(paymentData);
+
+        // if (res.data?.data?.order_url) {
+        //   window.location.href = res.data.data.order_url; // Redirect to ZaloPay
+        // } else {
+        //   alert("Lỗi thanh toán ZaloPay. Vui lòng thử lại.");
+        // }
+      } catch (error) {
+        console.error("ZaloPay Payment Error:", error);
+        alert("Không thể kết nối với ZaloPay. Vui lòng thử lại.");
+      }
+    } else {
+      setShowSuccessMessage(true);
+      setTimeout(() => {
+        navigate(routes.home);
+      }, 1000);
+    }
+  };
 
   const toggleAddressModal = () => {
     setShowAddressModal(!showAddressModal);

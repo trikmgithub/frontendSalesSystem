@@ -50,9 +50,15 @@ const momoIpnAxios = async (ipnData) => {
 // ✅ Initiate Payment with Zalopay
 const zaloPayAxios = async (paymentData) => {
     try {
-        const res = await axiosConfig.post('zalo/pay', paymentData, { withCredentials: true });
-        if (res.data?.payUrl) {
-            window.location.href = res.data.payUrl; // Redirect user to Zalo payment page
+        const res = await axiosConfig.get('zalo/pay', {
+            withCredentials: true, 
+            headers: {
+                Authorization: `Bearer ${localStorage.getItem('access_token')}` 
+            }
+        });
+
+        if (res.data?.order_url) {
+            window.location.href = res.data.order_url; 
         }
         return res;
     } catch (error) {
