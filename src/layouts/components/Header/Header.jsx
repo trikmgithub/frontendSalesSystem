@@ -7,7 +7,7 @@ import styles from './Header.module.scss';
 import logo from '~/assets/beautySkin.png';
 import { useState, useEffect, useRef, useContext } from 'react';
 import LoginForm from './LoginPopup';
-import SignupForm from './SignupPopup';
+import OtpForm from './OtpForm';
 import Navigation from '../Navigation/Navigation';
 import { getItemsAxios } from '~/services/itemAxios';
 import { googleLoginAxios, googleRedirectAxios, logoutAxios } from '~/services/authAxios';
@@ -276,7 +276,7 @@ function Header() {
                 )}
 
                 {showSignupForm && (
-                    <SignupForm
+                    <OtpForm
                         onClose={() => setShowSignupForm(false)}
                         onShowLogin={() => {
                             setShowSignupForm(false);
