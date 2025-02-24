@@ -1,10 +1,10 @@
 import classNames from 'classnames/bind';
 import styles from './SignupPopup.module.scss';
-import { Link } from 'react-router-dom';
-import { useState } from 'react';
+import { Link, useLocation } from 'react-router-dom';
+import { useState, useEffect } from 'react';
 import { FcGoogle } from 'react-icons/fc';
 import { IoWarning, IoCheckmarkCircle } from 'react-icons/io5';
-import { registerAxios } from '~/services/authAxios';
+import { googleLoginAxios, googleRedirectAxios, registerAxios } from '~/services/authAxios';
 
 const cx = classNames.bind(styles);
 
@@ -23,6 +23,29 @@ function SignupForm({ onClose, onShowLogin }) {
     });
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
+    const location = useLocation(); // ✅ Get current URL
+
+    useEffect(() => {
+        // ✅ Handle Google OAuth Redirection
+        const handleGoogleRedirect = async () => {
+            if (location.pathname.includes("auth/google/redirect")) {
+                try {
+                    await googleRedirectAxios();
+                } catch (error) {
+                    console.error("Google Redirect Error:", error);
+                }
+            }
+        };
+        handleGoogleRedirect();
+    }, [location]);
+
+    const handleGoogleLogin = async () => {
+        try {
+            await googleLoginAxios();
+        } catch (error) {
+            console.error("Google Login Error:", error);
+        }
+    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -251,7 +274,7 @@ function SignupForm({ onClose, onShowLogin }) {
                 <div className={cx('socialLogin')}>
                     <p>Hoặc đăng ký với:</p>
                     <div className={cx('socialButtons')}>
-                        <button type="button" className={cx('googleBtn')}>
+                        <button type="button" className={cx('googleBtn')} onClick={handleGoogleLogin}>
                             <FcGoogle />
                             Google +
                         </button>
