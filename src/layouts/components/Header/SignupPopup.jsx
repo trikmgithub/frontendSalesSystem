@@ -8,9 +8,9 @@ import { googleLoginAxios, googleRedirectAxios, registerAxios } from '~/services
 
 const cx = classNames.bind(styles);
 
-function SignupForm({ onClose, onShowLogin }) {
+function SignupForm({ onClose, onShowLogin, verifiedEmail = '' }) {
     const [formData, setFormData] = useState({
-        email: '',
+        email: verifiedEmail,
         password: '',
         name: '',
         year: '',
@@ -160,6 +160,7 @@ function SignupForm({ onClose, onShowLogin }) {
                             value={formData.email}
                             onChange={handleInputChange}
                             placeholder="Nhập email"
+                            readOnly={!!verifiedEmail}
                         />
                     </div>
                     <div className={cx('formGroup')}>

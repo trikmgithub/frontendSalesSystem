@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import classNames from 'classnames/bind';
 import styles from './OtpForm.module.scss';
 import SignupForm from './SignupPopup';
@@ -12,8 +12,14 @@ function OtpForm({ onVerificationSuccess, onClose }) {
   const [otp, setOtp] = useState('');
   const [otpError, setOtpError] = useState('');
   const [otpSuccess, setOtpSuccess] = useState('');
-  const [otpSent, setOtpSent] = useState(false);
-  const [verified, setVerified] = useState(false);
+  const [countdown, setCountdown] = useState(0);
+
+  useEffect(() => {
+    if (countdown > 0) {
+      const timer = setTimeout(() => setCountdown(countdown - 1), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [countdown]);
 
   const handleSendOtp = async () => {
     setOtpError('');
@@ -25,9 +31,9 @@ function OtpForm({ onVerificationSuccess, onClose }) {
     }
 
     try {
-      await sendOtpAxios({ email });
+      await sendOtpAxios(email);
       setOtpSuccess('OTP đã được gửi! Vui lòng kiểm tra email.');
-      setOtpSent(true);
+      setCountdown(60);
     } catch (error) {
       setOtpError('Lỗi gửi OTP, vui lòng thử lại.');
     }
@@ -36,24 +42,20 @@ function OtpForm({ onVerificationSuccess, onClose }) {
   const handleVerifyOtp = async () => {
     setOtpError('');
     setOtpSuccess('');
-    
+
     if (!otp) {
       setOtpError('Vui lòng nhập mã OTP.');
       return;
     }
-    
+
     try {
-      await verifyOtpAxios({ email, otp });
+      await verifyOtpAxios(email, otp);
       onVerificationSuccess(email);
-      setVerified(true);
+      onClose();
     } catch (error) {
       setOtpError('OTP không hợp lệ.');
     }
   };
-
-  if (verified) {
-    return <SignupForm email={email} onClose={onClose} />;
-  }
 
   return (
     <div className={cx('modalOverlay')} onClick={(e) => e.stopPropagation()}>
@@ -88,32 +90,30 @@ function OtpForm({ onVerificationSuccess, onClose }) {
           />
         </div>
 
-        <button
-          className={cx('submitButton')}
-          onClick={handleSendOtp}
-        >
-          Gửi OTP
-        </button>
-
-        {otpSent && (
-          <>
-            <div className={cx('inputContainer')}>
-              <input
-                type="text"
-                className={cx('inputField')}
-                placeholder="Nhập mã OTP"
-                value={otp}
-                onChange={(e) => setOtp(e.target.value)}
-              />
-            </div>
-            <button 
-              className={cx('verifyButton')}
-              onClick={handleVerifyOtp}
-            >
-              Xác minh
+        <div className={cx('otpGroup')}>
+          {countdown > 0 ? (
+            <button className={cx('resendButton')} disabled>
+              {countdown}s
             </button>
-          </>
-        )}
+          ) : (
+            <button className={cx('submitButton')} onClick={handleSendOtp}>
+              Gửi OTP
+            </button>
+          )}
+          <input
+            type="text"
+            placeholder="Nhập mã OTP"
+            value={otp}
+            onChange={(e) => setOtp(e.target.value)}
+          />
+        </div>
+
+        <button
+          className={cx('verifyButton')}
+          onClick={handleVerifyOtp}
+        >
+          Xác minh
+        </button>
       </div>
     </div>
   );
