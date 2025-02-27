@@ -1,11 +1,11 @@
 import classNames from 'classnames/bind';
 import styles from './LoginPopup.module.scss';
-import { Link } from 'react-router-dom';
-import { useState } from 'react';
+import { Link, useLocation } from 'react-router-dom';
+import { useState, useEffect } from 'react';
 import { FcGoogle } from 'react-icons/fc';
 import { IoWarning } from 'react-icons/io5';
 import ForgotPasswordPopup from './ForgotPasswordPopup';
-import { loginAxios } from '~/services/authAxios';
+import { googleLoginAxios, googleRedirectAxios, loginAxios } from '~/services/authAxios';
 
 const cx = classNames.bind(styles);
 
@@ -14,6 +14,29 @@ function LoginForm({ onClose, onShowSignup }) {
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
     const [showForgotPassword, setShowForgotPassword] = useState(false);
+    const location = useLocation(); // ✅ Get current URL
+
+    useEffect(() => {
+        // ✅ Handle Google OAuth Redirection
+        const handleGoogleRedirect = async () => {
+            if (location.pathname.includes("auth/google/redirect")) {
+                try {
+                    await googleRedirectAxios();
+                } catch (error) {
+                    console.error("Google Redirect Error:", error);
+                }
+            }
+        };
+        handleGoogleRedirect();
+    }, [location]);
+
+    const handleGoogleLogin = async () => {
+        try {
+            await googleLoginAxios();
+        } catch (error) {
+            console.error("Google Login Error:", error);
+        }
+    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -70,7 +93,7 @@ function LoginForm({ onClose, onShowSignup }) {
                     </button>
                     <h3>Đăng nhập với</h3>
                     <div className={cx('socialButtons')}>
-                        <button className={cx('googleBtn')}>
+                        <button className={cx('googleBtn')} onClick={handleGoogleLogin}>
                             <FcGoogle />
                             Google +
                         </button>

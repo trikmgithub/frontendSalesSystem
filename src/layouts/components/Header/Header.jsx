@@ -8,6 +8,7 @@ import logo from '~/assets/beautySkin.png';
 import { useState, useEffect, useRef, useContext } from 'react';
 import LoginForm from './LoginPopup';
 import SignupForm from './SignupPopup';
+import OtpForm from './OtpForm';
 import Navigation from '../Navigation/Navigation';
 import { getItemsAxios } from '~/services/itemAxios';
 import { googleLoginAxios, googleRedirectAxios, logoutAxios } from '~/services/authAxios';
@@ -20,13 +21,15 @@ function Header() {
     const [showAccountPopup, setShowAccountPopup] = useState(false);
     const [showLoginForm, setShowLoginForm] = useState(false);
     const [showSignupForm, setShowSignupForm] = useState(false);
+    const [showOtpForm, setShowOtpForm] = useState(false);
     const popupRef = useRef(null);
     const [userInfo, setUserInfo] = useState('');
     const { cartItems } = useContext(CartContext);
     const [query, setQuery] = useState('');
     const [items, setItems] = useState([]);
     const [suggestions, setSuggestions] = useState([]);
-    const location = useLocation(); // ✅ Get current URL
+    const location = useLocation();
+    const [verifiedEmail, setVerifiedEmail] = useState('');
 
     const cartCount = cartItems.reduce((count, item) => count + item.quantity, 0);
 
@@ -120,7 +123,7 @@ function Header() {
     };
 
     const handleSignupClick = () => {
-        setShowSignupForm(true);
+        setShowOtpForm(true);
         setShowAccountPopup(false);
     };
 
@@ -275,6 +278,21 @@ function Header() {
                     />
                 )}
 
+                {showOtpForm && (
+                    <OtpForm
+                        onClose={() => setShowOtpForm(false)}
+                        onShowLogin={() => {
+                            setShowSignupForm(false);
+                            setShowLoginForm(true);
+                        }}
+                        onVerificationSuccess={(email) => {
+                            setVerifiedEmail(email);
+                            setShowOtpForm(false);  
+                            setShowSignupForm(true); 
+                        }}
+                    />
+                )}
+
                 {showSignupForm && (
                     <SignupForm
                         onClose={() => setShowSignupForm(false)}
@@ -282,6 +300,7 @@ function Header() {
                             setShowSignupForm(false);
                             setShowLoginForm(true);
                         }}
+                        verifiedEmail={verifiedEmail}
                     />
                 )}
             </header>

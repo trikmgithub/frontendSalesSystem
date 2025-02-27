@@ -1,0 +1,191 @@
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 99999;
+}
+
+.modalContent {
+  background: white;
+  padding: 30px;
+  border-radius: 8px;
+  position: relative;
+  width: 100%;
+  max-width: 480px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  animation: modalFadeIn 0.3s ease-out;
+}
+
+.closeButton {
+  position: absolute;
+  right: 15px;
+  top: 15px;
+  border: none;
+  background: none;
+  font-size: 24px;
+  cursor: pointer;
+  padding: 5px;
+  color: #666;
+}
+
+.modalTitle {
+  color: #333;
+  font-size: 18px;
+  font-weight: 500;
+  margin-bottom: 16px;
+  text-align: left;
+}
+
+.modalDescription {
+  font-size: 14px;
+  color: #666;
+  margin-bottom: 24px;
+  line-height: 1.5;
+  text-align: left;
+}
+
+.inputContainer {
+  margin-bottom: 16px;
+
+  .inputField {
+    width: 100%;
+    padding: 12px 16px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+    color: #333;
+
+    &:focus {
+      outline: none;
+      border-color: #f26522;
+    }
+
+    &::placeholder {
+      color: #999;
+    }
+  }
+}
+
+.otpGroup {
+  height: 40px;
+  display: flex;
+  gap: 10px;
+  margin-bottom: 15px;
+
+  .resendButton {
+    width: 100px;
+    height: 40px;
+    color: white;
+    background: #f26522;
+    border: 1px solid #f26522;
+    border-radius: 4px;
+    overflow: hidden;
+  }
+
+  .submitButton {
+    width: 100px;
+    height: 40px;
+    background: #f26522;
+    border: 1px solid #f26522;
+    border-radius: 4px;
+    overflow: hidden;
+
+    &:hover {
+      background: #ff4d4f;
+      border-color: #ff4d4f;
+    }
+  }
+
+  input {
+    flex: 1;
+    padding: 0 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+
+    &::placeholder {
+      color: #999;
+    }
+
+    &:focus {
+      outline: none;
+      border-color: #2b7b60;
+    }
+
+    &.error {
+      border-color: #ff4d4f;
+    }
+  }
+}
+
+.submitButton,
+.verifyButton {
+  width: 100%;
+  padding: 12px;
+  border: none;
+  border-radius: 4px;
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.submitButton {
+  background: #f26522;
+  color: white;
+  margin-bottom: 16px;
+
+  &:hover {
+    background: #e55511;
+  }
+}
+
+.verifyButton {
+  background: #28a745;
+  color: white;
+
+  &:hover {
+    background: #218838;
+  }
+}
+
+.errorMessage,
+.successMessage {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  padding: 10px 12px;
+  border-radius: 4px;
+  margin-bottom: 16px;
+}
+
+.errorMessage {
+  background: #fff2f0;
+  color: #ff4d4f;
+  border: 1px solid #ffccc7;
+}
+
+.successMessage {
+  background: #f6ffed;
+  color: #52c41a;
+  border: 1px solid #b7eb8f;
+}
+
+@keyframes modalFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
