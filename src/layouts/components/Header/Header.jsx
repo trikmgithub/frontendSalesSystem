@@ -1,4 +1,4 @@
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { FaUser, FaShoppingCart, FaPhone, FaStore, FaClipboardList, FaHeart, FaMapMarkerAlt, FaSignOutAlt } from 'react-icons/fa';
 import { IoSearch } from 'react-icons/io5';
 import { FcGoogle } from 'react-icons/fc';
@@ -23,15 +23,21 @@ function Header() {
     const [showSignupForm, setShowSignupForm] = useState(false);
     const [showOtpForm, setShowOtpForm] = useState(false);
     const popupRef = useRef(null);
-    const [userInfo, setUserInfo] = useState('');
+    const [userInfo, setUserInfo] = useState(JSON.parse(localStorage.getItem('user')) || {});
     const { cartItems } = useContext(CartContext);
     const [query, setQuery] = useState('');
     const [items, setItems] = useState([]);
     const [suggestions, setSuggestions] = useState([]);
     const location = useLocation();
     const [verifiedEmail, setVerifiedEmail] = useState('');
-
+    const navigate = useNavigate();
     const cartCount = cartItems.reduce((count, item) => count + item.quantity, 0);
+
+    useEffect(() => {
+        if (userInfo.role && ['STAFF', 'MANAGER', 'ADMIN'].includes(userInfo.role)) {
+            navigate(routes.admin);
+        }
+    }, [userInfo, navigate]);
 
     useEffect(() => {
         const fetchItems = async () => {
@@ -126,10 +132,6 @@ function Header() {
         setShowOtpForm(true);
         setShowAccountPopup(false);
     };
-
-    useEffect(() => {
-        setUserInfo(JSON.parse(localStorage.getItem('user')) || {});
-    }, []);
 
     return (
         <>
@@ -287,8 +289,8 @@ function Header() {
                         }}
                         onVerificationSuccess={(email) => {
                             setVerifiedEmail(email);
-                            setShowOtpForm(false);  
-                            setShowSignupForm(true); 
+                            setShowOtpForm(false);
+                            setShowSignupForm(true);
                         }}
                     />
                 )}
