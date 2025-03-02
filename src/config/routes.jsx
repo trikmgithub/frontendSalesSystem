@@ -4,7 +4,8 @@ const routes = {
     support: '/support',
     cart: '/cart',
     payment: '/payment',
-    admin: '/admin',
+    skinQuiz: '/skin-quiz',
+    skinQuizResult: '/skin-quiz/results/:skinType',
 };
 
 export default routes;
