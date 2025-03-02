@@ -1,7 +1,7 @@
 import config from '~/config';
 import { HeaderOnly } from '~/layouts/HeaderOnly';
-import Home from '~/pages/Home';
-import Profile from '~/pages/Profile';
+import Home from '~/pages/Home/Home';
+import Profile from '~/pages/Profile/Profile';
 import Support from '~/pages/Support/SupportPage';
 import SupportLayout from '~/layouts/SupportLayout/SupportLayout';
 import Cart from '~/pages/Cart/Cart';
