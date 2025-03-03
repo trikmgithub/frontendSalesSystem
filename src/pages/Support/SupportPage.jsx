@@ -1,6 +1,7 @@
 import React from 'react';
 import styles from './SupportPage.module.scss';
 import { FaTimes } from "react-icons/fa";
+import logo from '~/assets/beautySkin1.png';
 
 const SupportPage = () => {
   return (
@@ -8,31 +9,21 @@ const SupportPage = () => {
       <header className={`${styles.width_common} ${styles.wrapper_header}`}>
         <div className={styles.container}>
           <div className={`${styles.logo_support} ${styles.left}`}>
-            <a href='/'>
-              <img src="src\assets\beautySkin1.png" alt="Beauty Skin Logo" />
+            <a href="/">
+              <img src={logo} alt="Beauty Skin Logo" />
             </a>
-          </div>
-          <div className={`${styles.right_support} ${styles.right} ${styles.hidden_xs}`}>
-            <a href="/lien-he.html">Gửi yêu cầu</a> <span>|</span> <a href="https://hasaki.vn/customer/account/login/">Đăng nhập</a>
           </div>
         </div>
       </header>
+
 
       <main id="maincontent" className={`${styles.page_main} ${styles.width_common}`}>
         <div id="block_banner_page" className={styles.width_common}>
           <div className={styles.container}>
             <div className={`${styles.block_banner_support} ${styles.width_common}`}>
-              <h1 className={`${styles.slogan} ${styles.text_center}`}>Xin chào! Chúng tôi có thể giúp gì cho bạn?</h1>
-              <div className={`${styles.w_100} ${styles.text_center} ${styles.mb_3}`}>
-                <div className={styles.block_search_support}>
-                  <form action="https://hasaki.vn/catalogsearch/result/">
-                    <input type="text" name="q" placeholder="Nhập từ khóa để tìm sản phẩm, thương hiệu bạn mong muốn. Ví dụ: Hasaki" />
-                    <button className={styles.btn_search}>
-                      <img src="src/assets/icon_search.svg" alt="Search" />
-                    </button>
-                  </form>
-                </div>
-              </div>
+              <h1 className={`${styles.slogan} ${styles.text_center}`}>
+                Xin chào! Chúng tôi có thể giúp gì cho bạn?
+              </h1>
               <div className={styles.mt_2}>
                 <div className={styles.block_sub_info}>
                   <div className={styles.flex_center}>
@@ -58,7 +49,7 @@ const SupportPage = () => {
           </div>
         </div>
         <div className={styles.container}>
-        <div className={`${styles.block_slogan_logo} ${styles.width_common} ${styles.spaceBottom20}`}>
+          <div className={`${styles.block_slogan_logo} ${styles.width_common} ${styles.space_bottom_20}`}>
             <div className={styles.row}>
               <div className={styles.item_slogan_logo}>
                 <div className={styles.col}>
@@ -120,7 +111,7 @@ const SupportPage = () => {
                 <div className={styles.col}>
                   <div className={styles.block_image_slogan}><span className={`${styles.icon_slogan} ${styles.icon_7}`}>&nbsp;</span></div>
                   <div className={styles.text_logo}>Tuyển dụng</div>
-                  <a href="https://tuyendung.hasaki.vn/">&nbsp;</a>
+                  <a href="https://www.kieuminhtri.site/tuyendung">&nbsp;</a>
                 </div>
               </div>
             </div>
@@ -128,21 +119,21 @@ const SupportPage = () => {
           <div className={`${styles.block_cau_hoi_thuong_gap} ${styles.width_common}`}>
             <h1 className={`${styles.title_block_cauhoi} ${styles.width_common}`}>Câu hỏi thường gặp</h1>
             <div className={`${styles.list_cauhoi} ${styles.width_common}`}>
-              <div className={styles.item_cau_hoi}><a href="/tai-khoan.html#div_dang_ky_thanh_vien_hasaki">Đăng ký thành viên Hasaki như thế nào?</a></div>
+              <div className={styles.item_cau_hoi}><a href="/tai-khoan.html#div_dang_ky_thanh_vien_hasaki">Đăng ký thành viên Beauty Skin như thế nào?</a></div>
               <div className={styles.item_cau_hoi}><a href="/dich-vu-spa.html#div_co_can_dat_lich_truoc">Có cần đặt lịch trước khi đến spa hay không?</a></div>
               <div className={styles.item_cau_hoi}><a href="/tai-khoan.html#div_tai_sao_khong_dang_nhap_duoc_tk">Tại sao tôi không thể đăng nhập vào tài khoản của tôi?</a></div>
               <div className={styles.item_cau_hoi}><a href="/dich-vu-spa.html#div_co_can_dat_lich_truoc">Đặt dịch vụ như thế nào?</a></div>
               <div className={styles.item_cau_hoi}><a href="/tai-khoan.html#div_su_dung_chung_tk">Tôi có thể sử dụng chung tài khoản với người khác không?</a></div>
-              <div className={styles.item_cau_hoi}><a href="/dich-vu-spa.html#div_kham_da">Khám da tại spa Hasaki có tốn phí hay không?</a></div>
+              <div className={styles.item_cau_hoi}><a href="/dich-vu-spa.html#div_kham_da">Khám da tại spa Beauty Skin có tốn phí hay không?</a></div>
             </div>
           </div>
           <div className={`${styles.block_thongtin_hotro} ${styles.width_common}`}>
             <h1 className={`${styles.title_block_cauhoi} ${styles.width_common}`}>Thông tin hỗ trợ</h1>
             <div className={`${styles.list_cauhoi} ${styles.width_common}`}>
-              <div className={styles.item_main_menu}><a href="/gioi-thieu-hasaki.html">Giới thiệu Hasaki</a></div>
+              <div className={styles.item_main_menu}><a href="/gioi-thieu-hasaki.html">Giới thiệu Beauty Skin</a></div>
               <div className={styles.item_main_menu}><a href="/lien-he.html">Liên hệ</a></div>
-              <div className={styles.item_main_menu}><a href="/he-thong-cua-hang.html">Hệ thống cửa hàng Hasaki trên toàn quốc</a></div>
-              <div className={styles.item_main_menu}><a href="/huong-dan-nhan-biet-kenh-chinh-thuc-cua-hasaki.html">Các kênh chính thức của Hasaki</a></div>
+              <div className={styles.item_main_menu}><a href="/he-thong-cua-hang.html">Hệ thống cửa hàng Beauty Skin trên toàn quốc</a></div>
+              <div className={styles.item_main_menu}><a href="/huong-dan-nhan-biet-kenh-chinh-thuc-cua-hasaki.html">Các kênh chính thức của Beauty Skin</a></div>
               <div className={styles.item_main_menu}><a href="/huong-dan-dat-hang.html">Hướng dẫn đặt hàng</a></div>
               <div className={styles.item_main_menu}><a href="/huong-dan-dat-hang-2h.html">Hướng dẫn đặt hàng 2H</a></div>
               <div className={styles.item_main_menu}><a href="/huong-dan-thanh-toan-truc-tuyen-vnpay.html">Phương thức thanh toán</a></div>
@@ -151,24 +142,24 @@ const SupportPage = () => {
               <div className={styles.item_main_menu}><a href="/huong-dan-doi-qua.html">Hướng dẫn đổi điểm lấy quà</a></div>
               <div className={styles.item_main_menu}><a href="/chuong-trinh-tang-qua-tri-an-khach-hang-tu-hasaki.html">Chương trình quà tặng tri ân khách hàng</a></div>
               <div className={styles.item_main_menu}><a href="/the-qua-tang-mobile-gift.html">Thẻ quà tặng Got It</a></div>
-              <div className={styles.item_main_menu}><a href="/phieu-mua-hang.html">Phiếu mua hàng Hasaki</a></div>
-              <div className={styles.item_main_menu}><a href="/app">Hướng dẫn tải &amp; sử dụng App Hasaki</a></div>
+              <div className={styles.item_main_menu}><a href="/phieu-mua-hang.html">Phiếu mua hàng Beauty Skin</a></div>
+              <div className={styles.item_main_menu}><a href="/app">Hướng dẫn tải &amp; sử dụng App Beauty Skin</a></div>
               <div className={styles.item_main_menu}><a href="/dieu-khoan-su-dung.html">Điều khoản sử dụng</a></div>
               <div className={styles.item_main_menu}><a href="/chinh-sach-bao-mat.html">Chính sách bảo mật</a></div>
               <div className={styles.item_main_menu}><a href="/chinh-sach-cookie.html">Chính sách Cookie</a></div>
               <div className={styles.item_main_menu}><a href="/chinh-sach-khach-hang-clinic.html">Chính sách khách hàng Clinic</a></div>
               <div className={styles.item_main_menu}><a href="/quy-dinh-giao-dich-chung.html">Quy định giao dịch chung</a></div>
-              <div className={styles.item_main_menu}><a href="/lich-hoat-dong-cua-hang-hasaki-tet-nguyen-dan-2025.html">Lịch hoạt động Tết Nguyên Đán 2025</a></div>
+              <div className={styles.item_main_menu}><a href="/lich-hoat-dong-cua-hang-hasaki-tet-nguyen-dan-2025.html">Cảnh báo mạo danh Beauty Skin để lừa đảo</a></div>
             </div>
           </div>
         </div>
       </main>
-      
+
       <footer className={styles.page_footer}>
-      <div className={styles.container}>
+        <div className={styles.container}>
           <div className={`${styles.main_footer} ${styles.width_common}`}>
-          <div className={`${styles.row} ${styles.space_bottom_20}`}>
-          <div className={`${styles.col_lg_4} ${styles.col_md_4} ${styles.col_sm_12}`}>
+            <div className={`${styles.row} ${styles.space_bottom_20}`}>
+              <div className={`${styles.col_lg_4} ${styles.col_md_4} ${styles.col_sm_12}`}>
                 <div
                   className={`fb_page ${styles.fb_page}`}
                   data-href="https://www.facebook.com/Hasaki.vn/"
@@ -176,7 +167,8 @@ const SupportPage = () => {
                   data-adapt-container-width="true"
                   data-hide-cover="false"
                   data-show-facepile="true"
-                >                  <span style={{ verticalAlign: 'bottom', width: '340px', height: '70px' }}>
+                >
+                  <span style={{ verticalAlign: 'bottom', width: '340px', height: '70px' }}>
                     <iframe name="f106fb37d8d83b56f" width="1000px" height="1000px" data-testid="fb:page Facebook Social Plugin" title="fb:page Facebook Social Plugin" frameBorder="0" allowTransparency="true" allowFullScreen="true" scrolling="no" allow="encrypted-media" src="https://www.facebook.com/v2.9/plugins/page.php?adapt_container_width=true&amp;app_id=1028207553936734&amp;channel=https%3A%2F%2Fstaticxx.facebook.com%2Fx%2Fconnect%2Fxd_arbiter%2F%3Fversion%3D46%23cb%3Dfd3a8a214bfab3c1d%26domain%3Dhotro.hasaki.vn%26is_canvas%3Dfalse%26origin%3Dhttps%253A%252F%252Fhotro.hasaki.vn%252Ff9828894e0010d3e2%26relation%3Dparent.parent&amp;container_width=340&amp;hide_cover=false&amp;href=https%3A%2F%2Fwww.facebook.com%2FHasaki.vn%2F&amp;locale=vi_VN&amp;sdk=joey&amp;show_facepile=true&amp;small_header=true" style={{ border: 'none', visibility: 'visible', width: '340px', height: '70px' }}></iframe>
                   </span>
                 </div>
@@ -194,7 +186,7 @@ const SupportPage = () => {
                 </script>
                 <script defer src="https://wsc.hasaki.vn/plugin_chat/live/ecomInit.js" onLoad="initModuleChat()"></script>
                 <div className={styles.block_chat_fb}>
-                <a href="javascript:;" className={styles.btn_close_chat}><FaTimes className={styles.icon_close} /></a>
+                  <a href="javascript:;" className={styles.btn_close_chat}><FaTimes className={styles.icon_close} /></a>
                   <div id="hsk-chat-root" style={{ position: 'fixed', right: '40px', bottom: '25px', width: '85px', zIndex: 100 }}>
                     <div id="main_chat_container" className={styles._container_uysnc_16} style={{ transform: 'translateX(100vw)', aspectRatio: '5 / 4' }}></div>
                     <img className={styles._icon_1lugr_47} src="https://wsc.hasaki.vn/assets/customer_icons/appIcon.svg" width="60px" height="60px" alt="" />
@@ -206,88 +198,77 @@ const SupportPage = () => {
                   </div>
                 </div>
 
-                <div className="multi-channel-contact">
-                  <div className="float-right">
-                    <div className="mb-2 border-round" id="contact-map" title="" data-placement="left" data-original-title="Bản đồ">
-                      <img src="../images/contact/widget_icon_map.jpg" width="54px" className="rounded-circle" alt="" />
-                    </div>
-                    <div className="mb-2 border-round" id="contact-sms" title="" data-placement="left" data-original-title="Để lại lời nhắn cho chúng tôi">
-                      <img src="../images/contact/widget_icon_contact_form.jpg" width="54px" className="rounded-circle" alt="" />
-                    </div>
-                    <div className="mb-2 border-round" id="contact-call" title="" data-placement="left" data-original-title="Gọi ngay">
-                      <img src="../images/contact/widget_icon_click_to_call.jpg" width="54px" className="rounded-circle" alt="" />
-                    </div>
-                  </div>
-                </div>
               </div>
-              <div className="col-lg-8 col-md-8 col-sm-12">
-                <div className="row">
-                  <div className="col-lg-4 col-md-4 col-sm-4">
-                    <ul className="footer links">
+              <div className={`${styles.col_lg_8} ${styles.col_md_8} ${styles.col_sm_12}`}>
+                <div className={styles.row}>
+                  <div className={`${styles.col_lg_4} ${styles.col_md_4} ${styles.col_sm_4}`}>
+                    <ul className={`${styles.footer} ${styles.links}`}>
                       <li>
-                        <h4 className="tt_footer text-uppercase">Hỗ trợ khách hàng</h4>
+                        <h4 className={`${styles.tt_footer} ${styles.text_uppercase}`}>Hỗ trợ khách hàng</h4>
                       </li>
                       <li>
                         <div>
                           <a href="tel:1800 6324">
-                            <span className="txt_color_2">Hotline: 1800 6324&nbsp;(miễn phí)</span>
+                            <span className={styles.txt_color_2}>Hotline: 1800 6324&nbsp;(miễn phí)</span>
                           </a>
                         </div>
                         <div>
-                          <span className="txt_color_2">
+                          <span className={styles.txt_color_2}>
                             Mỹ phẩm: 08:00 - 22:00
                           </span>
                         </div>
                         <div>
-                          <span className="txt_color_2">
+                          <span className={styles.txt_color_2}>
                             Clinic &amp; Spa: 09:00 - 20:00
                           </span>
                         </div>
                       </li>
-                      <li className="nav item"><a href="/tai-khoan.html" className="txt_link_hasaki">Các câu hỏi thường gặp</a></li>
-                      <li className="nav item"><a href="https://hasaki.vn/lien-he" className="txt_link_hasaki">Gửi yêu cầu hỗ trợ</a></li>
-                      <li className="nav item"><a href="/huong-dan-dat-hang.html" className="txt_link_hasaki">Hướng dẫn đặt hàng</a></li>
-                      <li className="nav item"><a href="/phi-van-chuyen.html" className="txt_link_hasaki">Phương thức vận chuyển</a></li>
-                      <li className="nav item"><a href="/doi-tra-hoan-tien.html" className="txt_link_hasaki">Chính sách đổi trả</a></li>
+                      <li className={`${styles.nav} ${styles.item}`}><a href="/tai-khoan.html" className={styles.txt_link_hasaki}>Các câu hỏi thường gặp</a></li>
+                      <li className={`${styles.nav} ${styles.item}`}><a href="https://hasaki.vn/lien-he" className={styles.txt_link_hasaki}>Gửi yêu cầu hỗ trợ</a></li>
+                      <li className={`${styles.nav} ${styles.item}`}><a href="/huong-dan-dat-hang.html" className={styles.txt_link_hasaki}>Hướng dẫn đặt hàng</a></li>
+                      <li className={`${styles.nav} ${styles.item}`}><a href="/phi-van-chuyen.html" className={styles.txt_link_hasaki}>Phương thức vận chuyển</a></li>
+                      <li className={`${styles.nav} ${styles.item}`}><a href="/doi-tra-hoan-tien.html" className={styles.txt_link_hasaki}>Chính sách đổi trả</a></li>
                     </ul>
                   </div>
-                  <div className="col-lg-3 col-md-3 col-sm-3">
-                    <ul className="footer links">
+                  <div className={`${styles.col_lg_3} ${styles.col_md_3} ${styles.col_sm_3}`}>
+                    <ul className={`${styles.footer} ${styles.links}`}>
                       <li>
-                        <h4 className="tt_footer text-uppercase">Về hasaki.vn</h4>
+                        <h4 className={`${styles.tt_footer} ${styles.text_uppercase}`}>Về hasaki.vn</h4>
                       </li>
-                      <li className="nav item"><a href="/phieu-mua-hang.html" className="txt_link_hasaki">Phiếu mua hàng</a></li>
-                      <li className="nav item"><a href="/gioi-thieu-hasaki.html" className="txt_link_hasaki">Giới thiệu Hasaki.vn</a></li>
-                      <li className="nav item"><a href="/viec-lam.html" className="txt_link_hasaki">Tuyển dụng</a></li>
-                      <li className="nav item"><a href="/chinh-sach-bao-mat.html" className="txt_link_hasaki">Chính sách bảo mật</a></li>
-                      <li className="nav item"><a href="/dieu-khoan-su-dung.html" className="txt_link_hasaki">Điều khoản sử dụng</a></li>
-                      <li className="nav item"><a href="/lien-he.html" className="txt_link_hasaki">Liên hệ</a></li>
-                      <li className="nav item"><a href="/he-thong-cua-hang.html" className="txt_link_hasaki">Vị trí cửa hàng</a></li>
+                      <li className={`${styles.nav} ${styles.item}`}>
+                        <a href="/phieu-mua-hang.html" className={styles.txtLinkHasaki}>Phiếu mua hàng</a>
+                      </li>
+                      <li className={`${styles.nav} ${styles.item}`}><a href="/gioi-thieu-hasaki.html" className={styles.txt_link_hasaki}>Giới thiệu Beauty Skin.vn</a></li>
+                      <li className={`${styles.nav} ${styles.item}`}><a href="/viec-lam.html" className={styles.txt_link_hasaki}>Tuyển dụng</a></li>
+                      <li className={`${styles.nav} ${styles.item}`}><a href="/chinh-sach-bao-mat.html" className={styles.txt_link_hasaki}>Chính sách bảo mật</a></li>
+                      <li className={`${styles.nav} ${styles.item}`}><a href="/dieu-khoan-su-dung.html" className={styles.txt_link_hasaki}>Điều khoản sử dụng</a></li>
+                      <li className={`${styles.nav} ${styles.item}`}><a href="/lien-he.html" className={styles.txt_link_hasaki}>Liên hệ</a></li>
+                      <li className={`${styles.nav} ${styles.item}`}><a href="/he-thong-cua-hang.html" className={styles.txt_link_hasaki}>Vị trí cửa hàng</a></li>
                     </ul>
                   </div>
-                  <div className="col-lg-5 col-md-5 col-sm-5">
-                    <ul className="footer links">
+                  <div className={`${styles.col_lg_5} ${styles.col_md_5} ${styles.col_sm_5}`}>
+                    <ul className={`${styles.footer} ${styles.links}`}>
                       <li>
-                        <h4 className="tt_footer text-uppercase">Hợp tác &amp; Liên kết</h4>
+                        <h4 className={`${styles.tt_footer} ${styles.text_uppercase}`}>Hợp tác &amp; Liên kết</h4>
                       </li>
-                      <li className="nav item"><a href="https://hasaki.vn/spa.html" className="txt_link_hasaki">Hasaki Clinic &amp; Spa</a></li>
-                      <li className="nav item"><a href="https://hasaki.vn/cam-nang.html" className="txt_link_hasaki">Hasaki cẩm nang</a></li>
+                      <li className={`${styles.nav} ${styles.item}`}><a href="https://hasaki.vn/spa.html" className={styles.txt_link_hasaki}>Beauty Skin Clinic &amp; Spa</a></li>
+                      <li className={`${styles.nav} ${styles.item}`}><a href="https://hasaki.vn/cam-nang.html" className={styles.txt_link_hasaki}>Beauty Skin cẩm nang</a></li>
                     </ul>
-                    <ul className="footer links">
+                    <ul className={`${styles.footer} ${styles.links}`}>
                       <li>
-                        <h4 className="tt_footer text-uppercase">Tải ứng dụng</h4>
+                        <h4 className={`${styles.tt_footer} ${styles.text_uppercase}`}>Tải ứng dụng</h4>
                       </li>
                       <li>
-                        <div className="block_down_app_footer width_common">
-                          <div className="thumb_qr_code">
-                            <img src="/images/graphics/QRCode_App.png" className="loading" data-was-processed="true" alt="" />
+                        <div className={`${styles.block_down_app_footer} ${styles.width_common}`}>
+                          <div className={styles.thumb_qr_code}>
+                            <img src="src/assets/graphics/QRCode_App.png" className={styles.loading} data-was-processed="true" alt="" />
                           </div>
-                          <div className="block_down_app_sub">
-                            <a href="https://itunes.apple.com/us/app/hasaki-vn/id1173985273?ls=1&amp;mt=8" className="item_download_app">
-                              <img src="/images/graphics/img_app_store.jpg" alt="" className="loading" data-was-processed="true" />
+                          <div className={styles.block_down_app_sub}>
+                            <a href="https://itunes.apple.com/us/app/hasaki-vn/id1173985273?ls=1&amp;mt=8" className={styles.item_download_app}>
+                              <img src="src\assets\graphics\img_app_store.jpg" alt="" className={styles.loading} data-was-processed="true" />
                             </a>
-                            <a href="https://play.google.com/store/apps/details?id=vn.hasaki.buyer" className="item_download_app">
-                              <img src="/images/graphics/img_google_play.jpg" alt="" className="loading" data-was-processed="true" />
+                            <a href="https://play.google.com/store/apps/details?id=vn.hasaki.buyer" className={styles.item_download_app}>
+                              <img src="src\assets\graphics\img_google_play.jpg" alt="" className={styles.loading} data-was-processed="true" />
                             </a>
                           </div>
                         </div>
