@@ -23,15 +23,21 @@ function Header() {
     const [showSignupForm, setShowSignupForm] = useState(false);
     const [showOtpForm, setShowOtpForm] = useState(false);
     const popupRef = useRef(null);
+    const searchRef = useRef(null);
     const [userInfo, setUserInfo] = useState(JSON.parse(localStorage.getItem('user')) || {});
     const { cartItems } = useContext(CartContext);
     const [query, setQuery] = useState('');
     const [items, setItems] = useState([]);
     const [suggestions, setSuggestions] = useState([]);
+    const [showSuggestions, setShowSuggestions] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
     const location = useLocation();
     const [verifiedEmail, setVerifiedEmail] = useState('');
     const navigate = useNavigate();
     const cartCount = cartItems.reduce((count, item) => count + item.quantity, 0);
+    const [recentSearches, setRecentSearches] = useState(
+        JSON.parse(localStorage.getItem('recentSearches')) || []
+    );
 
     useEffect(() => {
         if (userInfo.role && ['STAFF', 'MANAGER', 'ADMIN'].includes(userInfo.role)) {
@@ -46,10 +52,10 @@ function Header() {
 
                 // Check if response is an array (API directly returns items)
                 if (Array.isArray(response.data)) {
-                    setItems(response.data); // ✅ Use response.data directly
+                    setItems(response.data);
                 } else {
                     console.error("Invalid API response:", response);
-                    setItems([]); // Prevent errors if response is not an array
+                    setItems([]);
                 }
             } catch (error) {
                 console.error('Error fetching items:', error);
@@ -61,7 +67,7 @@ function Header() {
     }, []);
 
     useEffect(() => {
-        // ✅ Handle Google OAuth Redirection
+        // Handle Google OAuth Redirection
         const handleGoogleRedirect = async () => {
             if (location.pathname.includes("auth/google/redirect")) {
                 try {
@@ -74,32 +80,12 @@ function Header() {
         handleGoogleRedirect();
     }, [location]);
 
-    const handleGoogleLogin = async () => {
-        try {
-            await googleLoginAxios();
-        } catch (error) {
-            console.error("Google Login Error:", error);
-        }
-    };
-
-    const handleInputChange = (event) => {
-        const value = event.target.value.toLowerCase();
-        setQuery(value);
-
-        if (value.length > 0) {
-            const filteredResults = items.filter(
-                (item) =>
-                    item.name.toLowerCase().startsWith(value) ||
-                    (item.brand?.name && item.brand.name.toLowerCase().startsWith(value))
-            );
-            setSuggestions(filteredResults);
-        } else {
-            setSuggestions([]);
-        }
-    };
-
+    // Click outside handler for search suggestions
     useEffect(() => {
         const handleClickOutside = (event) => {
+            if (searchRef.current && !searchRef.current.contains(event.target)) {
+                setShowSuggestions(false);
+            }
             if (popupRef.current && !popupRef.current.contains(event.target)) {
                 setShowAccountPopup(false);
             }
@@ -110,6 +96,134 @@ function Header() {
             document.removeEventListener('mousedown', handleClickOutside);
         };
     }, []);
+
+    const handleGoogleLogin = async () => {
+        try {
+            await googleLoginAxios();
+        } catch (error) {
+            console.error("Google Login Error:", error);
+        }
+    };
+
+    // Client-side search functionality
+    const handleInputChange = (event) => {
+        const value = event.target.value;
+        setQuery(value);
+        setShowSuggestions(!!value);
+
+        if (value.length > 0) {
+            setIsLoading(true);
+            // Debounce search
+            const timer = setTimeout(() => {
+                searchItemsLocally(value);
+            }, 300);
+            
+            return () => clearTimeout(timer);
+        } else {
+            setSuggestions([]);
+            setIsLoading(false);
+        }
+    };
+
+    // Perform search on the client side using the items already fetched
+    const searchItemsLocally = (searchTerm) => {
+        const term = searchTerm.toLowerCase().trim();
+        
+        // Skip searching if term is too short
+        if (term.length < 2) {
+            setSuggestions([]);
+            setIsLoading(false);
+            return;
+        }
+        
+        // Get all unique brands from items
+        const uniqueBrands = new Map();
+        
+        // Find matching items
+        const matchingItems = items.filter(item => {
+            const nameMatch = item.name && item.name.toLowerCase().includes(term);
+            const brandMatch = item.brand && item.brand.name && item.brand.name.toLowerCase().includes(term);
+            
+            // Collect unique brands for the "Brands" category
+            if (brandMatch && item.brand) {
+                uniqueBrands.set(item.brand._id, {
+                    _id: item.brand._id,
+                    name: item.brand.name,
+                    type: 'brand'
+                });
+            }
+            
+            return nameMatch || brandMatch;
+        });
+        
+        // Convert matching items to suggestion format
+        const productSuggestions = matchingItems.slice(0, 6).map(item => ({
+            ...item,
+            type: 'product'
+        }));
+        
+        // Get brand suggestions (up to 3)
+        const brandSuggestions = Array.from(uniqueBrands.values()).slice(0, 3);
+        
+        // Combine results
+        setSuggestions([...brandSuggestions, ...productSuggestions]);
+        setIsLoading(false);
+    };
+
+    const handleSearch = () => {
+        if (query.trim()) {
+            // Add to recent searches
+            const updatedSearches = [
+                query,
+                ...recentSearches.filter(term => term !== query)
+            ].slice(0, 5); // Keep only 5 most recent
+            
+            setRecentSearches(updatedSearches);
+            localStorage.setItem('recentSearches', JSON.stringify(updatedSearches));
+            
+            // Navigate to search results
+            navigate(`/search?q=${encodeURIComponent(query)}`);
+            setShowSuggestions(false);
+        }
+    };
+
+    const handleKeyDown = (e) => {
+        if (e.key === 'Enter') {
+            handleSearch();
+        }
+    };
+
+    const handleSuggestionClick = (suggestion) => {
+        // Add to recent searches
+        const updatedSearches = [
+            suggestion.name,
+            ...recentSearches.filter(term => term !== suggestion.name)
+        ].slice(0, 5);
+        
+        setRecentSearches(updatedSearches);
+        localStorage.setItem('recentSearches', JSON.stringify(updatedSearches));
+        
+        // Navigate based on suggestion type
+        if (suggestion.type === 'brand') {
+            navigate(`/brand/${suggestion._id}`);
+        } else {
+            navigate(`/product/${suggestion._id}`);
+        }
+        
+        setShowSuggestions(false);
+        setQuery('');
+    };
+
+    const handleRecentSearchClick = (term) => {
+        setQuery(term);
+        navigate(`/search?q=${encodeURIComponent(term)}`);
+        setShowSuggestions(false);
+    };
+
+    const clearRecentSearches = () => {
+        setRecentSearches([]);
+        localStorage.removeItem('recentSearches');
+    };
 
     const handleAccountClick = () => {
         setShowAccountPopup(!showAccountPopup);
@@ -132,6 +246,10 @@ function Header() {
         setShowOtpForm(true);
         setShowAccountPopup(false);
     };
+    
+    // Group suggestions by type for display
+    const brandSuggestions = suggestions.filter(item => item.type === 'brand');
+    const productSuggestions = suggestions.filter(item => item.type === 'product');
 
     return (
         <>
@@ -165,31 +283,125 @@ function Header() {
                             </ul>
                         </nav>
 
-                        <div className={cx('searchContainer')}>
+                        <div ref={searchRef} className={cx('searchContainer')}>
                             <input
                                 type="text"
                                 value={query}
                                 onChange={handleInputChange}
+                                onKeyDown={handleKeyDown}
+                                onFocus={() => setShowSuggestions(!!query || recentSearches.length > 0)}
                                 placeholder="Tìm kiếm sản phẩm..."
                                 className={cx('searchInput')}
                             />
-                            <button className={cx('searchButton')}>
+                            <button className={cx('searchButton')} onClick={handleSearch}>
                                 <IoSearch />
                             </button>
 
-                            {/* Display search suggestions */}
-                            {suggestions.length > 0 && (
-                                <ul className={cx('suggestionsDropdown')}>
-                                    {suggestions.map((item) => (
-                                        <li
-                                            key={item._id}
-                                            onClick={() => setQuery(item.name)}
-                                            className={cx('suggestionItem')}
-                                        >
-                                            <strong>{item.name}</strong> - {item.brand?.name || "No Brand"}
-                                        </li>
-                                    ))}
-                                </ul>
+                            {/* Enhanced search suggestions dropdown */}
+                            {showSuggestions && (
+                                <div className={cx('enhancedSuggestions')}>
+                                    {isLoading ? (
+                                        <div className={cx('loadingIndicator')}>
+                                            <div className={cx('spinner')}></div>
+                                            <span>Đang tìm kiếm...</span>
+                                        </div>
+                                    ) : suggestions.length > 0 ? (
+                                        <>
+                                            {/* Brand suggestions */}
+                                            {brandSuggestions.length > 0 && (
+                                                <div className={cx('suggestionGroup')}>
+                                                    <div className={cx('suggestionGroupTitle')}>Thương hiệu</div>
+                                                    {brandSuggestions.map(brand => (
+                                                        <div 
+                                                            key={`brand-${brand._id}`} 
+                                                            className={cx('suggestionItem', 'brandItem')}
+                                                            onClick={() => handleSuggestionClick(brand)}
+                                                        >
+                                                            <div className={cx('brandIcon')}>
+                                                                <IoSearch />
+                                                            </div>
+                                                            <div className={cx('suggestionContent')}>
+                                                                <div className={cx('suggestionName')}>{brand.name}</div>
+                                                                <div className={cx('suggestionType')}>Thương hiệu</div>
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            )}
+
+                                            {/* Product suggestions */}
+                                            {productSuggestions.length > 0 && (
+                                                <div className={cx('suggestionGroup')}>
+                                                    <div className={cx('suggestionGroupTitle')}>Sản phẩm</div>
+                                                    {productSuggestions.map(product => (
+                                                        <div 
+                                                            key={`product-${product._id}`} 
+                                                            className={cx('suggestionItem', 'productItem')}
+                                                            onClick={() => handleSuggestionClick(product)}
+                                                        >
+                                                            {product.imageUrls && product.imageUrls.length > 0 ? (
+                                                                <img 
+                                                                    src={product.imageUrls[0]} 
+                                                                    alt={product.name} 
+                                                                    className={cx('productImage')}
+                                                                />
+                                                            ) : (
+                                                                <div className={cx('productImagePlaceholder')}>
+                                                                    <IoSearch />
+                                                                </div>
+                                                            )}
+                                                            <div className={cx('suggestionContent')}>
+                                                                <div className={cx('suggestionName')}>{product.name}</div>
+                                                                {product.brand && (
+                                                                    <div className={cx('productBrand')}>{product.brand.name}</div>
+                                                                )}
+                                                                <div className={cx('productPrice')}>
+                                                                    {product.price?.toLocaleString()} đ
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            )}
+
+                                            {/* View all results */}
+                                            <div className={cx('viewAllResults')}>
+                                                <Link 
+                                                    to={`/search?q=${encodeURIComponent(query)}`}
+                                                    onClick={() => setShowSuggestions(false)}
+                                                >
+                                                    Xem tất cả kết quả cho "{query}"
+                                                </Link>
+                                            </div>
+                                        </>
+                                    ) : query ? (
+                                        <div className={cx('noResults')}>
+                                            Không tìm thấy kết quả cho "{query}"
+                                        </div>
+                                    ) : recentSearches.length > 0 ? (
+                                        <div className={cx('recentSearches')}>
+                                            <div className={cx('recentSearchesHeader')}>
+                                                <span>Tìm kiếm gần đây</span>
+                                                <button 
+                                                    className={cx('clearRecentSearches')} 
+                                                    onClick={clearRecentSearches}
+                                                >
+                                                    Xóa
+                                                </button>
+                                            </div>
+                                            {recentSearches.map((term, index) => (
+                                                <div 
+                                                    key={`recent-${index}`} 
+                                                    className={cx('recentSearchItem')}
+                                                    onClick={() => handleRecentSearchClick(term)}
+                                                >
+                                                    <IoSearch className={cx('recentSearchIcon')} />
+                                                    <span>{term}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    ) : null}
+                                </div>
                             )}
                         </div>
                     </div>

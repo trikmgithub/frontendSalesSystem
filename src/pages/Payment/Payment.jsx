@@ -138,18 +138,34 @@ const Payment = () => {
               </div>
 
               {/* Order Item Section */}
-              <div className={cx('section')}>
-                <h3>🛒 Thông tin kiện hàng</h3>
+              <div className={cx('section', 'order-items-section')}>
+                <h3 className={cx('section-heading')}>🛒 Thông tin kiện hàng</h3>
                 {cartItems.map((item) => (
                   <div key={item._id} className={cx("order-item")}>
-                    <img src={productImg} alt={item.name} className={cx("product-image")} />
+                    <div className={cx("item-image-container")}>
+                      <img
+                        src={item.imageUrls && item.imageUrls[0] ? item.imageUrls[0] : productImg}
+                        alt={item.name}
+                        className={cx("product-image")}
+                        onError={(e) => {
+                          e.target.onerror = null;
+                          e.target.src = 'https://via.placeholder.com/80';
+                        }}
+                      />
+                    </div>
                     <div className={cx("item-details")}>
-                      <strong className={cx("product-name")}>{item.name}</strong>
-                      <p className={cx("product-description")}>{item.description}</p>
+                      <div className={cx("brand-name")}>{item.brand?.name || 'BRAND'}</div>
+                      <div className={cx("product-name")}>{item.name}</div>
                     </div>
                     <div className={cx("item-price")}>
-                      <span className={cx("quantity")}>{item.quantity} x</span>
-                      <span className={cx("price")}>{formatPrice(item.price)}</span>
+                      <div className={cx("quantity-price")}>
+                        <span>{item.quantity}</span>
+                        <span> × </span>
+                        <span>{formatPrice(item.price)}</span>
+                      </div>
+                      <div className={cx("total-item-price")}>
+                        {formatPrice(item.price * item.quantity)}
+                      </div>
                     </div>
                   </div>
                 ))}
