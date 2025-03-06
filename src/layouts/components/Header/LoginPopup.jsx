@@ -14,10 +14,13 @@ function LoginForm({ onClose, onShowSignup }) {
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
     const [showForgotPassword, setShowForgotPassword] = useState(false);
-    const location = useLocation(); // ✅ Get current URL
+    const location = useLocation();
 
     useEffect(() => {
-        // ✅ Handle Google OAuth Redirection
+        // Add class to body to prevent scrolling
+        document.body.classList.add('modal-open');
+        
+        // Handle Google OAuth Redirection
         const handleGoogleRedirect = async () => {
             if (location.pathname.includes("auth/google/redirect")) {
                 try {
@@ -28,6 +31,11 @@ function LoginForm({ onClose, onShowSignup }) {
             }
         };
         handleGoogleRedirect();
+        
+        // Cleanup function
+        return () => {
+            document.body.classList.remove('modal-open');
+        };
     }, [location]);
 
     const handleGoogleLogin = async () => {
@@ -80,14 +88,22 @@ function LoginForm({ onClose, onShowSignup }) {
     };
 
     const handleShowSignup = () => {
+        document.body.classList.remove('modal-open');
         onClose();
         onShowSignup();
+    };
+    
+    // Handle click outside
+    const handleOverlayClick = (e) => {
+        if (e.target === e.currentTarget) {
+            onClose();
+        }
     };
 
     return (
         <>
-            <div className={cx('modalOverlay')} onClick={(e) => e.stopPropagation()}>
-                <div className={cx('modalContent')} onClick={(e) => e.stopPropagation()}>
+            <div className={cx('modalOverlay')} onClick={handleOverlayClick}>
+                <div className={cx('modalContent')}>
                     <button className={cx('closeButton')} onClick={onClose}>
                         ×
                     </button>

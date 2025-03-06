@@ -7,12 +7,22 @@ import { sendOtpAxios, verifyOtpAxios } from '~/services/otpAxios';
 
 const cx = classNames.bind(styles);
 
-function OtpForm({ onVerificationSuccess, onClose }) {
+function OtpForm({ onVerificationSuccess, onClose, onShowLogin }) {
   const [email, setEmail] = useState('');
   const [otp, setOtp] = useState('');
   const [otpError, setOtpError] = useState('');
   const [otpSuccess, setOtpSuccess] = useState('');
   const [countdown, setCountdown] = useState(0);
+
+  useEffect(() => {
+    // Add class to body to prevent scrolling
+    document.body.classList.add('modal-open');
+    
+    // Cleanup function
+    return () => {
+        document.body.classList.remove('modal-open');
+    };
+  }, []);
 
   useEffect(() => {
     if (countdown > 0) {
@@ -57,9 +67,16 @@ function OtpForm({ onVerificationSuccess, onClose }) {
     }
   };
 
+  // Handle click outside
+  const handleOverlayClick = (e) => {
+    if (e.target === e.currentTarget) {
+      onClose();
+    }
+  };
+
   return (
-    <div className={cx('modalOverlay')} onClick={(e) => e.stopPropagation()}>
-      <div className={cx('modalContent')} onClick={(e) => e.stopPropagation()}>
+    <div className={cx('modalOverlay')} onClick={handleOverlayClick}>
+      <div className={cx('modalContent')}>
         <button className={cx('closeButton')} onClick={onClose}>×</button>
         <h2 className={cx('modalTitle')}>Xác minh tài khoản</h2>
         <p className={cx('modalDescription')}>

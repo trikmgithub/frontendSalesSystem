@@ -20,6 +20,18 @@
   max-width: 480px;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
   animation: modalFadeIn 0.3s ease-out;
+  max-height: 90vh;
+  overflow-y: auto;
+  scrollbar-width: none;  /* Firefox */
+  -ms-overflow-style: none;  /* IE and Edge */
+  
+  &::-webkit-scrollbar {
+    display: none;  /* Chrome, Safari, Opera */
+  }
+}
+
+body.modal-open {
+  overflow: hidden;
 }
 
 .closeButton {
@@ -95,6 +107,7 @@
     border: 1px solid #f26522;
     border-radius: 4px;
     overflow: hidden;
+    color: white;
 
     &:hover {
       background: #ff4d4f;

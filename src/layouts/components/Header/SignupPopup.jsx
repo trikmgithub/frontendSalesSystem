@@ -8,6 +8,79 @@ import { googleLoginAxios, googleRedirectAxios, registerAxios } from '~/services
 
 const cx = classNames.bind(styles);
 
+// Location data for address dropdowns
+const locationData = {
+    regions: [
+        "Hồ Chí Minh",
+        "Hà Nội",
+        "Đà Nẵng"
+    ],
+    districts: {
+        "Hồ Chí Minh": [
+            "Quận 1",
+            "Quận 2",
+            "Quận 3"
+        ],
+        "Hà Nội": [
+            "Ba Đình",
+            "Hoàn Kiếm",
+            "Hai Bà Trưng"
+        ],
+        "Đà Nẵng": [
+            "Hải Châu",
+            "Thanh Khê",
+            "Sơn Trà"
+        ]
+    },
+    wards: {
+        "Quận 1": [
+            "Phường Bến Nghé",
+            "Phường Bến Thành",
+            "Phường Cô Giang"
+        ],
+        "Quận 2": [
+            "Phường Thảo Điền",
+            "Phường An Phú",
+            "Phường Bình An"
+        ],
+        "Quận 3": [
+            "Phường 1",
+            "Phường 2",
+            "Phường 3"
+        ],
+        "Ba Đình": [
+            "Phường Trúc Bạch",
+            "Phường Vĩnh Phúc",
+            "Phường Cống Vị"
+        ],
+        "Hoàn Kiếm": [
+            "Phường Hàng Bạc",
+            "Phường Hàng Bồ",
+            "Phường Hàng Đào"
+        ],
+        "Hai Bà Trưng": [
+            "Phường Bách Khoa",
+            "Phường Bạch Đằng",
+            "Phường Bùi Thị Xuân"
+        ],
+        "Hải Châu": [
+            "Phường Hải Châu 1",
+            "Phường Hải Châu 2",
+            "Phường Nam Dương"
+        ],
+        "Thanh Khê": [
+            "Phường Thanh Khê Đông",
+            "Phường Thanh Khê Tây",
+            "Phường Xuân Hà"
+        ],
+        "Sơn Trà": [
+            "Phường An Hải Bắc",
+            "Phường An Hải Đông",
+            "Phường An Hải Tây"
+        ]
+    }
+};
+
 function SignupForm({ onClose, onShowLogin, verifiedEmail = '' }) {
     const [formData, setFormData] = useState({
         email: verifiedEmail,
@@ -18,15 +91,27 @@ function SignupForm({ onClose, onShowLogin, verifiedEmail = '' }) {
         day: '',
         gender: '',
         address: '',
+        selectedRegion: '',
+        selectedDistrict: '',
+        selectedWard: '',
         receivePromotions: false,
         acceptTerms: false,
     });
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
-    const location = useLocation(); // ✅ Get current URL
+    const [addressErrors, setAddressErrors] = useState({
+        region: '',
+        district: '',
+        ward: ''
+    });
+    
+    const location = useLocation();
 
     useEffect(() => {
-        // ✅ Handle Google OAuth Redirection
+        // Add class to body to prevent scrolling
+        document.body.classList.add('modal-open');
+        
+        // Handle Google OAuth Redirection
         const handleGoogleRedirect = async () => {
             if (location.pathname.includes("auth/google/redirect")) {
                 try {
@@ -37,6 +122,11 @@ function SignupForm({ onClose, onShowLogin, verifiedEmail = '' }) {
             }
         };
         handleGoogleRedirect();
+        
+        // Cleanup function
+        return () => {
+            document.body.classList.remove('modal-open');
+        };
     }, [location]);
 
     const handleGoogleLogin = async () => {
@@ -52,23 +142,51 @@ function SignupForm({ onClose, onShowLogin, verifiedEmail = '' }) {
         setError("");
         setSuccess("");
 
-        const { year, month, day, acceptTerms, ...rest } = formData;
+        const { 
+            year, month, day, acceptTerms, 
+            selectedRegion, selectedDistrict, selectedWard,
+            ...rest 
+        } = formData;
 
         // Format birth date as YYYY-MM-DD
         const dateOfBirth = `${year.padStart(2, '0')}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+        
+        // Format address as "ward - district - region"
+        const formattedAddress = selectedWard && selectedDistrict && selectedRegion 
+            ? `${selectedWard} - ${selectedDistrict} - ${selectedRegion}`
+            : formData.address;
 
         // Validate required fields
         if (
             !formData.email ||
             !formData.password ||
             !formData.name ||
-            !formData.address ||
+            (!formattedAddress && !formData.address) ||
             !formData.gender ||
             !year ||
             !month ||
             !day
         ) {
             setError('Vui lòng điền đầy đủ thông tin.');
+            return;
+        }
+
+        // Validate address selections
+        if (!selectedRegion && !formData.address) {
+            setAddressErrors(prev => ({ ...prev, region: 'Vui lòng chọn khu vực' }));
+            setError('Vui lòng điền đầy đủ thông tin địa chỉ.');
+            return;
+        }
+        
+        if (selectedRegion && !selectedDistrict) {
+            setAddressErrors(prev => ({ ...prev, district: 'Vui lòng chọn quận/huyện' }));
+            setError('Vui lòng điền đầy đủ thông tin địa chỉ.');
+            return;
+        }
+        
+        if (selectedDistrict && !selectedWard) {
+            setAddressErrors(prev => ({ ...prev, ward: 'Vui lòng chọn phường/xã' }));
+            setError('Vui lòng điền đầy đủ thông tin địa chỉ.');
             return;
         }
 
@@ -90,7 +208,11 @@ function SignupForm({ onClose, onShowLogin, verifiedEmail = '' }) {
         }
 
         try {
-            const response = await registerAxios({ ...rest, dateOfBirth });
+            const response = await registerAxios({ 
+                ...rest, 
+                dateOfBirth,
+                address: formattedAddress
+            });
 
             if (response.error) {
                 setError(response.message || 'Đăng ký thất bại.');
@@ -126,15 +248,54 @@ function SignupForm({ onClose, onShowLogin, verifiedEmail = '' }) {
         }));
 
         setError(''); // Clear error when the user starts typing
+        
+        // Clear address errors on change
+        if (['selectedRegion', 'selectedDistrict', 'selectedWard'].includes(name)) {
+            setAddressErrors(prev => ({
+                ...prev,
+                [name === 'selectedRegion' ? 'region' : name === 'selectedDistrict' ? 'district' : 'ward']: ''
+            }));
+        }
+    };
+
+    const handleRegionChange = (e) => {
+        const region = e.target.value;
+        setFormData(prev => ({
+            ...prev,
+            selectedRegion: region,
+            selectedDistrict: '',
+            selectedWard: ''
+        }));
+        setAddressErrors(prev => ({ ...prev, region: '' }));
+    };
+
+    const handleDistrictChange = (e) => {
+        const district = e.target.value;
+        setFormData(prev => ({
+            ...prev,
+            selectedDistrict: district,
+            selectedWard: ''
+        }));
+        setAddressErrors(prev => ({ ...prev, district: '' }));
+    };
+
+    const handleWardChange = (e) => {
+        const ward = e.target.value;
+        setFormData(prev => ({
+            ...prev,
+            selectedWard: ward
+        }));
+        setAddressErrors(prev => ({ ...prev, ward: '' }));
     };
 
     const handleShowLogin = () => {
+        document.body.classList.remove('modal-open');
         onClose();
         onShowLogin();
     };
 
     return (
-        <div className={cx('modalOverlay')} onClick={(e) => e.stopPropagation()}>
+        <div className={cx('modalOverlay')} onClick={onClose}>
             <div className={cx('modalContent')} onClick={(e) => e.stopPropagation()}>
                 <button className={cx('closeButton')} onClick={onClose}>
                     ×
@@ -181,15 +342,60 @@ function SignupForm({ onClose, onShowLogin, verifiedEmail = '' }) {
                             placeholder="Họ và tên"
                         />
                     </div>
-                    <div className={cx('formGroup')}>
-                        <input
-                            type="text"
-                            name="address"
-                            value={formData.address}
-                            onChange={handleInputChange}
-                            placeholder="Địa chỉ"
-                        />
+
+                    {/* Address dropdowns */}
+                    <div className={cx('addressGroup')}>
+                        <div className={cx('selectWrapper')}>
+                            <select 
+                                name="selectedRegion" 
+                                value={formData.selectedRegion}
+                                onChange={handleRegionChange}
+                                className={addressErrors.region ? cx('error') : ''}
+                            >
+                                <option value="">Tỉnh/Thành phố</option>
+                                {locationData.regions.map(region => (
+                                    <option key={region} value={region}>{region}</option>
+                                ))}
+                            </select>
+                            <div className={cx('selectArrow')}></div>
+                            {addressErrors.region && <span className={cx('fieldError')}>{addressErrors.region}</span>}
+                        </div>
+                        
+                        <div className={cx('selectWrapper')}>
+                            <select 
+                                name="selectedDistrict" 
+                                value={formData.selectedDistrict}
+                                onChange={handleDistrictChange}
+                                disabled={!formData.selectedRegion}
+                                className={addressErrors.district ? cx('error') : ''}
+                            >
+                                <option value="">Quận/huyện</option>
+                                {formData.selectedRegion && locationData.districts[formData.selectedRegion]?.map(district => (
+                                    <option key={district} value={district}>{district}</option>
+                                ))}
+                            </select>
+                            <div className={cx('selectArrow')}></div>
+                            {addressErrors.district && <span className={cx('fieldError')}>{addressErrors.district}</span>}
+                        </div>
+                        
+                        <div className={cx('selectWrapper')}>
+                            <select 
+                                name="selectedWard" 
+                                value={formData.selectedWard}
+                                onChange={handleWardChange}
+                                disabled={!formData.selectedDistrict}
+                                className={addressErrors.ward ? cx('error') : ''}
+                            >
+                                <option value="">Phường/xã</option>
+                                {formData.selectedDistrict && locationData.wards[formData.selectedDistrict]?.map(ward => (
+                                    <option key={ward} value={ward}>{ward}</option>
+                                ))}
+                            </select>
+                            <div className={cx('selectArrow')}></div>
+                            {addressErrors.ward && <span className={cx('fieldError')}>{addressErrors.ward}</span>}
+                        </div>
                     </div>
+
                     <div className={cx('genderGroup')}>
                         <label>
                             <input
