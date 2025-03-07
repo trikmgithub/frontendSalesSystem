@@ -4,6 +4,7 @@ import styles from './OtpForm.module.scss';
 import SignupForm from './SignupPopup';
 import { IoWarning, IoCheckmarkCircle } from 'react-icons/io5';
 import { sendOtpAxios, verifyOtpAxios } from '~/services/otpAxios';
+import useDisableBodyScroll from '~/hooks/useDisableBodyScroll';
 
 const cx = classNames.bind(styles);
 
@@ -13,6 +14,9 @@ function OtpForm({ onVerificationSuccess, onClose }) {
   const [otpError, setOtpError] = useState('');
   const [otpSuccess, setOtpSuccess] = useState('');
   const [countdown, setCountdown] = useState(0);
+  
+  // Use the custom hook to disable body scroll
+  useDisableBodyScroll(true);
 
   useEffect(() => {
     if (countdown > 0) {
@@ -58,7 +62,7 @@ function OtpForm({ onVerificationSuccess, onClose }) {
   };
 
   return (
-    <div className={cx('modalOverlay')} onClick={(e) => e.stopPropagation()}>
+    <div className={cx('modalOverlay')} onClick={onClose}>
       <div className={cx('modalContent')} onClick={(e) => e.stopPropagation()}>
         <button className={cx('closeButton')} onClick={onClose}>×</button>
         <h2 className={cx('modalTitle')}>Xác minh tài khoản</h2>

@@ -6,6 +6,7 @@ import { FcGoogle } from 'react-icons/fc';
 import { IoWarning } from 'react-icons/io5';
 import ForgotPasswordPopup from './ForgotPasswordPopup';
 import { googleLoginAxios, googleRedirectAxios, loginAxios } from '~/services/authAxios';
+import useDisableBodyScroll from '~/hooks/useDisableBodyScroll';
 
 const cx = classNames.bind(styles);
 
@@ -14,10 +15,13 @@ function LoginForm({ onClose, onShowSignup }) {
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
     const [showForgotPassword, setShowForgotPassword] = useState(false);
-    const location = useLocation(); // ✅ Get current URL
+    const location = useLocation();
+
+    // Use the custom hook to disable body scroll
+    useDisableBodyScroll(true);
 
     useEffect(() => {
-        // ✅ Handle Google OAuth Redirection
+        // Handle Google OAuth Redirection
         const handleGoogleRedirect = async () => {
             if (location.pathname.includes("auth/google/redirect")) {
                 try {
@@ -86,7 +90,7 @@ function LoginForm({ onClose, onShowSignup }) {
 
     return (
         <>
-            <div className={cx('modalOverlay')} onClick={(e) => e.stopPropagation()}>
+            <div className={cx('modalOverlay')} onClick={onClose}>
                 <div className={cx('modalContent')} onClick={(e) => e.stopPropagation()}>
                     <button className={cx('closeButton')} onClick={onClose}>
                         ×
