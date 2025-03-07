@@ -4,25 +4,19 @@ import styles from './OtpForm.module.scss';
 import SignupForm from './SignupPopup';
 import { IoWarning, IoCheckmarkCircle } from 'react-icons/io5';
 import { sendOtpAxios, verifyOtpAxios } from '~/services/otpAxios';
+import useDisableBodyScroll from '~/hooks/useDisableBodyScroll';
 
 const cx = classNames.bind(styles);
 
-function OtpForm({ onVerificationSuccess, onClose, onShowLogin }) {
+function OtpForm({ onVerificationSuccess, onClose }) {
   const [email, setEmail] = useState('');
   const [otp, setOtp] = useState('');
   const [otpError, setOtpError] = useState('');
   const [otpSuccess, setOtpSuccess] = useState('');
   const [countdown, setCountdown] = useState(0);
-
-  useEffect(() => {
-    // Add class to body to prevent scrolling
-    document.body.classList.add('modal-open');
-    
-    // Cleanup function
-    return () => {
-        document.body.classList.remove('modal-open');
-    };
-  }, []);
+  
+  // Use the custom hook to disable body scroll
+  useDisableBodyScroll(true);
 
   useEffect(() => {
     if (countdown > 0) {
@@ -67,16 +61,9 @@ function OtpForm({ onVerificationSuccess, onClose, onShowLogin }) {
     }
   };
 
-  // Handle click outside
-  const handleOverlayClick = (e) => {
-    if (e.target === e.currentTarget) {
-      onClose();
-    }
-  };
-
   return (
-    <div className={cx('modalOverlay')} onClick={handleOverlayClick}>
-      <div className={cx('modalContent')}>
+    <div className={cx('modalOverlay')} onClick={onClose}>
+      <div className={cx('modalContent')} onClick={(e) => e.stopPropagation()}>
         <button className={cx('closeButton')} onClick={onClose}>×</button>
         <h2 className={cx('modalTitle')}>Xác minh tài khoản</h2>
         <p className={cx('modalDescription')}>

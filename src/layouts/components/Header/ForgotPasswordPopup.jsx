@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import classNames from 'classnames/bind';
 import styles from './ForgotPasswordPopup.module.scss';
 import { IoWarning } from "react-icons/io5";
+import useDisableBodyScroll from '~/hooks/useDisableBodyScroll';
 
 const cx = classNames.bind(styles);
 
@@ -9,16 +10,9 @@ function ForgotPasswordPopup({ onClose }) {
     const [email, setEmail] = useState('');
     const [captcha, setCaptcha] = useState('');
     const [error, setError] = useState('');
-
-    useEffect(() => {
-        // Add class to body to prevent scrolling
-        document.body.classList.add('modal-open');
-        
-        // Cleanup function
-        return () => {
-            document.body.classList.remove('modal-open');
-        };
-    }, []);
+    
+    // Use the custom hook to disable body scroll
+    useDisableBodyScroll(true);
 
     const handleSubmit = (e) => {
         e.preventDefault();
@@ -45,16 +39,9 @@ function ForgotPasswordPopup({ onClose }) {
         // Handle password reset logic here
     };
 
-    // Handle click outside
-    const handleOverlayClick = (e) => {
-        if (e.target === e.currentTarget) {
-            onClose();
-        }
-    };
-
     return (
-        <div className={cx('modalOverlay')} onClick={handleOverlayClick}>
-            <div className={cx('modalContent')}>
+        <div className={cx('modalOverlay')} onClick={onClose}>
+            <div className={cx('modalContent')} onClick={(e) => e.stopPropagation()}>
                 <button className={cx('closeButton')} onClick={onClose}>×</button>
                 <h3>Quên mật khẩu tài khoản</h3>
                 

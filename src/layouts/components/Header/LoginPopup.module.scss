@@ -128,8 +128,10 @@
     background-color: rgba(0, 0, 0, 0.5);
     display: flex;
     justify-content: center;
-    align-items: center;
+    align-items: flex-start; /* Changed from center to allow proper scrolling */
     z-index: 99999;
+    overflow-y: auto; /* Allow the overlay itself to scroll */
+    padding: 20px 0; /* Add some padding for better mobile experience */
 }
 
 .modalContent {
@@ -139,15 +141,10 @@
     position: relative;
     width: 100%;
     max-width: 400px;
+    margin: auto; /* Center the modal in the viewport */
+    max-height: calc(100vh - 40px); /* Limit height to viewport minus padding */
+    overflow-y: auto; /* Enable scrolling within the modal content */
     animation: modalFadeIn 0.3s ease-out;
-    max-height: 90vh;
-    overflow-y: auto;
-    scrollbar-width: none;  /* Firefox */
-    -ms-overflow-style: none;  /* IE and Edge */
-    
-    &::-webkit-scrollbar {
-        display: none;  /* Chrome, Safari, Opera */
-    }
 
     h3 {
         text-align: center;
@@ -155,10 +152,6 @@
         color: #333;
         font-size: 14px;
     }
-}
-
-body.modal-open {
-    overflow: hidden;
 }
 
 .closeButton {
@@ -191,6 +184,10 @@ body.modal-open {
             &:focus {
                 outline: none;
                 border-color: #2b7b60;
+            }
+            
+            &.error {
+                border-color: #ff4d4f;
             }
         }
     }

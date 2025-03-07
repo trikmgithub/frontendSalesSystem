@@ -6,6 +6,7 @@ import { FcGoogle } from 'react-icons/fc';
 import { IoWarning } from 'react-icons/io5';
 import ForgotPasswordPopup from './ForgotPasswordPopup';
 import { googleLoginAxios, googleRedirectAxios, loginAxios } from '~/services/authAxios';
+import useDisableBodyScroll from '~/hooks/useDisableBodyScroll';
 
 const cx = classNames.bind(styles);
 
@@ -16,10 +17,10 @@ function LoginForm({ onClose, onShowSignup }) {
     const [showForgotPassword, setShowForgotPassword] = useState(false);
     const location = useLocation();
 
+    // Use the custom hook to disable body scroll
+    useDisableBodyScroll(true);
+
     useEffect(() => {
-        // Add class to body to prevent scrolling
-        document.body.classList.add('modal-open');
-        
         // Handle Google OAuth Redirection
         const handleGoogleRedirect = async () => {
             if (location.pathname.includes("auth/google/redirect")) {
@@ -31,11 +32,6 @@ function LoginForm({ onClose, onShowSignup }) {
             }
         };
         handleGoogleRedirect();
-        
-        // Cleanup function
-        return () => {
-            document.body.classList.remove('modal-open');
-        };
     }, [location]);
 
     const handleGoogleLogin = async () => {
@@ -88,22 +84,14 @@ function LoginForm({ onClose, onShowSignup }) {
     };
 
     const handleShowSignup = () => {
-        document.body.classList.remove('modal-open');
         onClose();
         onShowSignup();
-    };
-    
-    // Handle click outside
-    const handleOverlayClick = (e) => {
-        if (e.target === e.currentTarget) {
-            onClose();
-        }
     };
 
     return (
         <>
-            <div className={cx('modalOverlay')} onClick={handleOverlayClick}>
-                <div className={cx('modalContent')}>
+            <div className={cx('modalOverlay')} onClick={onClose}>
+                <div className={cx('modalContent')} onClick={(e) => e.stopPropagation()}>
                     <button className={cx('closeButton')} onClick={onClose}>
                         ×
                     </button>
