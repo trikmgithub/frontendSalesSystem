@@ -89,35 +89,50 @@ const googleRedirectAxios = async () => {
 // Logout API
 const logoutAxios = async () => {
     try {
-        const token = localStorage.getItem('access_token'); // Lấy token từ localStorage
+        const token = localStorage.getItem('access_token');
 
         if (!token) {
-            throw new Error('No access token found');
+            console.log('No access token found, proceeding with local logout');
+            // Still perform local logout even without a token
+            localStorage.removeItem('access_token');
+            localStorage.removeItem('confirmedAddress');
+            localStorage.setItem('user', 'null');
+            window.location.reload();
+            return;
         }
 
-        // Thêm Bearer token vào Authorization header
-        const res = await axiosConfig.post(
-            'auth/logout',
-            {},
-            {
-                headers: {
-                    Authorization: `Bearer ${token}`, // Truyền Bearer token trong header
+        try {
+            // Attempt server logout
+            const res = await axiosConfig.post(
+                'auth/logout',
+                {},
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                    withCredentials: true,
                 },
-                withCredentials: true, // Gửi cookie nếu có
-            },
-        );
+            );
 
-        // Sau khi logout thành công, xóa token và thông tin người dùng khỏi localStorage
+            console.log('Logout successful');
+            return res;
+        } catch (serverError) {
+            // Log the server error but continue with local logout
+            console.error('Server logout failed:', serverError);
+        } finally {
+            // Always perform local logout regardless of server response
+            localStorage.removeItem('access_token');
+            localStorage.removeItem('confirmedAddress');
+            localStorage.setItem('user', 'null');
+            window.location.reload();
+        }
+    } catch (error) {
+        console.error('Logout process error:', error);
+        // Ensure we still do the local logout even if there's an error
         localStorage.removeItem('access_token');
         localStorage.removeItem('confirmedAddress');
         localStorage.setItem('user', 'null');
-
-        // Làm mới lại trang sau khi logout
         window.location.reload();
-
-        return res;
-    } catch (error) {
-        console.error('Logout Axios logoutAxios error', error);
     }
 };
 
