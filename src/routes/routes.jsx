@@ -8,6 +8,7 @@ import Cart from '~/pages/Cart/Cart';
 import Payment from '~/pages/Payment/Payment';
 import SkinQuizPage from '~/pages/Quiz/SkinQuizPage';
 import QuizResultPage from '~/pages/QuizResult/QuizResultPage';
+import GoogleAuthCallback from '~/components/GoogleAuthCallback';
 
 const publicRoutes = [
     { path: config.routes.home, component: Home, layout: HeaderOnly },
@@ -17,6 +18,7 @@ const publicRoutes = [
     { path: config.routes.payment, component: Payment, layout: Payment },
     { path: config.routes.skinQuiz, component: SkinQuizPage, layout: HeaderOnly },
     { path: config.routes.skinQuizResult, component: QuizResultPage, layout: HeaderOnly },
+    { path: config.routes.googleAuthCallback, component: GoogleAuthCallback, layout: null },
 ];
 
 const privateRoutes = [];

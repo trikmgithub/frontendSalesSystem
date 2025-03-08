@@ -15,6 +15,7 @@ const loginAxios = async (userData) => {
                     name: res.data.name,
                     email: res.data.email,
                     role: res.data.role,
+                    avatar: res.data.avatar
                 }),
             );
         }
@@ -31,8 +32,11 @@ const loginAxios = async (userData) => {
 // Google Login API (Redirect to Google's OAuth page)
 const googleLoginAxios = async () => {
     try {
+        // Use the environment variable or fallback to hardcoded URL
+        const apiBaseUrl = 'http://localhost:8000/api/v1';
+
         // Redirect the user to Google login page
-        window.location.href = "http://localhost:8000/api/v1/auth/google/login";
+        window.location.href = `${apiBaseUrl}/auth/google/login`;
     } catch (error) {
         console.error("Google Login Error:", error);
         throw new Error("Google login failed.");
@@ -42,8 +46,20 @@ const googleLoginAxios = async () => {
 // Google Redirect API (Handles OAuth response)
 const googleRedirectAxios = async () => {
     try {
-        const res = await axiosConfig.get('auth/google/redirect', { withCredentials: true });
+        // Get the URL parameters (for code parsing if needed)
+        const urlParams = new URLSearchParams(window.location.search);
+        const code = urlParams.get('code');
 
+        // If there's no code in the URL but we're on the redirect path,
+        // we might need to adjust the API call
+        let endpoint = 'auth/google/redirect';
+        if (code) {
+            endpoint += `?code=${code}`;
+        }
+
+        const res = await axiosConfig.get(endpoint, { withCredentials: true });
+
+        // Process the response and store user data
         if (res.data?.access_token) {
             localStorage.setItem('access_token', res.data.access_token);
             localStorage.setItem(
@@ -52,14 +68,20 @@ const googleRedirectAxios = async () => {
                     _id: res.data._id,
                     name: res.data.name,
                     email: res.data.email,
+                    role: res.data.role,
+                    avatar: res.data.avatar
                 }),
             );
+
+            // Redirect to homepage after storing data
+            window.location.href = '/';
         }
 
-        window.location.reload();
         return res;
     } catch (error) {
         console.error('Google Redirect Error:', error);
+        // Redirect to home page with error state if needed
+        window.location.href = '/?login_error=true';
         throw new Error('Failed to authenticate with Google.');
     }
 };

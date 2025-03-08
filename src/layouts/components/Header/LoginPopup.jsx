@@ -23,14 +23,30 @@ function LoginForm({ onClose, onShowSignup }) {
     useEffect(() => {
         // Handle Google OAuth Redirection
         const handleGoogleRedirect = async () => {
-            if (location.pathname.includes("auth/google/redirect")) {
+            const urlParams = new URLSearchParams(window.location.search);
+            const code = urlParams.get('code');
+
+            // Check if we're on the Google redirect path or have a code parameter
+            if (location.pathname.includes("auth/google/redirect") || code) {
                 try {
-                    await googleRedirectAxios();
+                    const response = await googleRedirectAxios();
+
+                    // If successful, update user state
+                    if (response?.data) {
+                        setUserInfo({
+                            _id: response.data._id,
+                            name: response.data.name,
+                            email: response.data.email,
+                            role: response.data.role,
+                            avatar: response.data.avatar
+                        });
+                    }
                 } catch (error) {
                     console.error("Google Redirect Error:", error);
                 }
             }
         };
+
         handleGoogleRedirect();
     }, [location]);
 
