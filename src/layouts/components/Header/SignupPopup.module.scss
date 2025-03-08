@@ -449,8 +449,14 @@ body.modal-open {
   margin-bottom: 15px;
   padding: 8px 12px;
   display: flex;
-  align-items: center;
+  flex-direction: column;
   gap: 8px;
+  
+  .errorContent {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
 }
 
 .formGroup {
@@ -474,6 +480,22 @@ body.modal-open {
   display: flex;
   align-items: center;
   gap: 8px;
+}
+
+.loginBtnError {
+  align-self: center;
+  background: transparent;
+  border: none;
+  color: #2b7b60;
+  cursor: pointer;
+  font-size: 13px;
+  margin-top: 2px;
+  padding: 4px 8px;
+  text-decoration: underline;
+  
+  &:hover {
+    color: #1a4a3a;
+  }
 }
 
 .verificationGroup {

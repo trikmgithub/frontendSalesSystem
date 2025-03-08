@@ -160,7 +160,7 @@ function SignupForm({ onClose, onShowLogin, verifiedEmail = '' }) {
     } = formData;
 
     // Format birth date as YYYY-MM-DD
-    const dateOfBirth = `${year.padStart(2, '0')}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+    const dateOfBirth = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
 
     // Format address as "ward - district - region"
     const formattedAddress = selectedWard && selectedDistrict && selectedRegion
@@ -225,17 +225,29 @@ function SignupForm({ onClose, onShowLogin, verifiedEmail = '' }) {
         address: formattedAddress
       });
 
-      if (response.error) {
+      // Check if response has isExistedEmail flag
+      if (response.isExistedEmail) {
+        setError('Email đã được sử dụng, vui lòng chọn email khác hoặc đăng nhập.');
+        return;
+      }
+
+      // Check for error response
+      if (response.error || response.statusCode === 400) {
+        // Check if the message indicates email already exists
+        if (response.message && (
+           response.message.includes('đã tồn tại trong hệ thống') || 
+           response.message.includes('Email already exists')
+        )) {
+          setError('Email đã được sử dụng, vui lòng chọn email khác hoặc đăng nhập.');
+          return;
+        }
+        
         setError(response.message || 'Đăng ký thất bại.');
         return;
       }
 
-      if (response.message === 'Email already exists') {
-        setError('Email đã được sử dụng, vui lòng chọn email khác.');
-        return;
-      }
-
-      if (response.message === 'Register success') {
+      // Success case
+      if (response.message === 'Register success' || (response.data && !response.error)) {
         setSuccess('Đăng ký thành công! Chuyển hướng sau 3 giây...');
         setError('');
 
@@ -245,7 +257,17 @@ function SignupForm({ onClose, onShowLogin, verifiedEmail = '' }) {
         }, 3000);
       }
     } catch (error) {
-      setError('Lỗi kết nối đến máy chủ. Vui lòng thử lại.');
+      // If error is a string (from the previous implementation)
+      if (typeof error === 'string') {
+        if (error.includes('đã tồn tại trong hệ thống') || 
+            error.includes('Email already exists')) {
+          setError('Email đã được sử dụng, vui lòng chọn email khác hoặc đăng nhập.');
+        } else {
+          setError(error || 'Lỗi kết nối đến máy chủ. Vui lòng thử lại.');
+        }
+      } else {
+        setError('Lỗi kết nối đến máy chủ. Vui lòng thử lại.');
+      }
       console.error('Error:', error);
     }
   };
@@ -314,8 +336,15 @@ function SignupForm({ onClose, onShowLogin, verifiedEmail = '' }) {
         <form className={cx('signupForm')} onSubmit={handleSubmit}>
           {error && (
             <div className={cx('errorMessage')}>
-              <IoWarning size={16} />
-              {error}
+              <div className={cx('errorContent')}>
+                <IoWarning size={16} />
+                {error}
+              </div>
+              {error.includes('Email đã được sử dụng') && (
+                <button type="button" className={cx('loginBtnError')} onClick={handleShowLogin}>
+                  Đăng nhập ngay
+                </button>
+              )}
             </div>
           )}
           {success && (

@@ -8,7 +8,7 @@ import useDisableBodyScroll from '~/hooks/useDisableBodyScroll';
 
 const cx = classNames.bind(styles);
 
-function OtpForm({ onVerificationSuccess, onClose }) {
+function OtpForm({ onVerificationSuccess, onClose, onShowLogin }) {
   const [email, setEmail] = useState('');
   const [otp, setOtp] = useState('');
   const [otpError, setOtpError] = useState('');
@@ -34,8 +34,33 @@ function OtpForm({ onVerificationSuccess, onClose }) {
       return;
     }
 
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      setOtpError('Email không hợp lệ.');
+      return;
+    }
+
     try {
-      await sendOtpAxios(email);
+      const response = await sendOtpAxios(email);
+      
+      // Check if response has error and is about existing email
+      if (response.error || response.statusCode === 400) {
+        // Check for isExistedEmail flag or email existed message
+        if (response.isExistedEmail || 
+            (response.message && (
+              response.message.includes('Email is existed') || 
+              response.message.includes('đã tồn tại')
+            ))) {
+          setOtpError('Email đã được sử dụng, vui lòng chọn email khác hoặc đăng nhập.');
+          return;
+        }
+        
+        // Handle other errors
+        setOtpError(response.message || 'Lỗi gửi OTP, vui lòng thử lại.');
+        return;
+      }
+      
       setOtpSuccess('OTP đã được gửi! Vui lòng kiểm tra email.');
       setCountdown(60);
     } catch (error) {
@@ -53,11 +78,27 @@ function OtpForm({ onVerificationSuccess, onClose }) {
     }
 
     try {
-      await verifyOtpAxios(email, otp);
+      const response = await verifyOtpAxios(email, otp);
+      
+      // Check if response has errors
+      if (response.error || !response.success) {
+        setOtpError(response.message || 'OTP không hợp lệ.');
+        return;
+      }
+      
+      // If verification successful
       onVerificationSuccess(email);
       onClose();
     } catch (error) {
       setOtpError('OTP không hợp lệ.');
+    }
+  };
+
+  // Handle login redirect when email exists
+  const handleShowLogin = () => {
+    onClose();
+    if (onShowLogin) {
+      onShowLogin(); // This would open the login form
     }
   };
 
@@ -74,6 +115,14 @@ function OtpForm({ onVerificationSuccess, onClose }) {
           <div className={cx('errorMessage')}>
             <IoWarning size={16} />
             {otpError}
+            {otpError.includes('Email đã được sử dụng') && (
+              <button 
+                className={cx('loginLinkBtn')} 
+                onClick={handleShowLogin}
+              >
+                Đăng nhập ngay
+              </button>
+            )}
           </div>
         )}
 

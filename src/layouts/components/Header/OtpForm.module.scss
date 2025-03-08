@@ -177,12 +177,34 @@
   background: #fff2f0;
   color: #ff4d4f;
   border: 1px solid #ffccc7;
+  flex-direction: column;
+  align-items: flex-start;
+  
+  svg {
+    margin-right: 4px;
+  }
 }
 
 .successMessage {
   background: #f6ffed;
   color: #52c41a;
   border: 1px solid #b7eb8f;
+}
+
+.loginLinkBtn {
+  margin-top: 8px;
+  color: #2b7b60;
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 14px;
+  cursor: pointer;
+  text-decoration: underline;
+  align-self: center;
+  
+  &:hover {
+    color: #1b4b3d;
+  }
 }
 
 @keyframes modalFadeIn {

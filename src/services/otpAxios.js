@@ -7,6 +7,12 @@ const sendOtpAxios = async (email) => {
         return res.data;
     } catch (error) {
         console.error('Send OTP Error:', error);
+        
+        // Return the error response data if available
+        if (error.response && error.response.data) {
+            return error.response.data;
+        }
+        
         throw new Error('Failed to send OTP.');
     }
 };
@@ -18,6 +24,12 @@ const verifyOtpAxios = async (email, otp) => {
         return res.data;
     } catch (error) {
         console.error('Verify OTP Error:', error);
+        
+        // Return the error response data if available
+        if (error.response && error.response.data) {
+            return error.response.data;
+        }
+        
         throw new Error('Invalid OTP. Please try again.');
     }
 };

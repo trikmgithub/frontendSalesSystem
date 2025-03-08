@@ -143,7 +143,13 @@ const registerAxios = async (userData) => {
         const res = await axiosConfig.post('users/register', userData);
         return res;
     } catch (error) {
-        throw error.response.data.message;
+        // Return the full error response data instead of just the message
+        // This allows us to check for isExistedEmail flag
+        if (error.response && error.response.data) {
+            return error.response.data;
+        }
+        // If no structured error data, throw a generic error
+        throw new Error(error.message || 'Registration failed');
     }
 };
 
