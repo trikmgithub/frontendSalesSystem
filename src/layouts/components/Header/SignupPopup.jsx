@@ -106,24 +106,38 @@ function SignupForm({ onClose, onShowLogin, verifiedEmail = '' }) {
     ward: ''
   });
   const location = useLocation();
-  
+
   // Use the custom hook to disable body scroll
   useDisableBodyScroll(true);
 
   useEffect(() => {
     // Handle Google OAuth Redirection
     const handleGoogleRedirect = async () => {
-      if (location.pathname.includes("auth/google/redirect")) {
+      const urlParams = new URLSearchParams(window.location.search);
+      const code = urlParams.get('code');
+
+      // Check if we're on the Google redirect path or have a code parameter
+      if (location.pathname.includes("auth/google/redirect") || code) {
         try {
-          await googleRedirectAxios();
+          const response = await googleRedirectAxios();
+
+          // If successful, update user state
+          if (response?.data) {
+            setUserInfo({
+              _id: response.data._id,
+              name: response.data.name,
+              email: response.data.email,
+              role: response.data.role,
+              avatar: response.data.avatar
+            });
+          }
         } catch (error) {
           console.error("Google Redirect Error:", error);
         }
       }
     };
+
     handleGoogleRedirect();
-    
-    // Cleanup function is handled by the useDisableBodyScroll hook
   }, [location]);
 
   const handleGoogleLogin = async () => {
@@ -139,8 +153,8 @@ function SignupForm({ onClose, onShowLogin, verifiedEmail = '' }) {
     setError("");
     setSuccess("");
 
-    const { 
-      year, month, day, acceptTerms, 
+    const {
+      year, month, day, acceptTerms,
       selectedRegion, selectedDistrict, selectedWard,
       ...rest
     } = formData;
@@ -205,8 +219,8 @@ function SignupForm({ onClose, onShowLogin, verifiedEmail = '' }) {
     }
 
     try {
-      const response = await registerAxios({ 
-        ...rest, 
+      const response = await registerAxios({
+        ...rest,
         dateOfBirth,
         address: formattedAddress
       });
@@ -245,7 +259,7 @@ function SignupForm({ onClose, onShowLogin, verifiedEmail = '' }) {
     }));
 
     setError(''); // Clear error when the user starts typing
-    
+
     // Clear address errors on change
     if (['selectedRegion', 'selectedDistrict', 'selectedWard'].includes(name)) {
       setAddressErrors(prev => ({

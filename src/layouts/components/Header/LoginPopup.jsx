@@ -4,6 +4,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { FcGoogle } from 'react-icons/fc';
 import { IoWarning } from 'react-icons/io5';
+import { FaSpinner } from 'react-icons/fa';
 import ForgotPasswordPopup from './ForgotPasswordPopup';
 import { googleLoginAxios, googleRedirectAxios, loginAxios } from '~/services/authAxios';
 import useDisableBodyScroll from '~/hooks/useDisableBodyScroll';
@@ -14,6 +15,7 @@ function LoginForm({ onClose, onShowSignup }) {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
     const [showForgotPassword, setShowForgotPassword] = useState(false);
     const location = useLocation();
 
@@ -23,7 +25,11 @@ function LoginForm({ onClose, onShowSignup }) {
     useEffect(() => {
         // Handle Google OAuth Redirection
         const handleGoogleRedirect = async () => {
-            if (location.pathname.includes("auth/google/redirect")) {
+            const urlParams = new URLSearchParams(window.location.search);
+            const code = urlParams.get('code');
+            
+            // Check if we're on the Google redirect path or have a code parameter
+            if (location.pathname.includes("auth/google/redirect") || code) {
                 try {
                     await googleRedirectAxios();
                 } catch (error) {
@@ -31,6 +37,7 @@ function LoginForm({ onClose, onShowSignup }) {
                 }
             }
         };
+        
         handleGoogleRedirect();
     }, [location]);
 
@@ -44,6 +51,7 @@ function LoginForm({ onClose, onShowSignup }) {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        setError(''); // Clear previous errors
 
         // Validate empty fields
         if (!email && !password) {
@@ -72,6 +80,7 @@ function LoginForm({ onClose, onShowSignup }) {
 
         // Handle login logic here
         try {
+            setIsLoading(true); // Start loading
             const response = await loginAxios({ username: email, password });
 
             if (response.message === 'Login success') {
@@ -79,7 +88,17 @@ function LoginForm({ onClose, onShowSignup }) {
                 onClose();
             }
         } catch (error) {
-            console.log('Login Popup', error);
+            setIsLoading(false); // Stop loading on error
+            console.error('Login Popup Error:', error);
+            
+            // Check if this is an auth error
+            if (error.response?.status === 401) {
+                setError('Email hoặc mật khẩu không chính xác.');
+            } else if (error.response?.data?.message) {
+                setError(error.response.data.message);
+            } else {
+                setError('Đăng nhập thất bại. Vui lòng thử lại sau.');
+            }
         }
     };
 
@@ -121,6 +140,7 @@ function LoginForm({ onClose, onShowSignup }) {
                                 onChange={(e) => setEmail(e.target.value)}
                                 placeholder="Nhập email"
                                 className={cx({ error: error && !email })}
+                                disabled={isLoading}
                             />
                         </div>
                         <div className={cx('formGroup')}>
@@ -131,6 +151,7 @@ function LoginForm({ onClose, onShowSignup }) {
                                 onChange={(e) => setPassword(e.target.value)}
                                 placeholder="Nhập password"
                                 className={cx({ error: error && !password })}
+                                disabled={isLoading}
                             />
                         </div>
                         <div className={cx('formOptions')}>
@@ -145,8 +166,17 @@ function LoginForm({ onClose, onShowSignup }) {
                                 Quên mật khẩu
                             </Link>
                         </div>
-                        <button type="submit" className={cx('submitBtn')}>
-                            Đăng nhập
+                        <button 
+                            type="submit" 
+                            className={cx('submitBtn')}
+                            disabled={isLoading}
+                        >
+                            {isLoading ? (
+                                <span className={cx('loadingWrapper')}>
+                                    <FaSpinner className={cx('loadingIcon')} />
+                                    Đang đăng nhập...
+                                </span>
+                            ) : 'Đăng nhập'}
                         </button>
                     </form>
                     <div className={cx('registerLink')}>
