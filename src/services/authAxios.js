@@ -15,17 +15,18 @@ const loginAxios = async (userData) => {
                     name: res.data.name,
                     email: res.data.email,
                     role: res.data.role,
-                    avatar: res.data.avatar
                 }),
             );
         }
 
-        // Làm mới lại trang sau khi logout
+        // Làm mới lại trang sau khi đăng nhập thành công
         window.location.reload();
 
         return res;
     } catch (error) {
-        throw new Error(error);
+        // Propagate the error with more details for better handling in the UI
+        console.error('Login error:', error.response?.data || error.message);
+        throw error; // Let the component handle the error
     }
 };
 
