@@ -1,13 +1,98 @@
 @import 'normalize.css';
 
+/* Import Roboto font from Google Fonts with multiple weights */
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap');
+
 :root {
+  /* Color Variables */
+  --primary-color: #356e4e;
+  --primary-light: #e5fbf1;
+  --secondary-color: #f26522;
+  --text-dark: #333;
+  --text-light: #666;
+  --text-lighter: #999;
+  --border-color: #e0e0e0;
+  --bg-light: #f5f5f5;
+  --white: #fff;
+  
+  /* Font Variables */
+  --font-family-primary: 'Roboto', Arial, sans-serif;
+  --font-weight-light: 300;
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-bold: 700;
+  --font-weight-black: 900;
 }
 
+/* Base Typography */
 html {
+  font-size: 16px;
+  line-height: 1.5;
 }
 
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
+body {
+  font-family: var(--font-family-primary);
+  color: var(--text-dark);
+  background-color: var(--bg-light);
+  margin: 0;
+  padding: 0;
 }
+
+/* Reset styles */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* Headings */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-family-primary);
+  font-weight: var(--font-weight-bold);
+  margin-bottom: 0.5rem;
+}
+
+/* Links */
+a {
+  text-decoration: none;
+  color: var(--primary-color);
+  transition: color 0.2s ease;
+  
+  &:hover {
+    color: var(--secondary-color);
+  }
+}
+
+/* Buttons */
+button {
+  font-family: var(--font-family-primary);
+  font-weight: var(--font-weight-medium);
+}
+
+/* Navigation specific styles */
+.mainNav a, 
+.navMenu a {
+  font-weight: var(--font-weight-medium);
+}
+
+/* Continue shopping button fix */
+.continueShoppingButton,
+.continue-shopping-link {
+  font-weight: var(--font-weight-medium) !important;
+}
+
+/* Fix for any bold text elements that might be affected */
+.boldText,
+.brand-name,
+.product-name strong,
+.sectionTitle,
+.currentPrice {
+  font-weight: var(--font-weight-bold) !important;
+}
+
+/* Make sure font weights are applied consistently */
+.font-weight-light { font-weight: var(--font-weight-light) !important; }
+.font-weight-regular { font-weight: var(--font-weight-regular) !important; }
+.font-weight-medium { font-weight: var(--font-weight-medium) !important; }
+.font-weight-bold { font-weight: var(--font-weight-bold) !important; }
+.font-weight-black { font-weight: var(--font-weight-black) !important; }

@@ -1,8 +1,6 @@
 import * as axiosConfig from '~/utils/axiosConfig';
 
-// Get
-
-// Get items
+// Get all items (without pagination)
 const getItemsAxios = async () => {
     try {
         const res = await axiosConfig.get('items/all');
@@ -13,4 +11,15 @@ const getItemsAxios = async () => {
     }
 };
 
-export { getItemsAxios };
+// Get paginated items
+const getItemsPaginatedAxios = async (page = 1, limit = 18) => {
+    try {
+        const res = await axiosConfig.get(`items/paginate?page=${page}&limit=${limit}`);
+        return res;
+    } catch (error) {
+        console.log('Error fetching paginated items:', error);
+        throw new Error(error);
+    }
+};
+
+export { getItemsAxios, getItemsPaginatedAxios };

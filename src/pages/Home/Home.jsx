@@ -1,5 +1,5 @@
 import { useEffect, useState, useContext } from 'react';
-import { getItemsAxios } from '~/services/itemAxios';
+import { getItemsPaginatedAxios } from '~/services/itemAxios';
 import classNames from 'classnames/bind';
 import styles from './Home.module.scss';
 import { Link } from 'react-router-dom';
@@ -12,40 +12,36 @@ function Home() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [currentPage, setCurrentPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
+    const [totalItems, setTotalItems] = useState(0);
+    const [itemsPerPage] = useState(12); // 4 products per row, 3 rows or 6 products per row, 2 rows
     const { addToCart } = useContext(CartContext);
-    const itemsPerPage = 18; // 6 products per row, 3 rows
 
     useEffect(() => {
-        const fetchItems = async () => {
-            try {
-                const response = await getItemsAxios();
-                if (response && response.statusCode === 200) {
-                    setItems(response.data);
-                } else {
-                    setError(response?.message || 'Failed to fetch items');
-                }
-            } catch (err) {
-                console.error('Error fetching items:', err);
-                setError('Could not load data from server');
-            } finally {
-                setLoading(false);
+        fetchItems(currentPage);
+    }, [currentPage]);
+
+    const fetchItems = async (page) => {
+        setLoading(true);
+        try {
+            const response = await getItemsPaginatedAxios(page, itemsPerPage);
+            
+            if (response && response.statusCode === 200) {
+                // Extract data from the correct path in the response
+                const { result, meta } = response.data.paginateItem;
+                setItems(result);
+                setTotalPages(parseInt(meta.totalPages));
+                setTotalItems(parseInt(meta.numberItems));
+            } else {
+                setError(response?.message || 'Failed to fetch items');
             }
-        };
-
-        fetchItems();
-    }, []);
-
-    if (loading) return (
-        <div className={cx('loading-container')}>
-            <div className={cx('loading-spinner')}></div>
-            <p>Đang tải sản phẩm...</p>
-        </div>
-    );
-
-    const indexOfLastItem = currentPage * itemsPerPage;
-    const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-    const currentItems = items.slice(indexOfFirstItem, indexOfLastItem);
-    const totalPages = Math.ceil(items.length / itemsPerPage);
+        } catch (err) {
+            console.error('Error fetching items:', err);
+            setError('Could not load data from server');
+        } finally {
+            setLoading(false);
+        }
+    };
 
     const handlePageChange = (pageNumber) => {
         setCurrentPage(pageNumber);
@@ -60,6 +56,15 @@ function Home() {
         return null;
     };
 
+    if (loading && items.length === 0) {
+        return (
+            <div className={cx('loading-container')}>
+                <div className={cx('loading-spinner')}></div>
+                <p>Đang tải sản phẩm...</p>
+            </div>
+        );
+    }
+
     return (
         <div className={cx('wrapper')}>
             {error && (
@@ -69,7 +74,7 @@ function Home() {
             )}
             <div className={cx('container')}>
                 <div className={cx('productGrid')}>
-                    {currentItems.map((item) => {
+                    {items.map((item) => {
                         const originalPrice = calculateOriginalPrice(item.price, item.flashSale);
                         const discount = originalPrice ? Math.round(((originalPrice - item.price) / originalPrice) * 100) : null;
                         
@@ -137,15 +142,74 @@ function Home() {
                 
                 {totalPages > 1 && (
                     <div className={cx('pagination')}>
-                        {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                        {/* Previous page button */}
+                        <button
+                            onClick={() => handlePageChange(currentPage - 1)}
+                            className={cx('paginationButton', 'navButton')}
+                            disabled={currentPage === 1}
+                        >
+                            &laquo;
+                        </button>
+                        
+                        {/* First page */}
+                        {currentPage > 3 && (
                             <button
-                                key={page}
-                                onClick={() => handlePageChange(page)}
-                                className={cx('paginationButton', { active: currentPage === page })}
+                                onClick={() => handlePageChange(1)}
+                                className={cx('paginationButton')}
                             >
-                                {page}
+                                1
                             </button>
-                        ))}
+                        )}
+                        
+                        {/* Ellipsis if needed */}
+                        {currentPage > 4 && (
+                            <span className={cx('paginationEllipsis')}>...</span>
+                        )}
+                        
+                        {/* Page number buttons (show max 5 pages around current) */}
+                        {Array.from({ length: totalPages }, (_, i) => i + 1)
+                            .filter(page => page === 1 || page === totalPages || 
+                                    (page >= currentPage - 2 && page <= currentPage + 2))
+                            .map((page) => (
+                                <button
+                                    key={page}
+                                    onClick={() => handlePageChange(page)}
+                                    className={cx('paginationButton', { active: currentPage === page })}
+                                >
+                                    {page}
+                                </button>
+                            ))}
+                        
+                        {/* Ellipsis if needed */}
+                        {currentPage < totalPages - 3 && (
+                            <span className={cx('paginationEllipsis')}>...</span>
+                        )}
+                        
+                        {/* Last page */}
+                        {currentPage < totalPages - 2 && totalPages > 1 && (
+                            <button
+                                onClick={() => handlePageChange(totalPages)}
+                                className={cx('paginationButton')}
+                            >
+                                {totalPages}
+                            </button>
+                        )}
+                        
+                        {/* Next page button */}
+                        <button
+                            onClick={() => handlePageChange(currentPage + 1)}
+                            className={cx('paginationButton', 'navButton')}
+                            disabled={currentPage === totalPages}
+                        >
+                            &raquo;
+                        </button>
+                    </div>
+                )}
+                
+                {loading && items.length > 0 && (
+                    <div className={cx('loading-overlay')}>
+                        <div className={cx('loading-spinner')}></div>
+                        <p>Đang tải...</p>
                     </div>
                 )}
             </div>
