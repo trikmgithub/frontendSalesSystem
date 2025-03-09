@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 250 200">
+  <!-- Xe đẩy -->
+  <path d="M60,120 L80,80 L180,80 L165,120 Z" fill="#ffa500" stroke="#e67700" stroke-width="2" />
+  <!-- Bánh xe đẩy trái -->
+  <circle cx="80" cy="130" r="10" fill="#ffa500" stroke="#e67700" stroke-width="2" />
+  <!-- Bánh xe đẩy phải -->
+  <circle cx="145" cy="130" r="10" fill="#ffa500" stroke="#e67700" stroke-width="2" />
+  <!-- Tay cầm giỏ -->
+  <path d="M60,100 L50,100 L45,70 L65,70" fill="none" stroke="#e67700" stroke-width="2" />
+  
+  <!-- Clipboard (Giấy tờ đơn hàng) -->
+  <rect x="105" y="35" width="60" height="75" rx="5" fill="#e8f5e9" stroke="#2e7d32" stroke-width="2" />
+  <rect x="110" y="45" width="50" height="8" rx="2" fill="#2e7d32" opacity="0.6" />
+  <rect x="110" y="60" width="50" height="4" rx="1" fill="#2e7d32" opacity="0.2" />
+  <rect x="110" y="70" width="50" height="4" rx="1" fill="#2e7d32" opacity="0.2" />
+  <rect x="110" y="80" width="50" height="4" rx="1" fill="#2e7d32" opacity="0.2" />
+  <rect x="110" y="90" width="30" height="4" rx="1" fill="#2e7d32" opacity="0.2" />
+  
+  <!-- Hiệu ứng trang trí -->
+  <circle cx="90" cy="60" r="5" fill="#ffca28" />
+  <circle cx="190" cy="90" r="3" fill="#ffca28" />
+  <path d="M190,60 L195,65 L190,70 L185,65 Z" fill="#e53935" />
+  <path d="M70,50 L75,55 L70,60 L65,55 Z" fill="#e53935" />
+  
+  <!-- Hiệu ứng vẽ gạch ngang -->
+  <path d="M190,150 L195,145 M190,145 L195,150" stroke="#4caf50" stroke-width="2" />
+  <path d="M75,150 L80,145 M75,145 L80,150" stroke="#4caf50" stroke-width="2" />
+  <path d="M135,40 L140,35 M135,35 L140,40" stroke="#4caf50" stroke-width="2" />
+</svg>
