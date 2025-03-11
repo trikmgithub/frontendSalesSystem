@@ -6,7 +6,6 @@ import zalo from '~/assets/zalo.png';
 import momo from '~/assets/momo.png';
 import { Link } from 'react-router-dom';
 import routes from '~/config/routes'
-import productImg from '~/assets/product1.png';
 import { CartContext } from "~/context/CartContext";
 import { useNavigate } from "react-router-dom";
 import { zaloPayAxios } from "~/services/paymentAxios";
@@ -92,6 +91,22 @@ const Payment = () => {
     }
   };
 
+  // Calculate discounted price if item is on flash sale
+  const calculatePriceDisplay = (item) => {
+    if (item.flashSale) {
+      const originalPrice = Math.round(item.price / 0.7); // Calculate original price (30% discount)
+      return {
+        currentPrice: item.price,
+        originalPrice: originalPrice
+      };
+    } else {
+      return {
+        currentPrice: item.price,
+        originalPrice: null
+      };
+    }
+  };
+
   return (
     <div className={cx('payment-container')}>
       {/* Header */}
@@ -140,35 +155,39 @@ const Payment = () => {
               {/* Order Item Section */}
               <div className={cx('section', 'order-items-section')}>
                 <h3 className={cx('section-heading')}>🛒 Thông tin kiện hàng</h3>
-                {cartItems.map((item) => (
-                  <div key={item._id} className={cx("order-item")}>
-                    <div className={cx("item-image-container")}>
-                      <img
-                        src={item.imageUrls && item.imageUrls[0] ? item.imageUrls[0] : productImg}
-                        alt={item.name}
-                        className={cx("product-image")}
-                        onError={(e) => {
-                          e.target.onerror = null;
-                          e.target.src = 'https://via.placeholder.com/80';
-                        }}
-                      />
-                    </div>
-                    <div className={cx("item-details")}>
-                      <div className={cx("brand-name")}>{item.brand?.name || 'BRAND'}</div>
-                      <div className={cx("product-name")}>{item.name}</div>
-                    </div>
-                    <div className={cx("item-price")}>
-                      <div className={cx("quantity-price")}>
-                        <span>{item.quantity}</span>
-                        <span> × </span>
-                        <span>{formatPrice(item.price)}</span>
+                {cartItems.map((item) => {
+                  const { currentPrice, originalPrice } = calculatePriceDisplay(item);
+                  
+                  return (
+                    <div key={item._id} className={cx("order-item")}>
+                      <div className={cx("item-image-container")}>
+                        <img
+                          src={item.imageUrls && item.imageUrls[0] ? item.imageUrls[0] : 'https://via.placeholder.com/80'}
+                          alt={item.name}
+                          className={cx("product-image")}
+                          onError={(e) => {
+                            e.target.onerror = null;
+                            e.target.src = 'https://via.placeholder.com/80';
+                          }}
+                        />
                       </div>
-                      <div className={cx("total-item-price")}>
-                        {formatPrice(item.price * item.quantity)}
+                      <div className={cx("item-details")}>
+                        <div className={cx("brand-name")}>{item.brand?.name || 'BRAND'}</div>
+                        <div className={cx("product-name")}>{item.name}</div>
+                      </div>
+                      <div className={cx("item-price")}>
+                        <div className={cx("quantity-price")}>
+                          <span>{item.quantity}</span>
+                          <span> × </span>
+                          <span>{formatPrice(currentPrice)}</span>
+                        </div>
+                        <div className={cx("total-item-price")}>
+                          {formatPrice(currentPrice * item.quantity)}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </>
           )}
