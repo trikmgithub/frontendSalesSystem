@@ -11,6 +11,17 @@ const getItemsAxios = async () => {
     }
 };
 
+// Get item detail
+const getItemDetail = async (itemId) => {
+    try {
+        const res = await axiosConfig.get(`items/${itemId}`);
+        return res;
+    } catch (error) {
+        console.log('Error at itemAxios.js');
+        throw new Error(error);
+    }
+};
+
 // Get paginated items
 const getItemsPaginatedAxios = async (page = 1, limit = 18) => {
     try {
@@ -22,4 +33,4 @@ const getItemsPaginatedAxios = async (page = 1, limit = 18) => {
     }
 };
 
-export { getItemsAxios, getItemsPaginatedAxios };
+export { getItemsAxios, getItemsPaginatedAxios, getItemDetail };

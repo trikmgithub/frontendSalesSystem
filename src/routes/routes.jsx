@@ -11,6 +11,7 @@ import QuizResultPage from '~/pages/QuizResult/QuizResultPage';
 import PasswordChangePage from '~/pages/Profile/PasswordChangePage';
 import OrdersPage from '~/pages/Profile/OrdersPage';
 import GoogleAuthCallback from '~/components/GoogleAuthCallback';
+import ItemDetail from '~/pages/ItemDetail/ItemDetail';
 
 const publicRoutes = [
     { path: config.routes.home, component: Home, layout: HeaderOnly },
@@ -20,9 +21,10 @@ const publicRoutes = [
     { path: config.routes.payment, component: Payment, layout: Payment },
     { path: config.routes.skinQuiz, component: SkinQuizPage, layout: HeaderOnly },
     { path: config.routes.skinQuizResult, component: QuizResultPage, layout: HeaderOnly },
-    { path: config.routes.passwordChangePage, component: PasswordChangePage, layout: HeaderOnly},
+    { path: config.routes.passwordChangePage, component: PasswordChangePage, layout: HeaderOnly },
     { path: config.routes.ordersPage, component: OrdersPage, layout: HeaderOnly },
     { path: config.routes.googleAuthCallback, component: GoogleAuthCallback, layout: null },
+    { path: config.routes.itemDetail, component: ItemDetail, layout: HeaderOnly },
 ];
 
 const privateRoutes = [];
