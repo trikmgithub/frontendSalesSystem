@@ -8,8 +8,9 @@ const routes = {
     skinQuizResult: '/skin-quiz/results/:skinType',
     passwordChangePage: '/profile/password-change',
     ordersPage: '/profile/orders',
-    googleAuthCallback: '/auth/google/callback', // Add this line for Google Auth Callback
+    googleAuthCallback: '/auth/google/callback',
     itemDetail: '/product/:id',
+    brand: '/brand/:id',  // Add this line for the brand page route
 };
 
 export default routes;

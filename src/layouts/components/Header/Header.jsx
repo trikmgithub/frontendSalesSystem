@@ -65,7 +65,7 @@ function Header() {
 
         fetchItems();
     }, []);
-    
+
     useEffect(() => {
         // Handle Google OAuth Redirection
         const handleGoogleRedirect = async () => {
@@ -221,7 +221,7 @@ function Header() {
 
         // Navigate based on suggestion type
         if (suggestion.type === 'brand') {
-            navigate(`/brand/${suggestion._id}`);
+            navigate(`/brand/${suggestion._id}`);  // Use the updated URL format for brand pages
         } else {
             navigate(`/product/${suggestion._id}`);
         }
