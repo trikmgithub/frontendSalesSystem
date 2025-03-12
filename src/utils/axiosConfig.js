@@ -93,6 +93,11 @@ const get = async (url, config = {}) => {
     return response.data;
 };
 
-export { post, get };
+const patch = async (url, data, config = {}) => {
+    const response = await axiosConfig.patch(url, data, config);
+    return response.data;
+};
+
+export { post, get, patch };
 
 export default axiosConfig;

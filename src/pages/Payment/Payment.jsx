@@ -117,14 +117,21 @@ const Payment = () => {
     const fetchUserData = async () => {
       try {
         setIsLoading(true);
-        // Get user ID from localStorage
+        // Get user data from localStorage
         const userData = JSON.parse(localStorage.getItem('user') || '{}');
         
+        // If user data exists in localStorage with address, use it
+        if (userData && userData.address) {
+          setUserAddress(userData.address);
+          setIsLoading(false);
+          return;
+        }
+        
+        // Otherwise, fetch fresh data from API if we have an ID
         if (userData && userData._id) {
           const response = await getUserByIdAxios(userData._id);
           
           if (response && response.data && response.data.user) {
-            // Set user address from the API response
             setUserAddress(response.data.user.address);
           }
         }
@@ -138,6 +145,19 @@ const Payment = () => {
     fetchUserData();
   }, []);
 
+  useEffect(() => {
+    // When address modal is opened and we have user address, parse it into components
+    if (showAddressModal && userAddress) {
+      const addressParts = userAddress.split(', ');
+      
+      if (addressParts.length >= 3) {
+        setTemporarySelectedWard(addressParts[0]);
+        setTemporarySelectedDistrict(addressParts[1]);
+        setTemporarySelectedRegion(addressParts[2]);
+      }
+    }
+  }, [showAddressModal, userAddress]);
+
   // ✅ Handle All Payment Success
   const handlePayment = async () => {
     if (selectedPayment === "zalopay") {
@@ -149,8 +169,8 @@ const Payment = () => {
 
         const res = await zaloPayAxios(paymentData);
 
-        // if (res.data?.data?.order_url) {
-        //   window.location.href = res.data.data.order_url; // Redirect to ZaloPay
+        // if (res.data?.order_url) {
+        //   window.location.href = res.data.order_url; // Redirect to ZaloPay
         // } else {
         //   alert("Lỗi thanh toán ZaloPay. Vui lòng thử lại.");
         // }
@@ -162,31 +182,18 @@ const Payment = () => {
       setShowSuccessMessage(true);
       setTimeout(() => {
         navigate(routes.home);
-      }, 1000);
+      }, 3000);
     }
   };
 
   const toggleAddressModal = () => {
     setShowAddressModal(!showAddressModal);
-    // Reset form on open
-    if (!showAddressModal) {
-      if (userAddress) {
-        const addressParts = userAddress.split(', ');
-        if (addressParts.length >= 3) {
-          setTemporarySelectedWard(addressParts[0]);
-          setTemporarySelectedDistrict(addressParts[1]);
-          setTemporarySelectedRegion(addressParts[2]);
-        } else {
-          setTemporarySelectedRegion("");
-          setTemporarySelectedDistrict("");
-          setTemporarySelectedWard("");
-        }
-      } else {
-        setTemporarySelectedRegion("");
-        setTemporarySelectedDistrict("");
-        setTemporarySelectedWard("");
-      }
-      
+    
+    // Reset form when closing modal
+    if (showAddressModal) {
+      setTemporarySelectedRegion("");
+      setTemporarySelectedDistrict("");
+      setTemporarySelectedWard("");
       setAddressErrors({
         region: "",
         district: "",
@@ -287,19 +294,33 @@ const Payment = () => {
     try {
       const formattedAddress = `${temporarySelectedWard}, ${temporarySelectedDistrict}, ${temporarySelectedRegion}`;
       
-      // Get user email from localStorage
+      // Get user data from localStorage
       const userData = JSON.parse(localStorage.getItem('user') || '{}');
-      const userEmail = userData.email;
       
-      if (!userEmail) {
-        throw new Error("Không tìm thấy thông tin email người dùng");
+      // Check if we have the necessary user data
+      if (!userData || !userData.email) {
+        throw new Error('Không tìm thấy thông tin email người dùng');
       }
       
-      // Save to API with both email and address
-      await updateAddressAxios({ 
-        email: userEmail,
-        address: formattedAddress 
-      });
+      try {
+        // Call the API to update address with both email and address fields
+        await updateAddressAxios({ 
+          email: userData.email,
+          address: formattedAddress 
+        });
+        console.log("Address updated successfully via API");
+      } catch (apiError) {
+        console.error("API address update failed:", apiError);
+        
+        // Even if API fails, update in localStorage as a fallback
+        userData.address = formattedAddress;
+        localStorage.setItem('user', JSON.stringify(userData));
+        console.log("Address updated in localStorage as fallback");
+        
+        // Don't throw the error here, we're handling it gracefully with the localStorage fallback
+        // Just log a warning for debugging purposes
+        console.warn("Using localStorage fallback for address update due to API error");
+      }
       
       // Update local state
       setUserAddress(formattedAddress);
@@ -307,7 +328,7 @@ const Payment = () => {
       // Close modal
       setShowAddressModal(false);
     } catch (error) {
-      console.error("Error saving address:", error);
+      console.error("Error in address update process:", error);
       alert("Không thể cập nhật địa chỉ. Vui lòng thử lại sau.");
     } finally {
       setIsAddressUpdating(false);
@@ -328,6 +349,7 @@ const Payment = () => {
           <h3>✅ Đặt hàng thành công!</h3>
           <p>Cảm ơn bạn đã mua hàng. Đơn hàng của bạn sẽ sớm được giao.</p>
           <p>Đang chuyển hướng về trang chủ...</p>
+          <Link to={routes.home} className={cx('back-home')}>Quay về trang chủ</Link>
         </div>
       )}
 
