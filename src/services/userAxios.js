@@ -69,12 +69,17 @@ const updateAddressAxios = async (addressData) => {
 
             // Update localStorage
             localStorage.setItem('user', JSON.stringify(updatedUserData));
+
+            // Also update confirmedAddress for backward compatibility
+            localStorage.setItem('confirmedAddress', res.data.user.address);
+
+            console.log('Address updated successfully in localStorage');
         }
 
         return res;
     } catch (error) {
         console.error('Error updating address:', error);
-        throw new Error(error);
+        throw error; // Just throw the error object itself for better error handling
     }
 };
 

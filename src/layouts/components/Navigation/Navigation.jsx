@@ -87,10 +87,21 @@ function Navigation() {
     const [isLocationOpen, setIsLocationOpen] = useState(false);
     const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
     const locationSelectorRef = useRef(null);
-    // Địa chỉ được xác nhận
-    const [confirmedAddress, setConfirmedAddress] = useState(
-        localStorage.getItem('confirmedAddress') || "Chọn khu vực của bạn"
-    );
+    // Get address from user object in localStorage, fallback to confirmedAddress or default value
+    const [confirmedAddress, setConfirmedAddress] = useState(() => {
+        // Try to get address from user object first
+        try {
+            const userData = JSON.parse(localStorage.getItem('user') || '{}');
+            if (userData && userData.address) {
+                return userData.address;
+            }
+        } catch (error) {
+            console.error("Error parsing user data from localStorage:", error);
+        }
+
+        // Fallback to confirmedAddress or default
+        return localStorage.getItem('confirmedAddress') || "Chọn khu vực của bạn";
+    });
     // Dữ liệu form tạm thời
     const [temporarySelectedRegion, setTemporarySelectedRegion] = useState("");
     const [temporarySelectedDistrict, setTemporarySelectedDistrict] = useState("");
@@ -155,28 +166,47 @@ function Navigation() {
     };
 
     const handleSubmit = async () => {
-        if (validateForm()) {
-            setIsSubmitting(true);
-            const newAddress = `${temporarySelectedWard}, ${temporarySelectedDistrict}, ${temporarySelectedRegion}`;
+        if (!validateForm()) {
+            return;
+        }
 
-            try {
-                // Update address in the backend
-                await updateUserAddressAxios(newAddress);
+        setIsSubmitting(true);
+        const newAddress = `${temporarySelectedWard}, ${temporarySelectedDistrict}, ${temporarySelectedRegion}`;
 
-                // Update local state and localStorage
-                setConfirmedAddress(newAddress);
-                localStorage.setItem('confirmedAddress', newAddress);
+        try {
+            // Get user data from localStorage
+            const userData = JSON.parse(localStorage.getItem('user') || '{}');
 
-                // Close modal and clear form
-                setIsAddressModalOpen(false);
-                setIsLocationOpen(false);
-                clearForm();
-            } catch (error) {
-                console.error("Failed to update address:", error);
-                // You might want to show an error message to the user here
-            } finally {
-                setIsSubmitting(false);
+            // Update address in the backend if the user is logged in
+            if (userData && userData.email) {
+                try {
+                    await updateAddressAxios({
+                        email: userData.email,
+                        address: newAddress
+                    });
+                    console.log("Address updated successfully via API");
+                } catch (apiError) {
+                    console.error("API address update failed:", apiError);
+                }
+
+                // Always update localStorage with new address regardless of API success
+                userData.address = newAddress;
+                localStorage.setItem('user', JSON.stringify(userData));
             }
+
+            // Also maintain the confirmedAddress for backward compatibility
+            localStorage.setItem('confirmedAddress', newAddress);
+
+            // Update state
+            setConfirmedAddress(newAddress);
+
+            // Close modal and reset form
+            setIsAddressModalOpen(false);
+            setIsLocationOpen(false);
+        } catch (error) {
+            console.error("Error updating address:", error);
+        } finally {
+            setIsSubmitting(false);
         }
     };
 

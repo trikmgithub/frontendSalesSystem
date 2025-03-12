@@ -96,11 +96,11 @@ const Payment = () => {
   const calculateTotal = () => cartItems.reduce((total, item) => total + item.price * item.quantity, 0);
   const formatPrice = (price) => new Intl.NumberFormat("vi-VN").format(price) + " ₫";
   const navigate = useNavigate();
-  
+
   // User address state
   const [userAddress, setUserAddress] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
-  
+
   // Address modal state
   const [temporarySelectedRegion, setTemporarySelectedRegion] = useState("");
   const [temporarySelectedDistrict, setTemporarySelectedDistrict] = useState("");
@@ -119,18 +119,18 @@ const Payment = () => {
         setIsLoading(true);
         // Get user data from localStorage
         const userData = JSON.parse(localStorage.getItem('user') || '{}');
-        
+
         // If user data exists in localStorage with address, use it
         if (userData && userData.address) {
           setUserAddress(userData.address);
           setIsLoading(false);
           return;
         }
-        
+
         // Otherwise, fetch fresh data from API if we have an ID
         if (userData && userData._id) {
           const response = await getUserByIdAxios(userData._id);
-          
+
           if (response && response.data && response.data.user) {
             setUserAddress(response.data.user.address);
           }
@@ -149,7 +149,7 @@ const Payment = () => {
     // When address modal is opened and we have user address, parse it into components
     if (showAddressModal && userAddress) {
       const addressParts = userAddress.split(', ');
-      
+
       if (addressParts.length >= 3) {
         setTemporarySelectedWard(addressParts[0]);
         setTemporarySelectedDistrict(addressParts[1]);
@@ -188,7 +188,7 @@ const Payment = () => {
 
   const toggleAddressModal = () => {
     setShowAddressModal(!showAddressModal);
-    
+
     // Reset form when closing modal
     if (showAddressModal) {
       setTemporarySelectedRegion("");
@@ -284,47 +284,53 @@ const Payment = () => {
     return !Object.values(newErrors).some(error => error);
   };
 
+  // Updated handleSaveAddress function for the Payment page
   const handleSaveAddress = async () => {
     if (!validateAddressForm()) {
       return;
     }
 
     setIsAddressUpdating(true);
-    
+
     try {
       const formattedAddress = `${temporarySelectedWard}, ${temporarySelectedDistrict}, ${temporarySelectedRegion}`;
-      
+
       // Get user data from localStorage
       const userData = JSON.parse(localStorage.getItem('user') || '{}');
-      
+
       // Check if we have the necessary user data
       if (!userData || !userData.email) {
         throw new Error('Không tìm thấy thông tin email người dùng');
       }
-      
+
       try {
         // Call the API to update address with both email and address fields
-        await updateAddressAxios({ 
+        const response = await updateAddressAxios({
           email: userData.email,
-          address: formattedAddress 
+          address: formattedAddress
         });
+
         console.log("Address updated successfully via API");
+
+        userData.address = formattedAddress;
+        localStorage.setItem('user', JSON.stringify(userData));
+
+        // Update local state for UI
+        setUserAddress(formattedAddress);
+
       } catch (apiError) {
         console.error("API address update failed:", apiError);
-        
+
         // Even if API fails, update in localStorage as a fallback
         userData.address = formattedAddress;
         localStorage.setItem('user', JSON.stringify(userData));
+
         console.log("Address updated in localStorage as fallback");
-        
-        // Don't throw the error here, we're handling it gracefully with the localStorage fallback
-        // Just log a warning for debugging purposes
-        console.warn("Using localStorage fallback for address update due to API error");
+
+        // Update local state for UI
+        setUserAddress(formattedAddress);
       }
-      
-      // Update local state
-      setUserAddress(formattedAddress);
-      
+
       // Close modal
       setShowAddressModal(false);
     } catch (error) {
@@ -392,7 +398,7 @@ const Payment = () => {
                 <h3 className={cx('section-heading')}>🛒 Thông tin kiện hàng</h3>
                 {cartItems.map((item) => {
                   const { currentPrice, originalPrice } = calculatePriceDisplay(item);
-                  
+
                   return (
                     <div key={item._id} className={cx("order-item")}>
                       <div className={cx("item-image-container")}>
@@ -433,8 +439,8 @@ const Payment = () => {
           <>
             <div className={cx('payment-right')}>
 
-              <button 
-                className={cx('order-button')} 
+              <button
+                className={cx('order-button')}
                 onClick={handlePayment}
                 disabled={!userAddress}
               >
@@ -482,7 +488,6 @@ const Payment = () => {
           </>
         )}
       </div>
-
 
       {/* Address Modal */}
       {showAddressModal && (
@@ -542,8 +547,8 @@ const Payment = () => {
             <div className={cx('modal-actions')}>
               <div className={cx('modal-buttons')}>
                 <button className={cx('cancel-btn')} onClick={toggleAddressModal}>Hủy</button>
-                <button 
-                  className={cx('confirm-btn')} 
+                <button
+                  className={cx('confirm-btn')}
                   onClick={handleSaveAddress}
                   disabled={isAddressUpdating}
                 >
