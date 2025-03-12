@@ -6,6 +6,7 @@ import { IoIosArrowForward } from 'react-icons/io';
 import { HiOutlineLocationMarker } from 'react-icons/hi';
 import { useState, useEffect, useRef } from 'react';
 import LoginForm from '~/layouts/components/Header/LoginPopup';
+import { updateAddressAxios } from '~/services/userAxios';
 
 const cx = classNames.bind(styles);
 
@@ -99,11 +100,12 @@ function Navigation() {
         district: "",
         ward: ""
     });
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     const handleChangeAddress = () => {
         const storedUser = localStorage.getItem('user');
         const user = storedUser && storedUser !== "null" ? JSON.parse(storedUser) : null;
-    
+
         if (!user) {
             setShowLoginForm(true); // Show login popup if user is not logged in
             return;
@@ -152,16 +154,31 @@ function Navigation() {
         return !Object.values(newErrors).some(error => error);
     };
 
-    const handleSubmit = () => {
+    const handleSubmit = async () => {
         if (validateForm()) {
+            setIsSubmitting(true);
             const newAddress = `${temporarySelectedWard}, ${temporarySelectedDistrict}, ${temporarySelectedRegion}`;
-            setConfirmedAddress(newAddress);
-            localStorage.setItem('confirmedAddress', newAddress);
-            setIsAddressModalOpen(false);
-            setIsLocationOpen(false);
-            clearForm();
+
+            try {
+                // Update address in the backend
+                await updateUserAddressAxios(newAddress);
+
+                // Update local state and localStorage
+                setConfirmedAddress(newAddress);
+                localStorage.setItem('confirmedAddress', newAddress);
+
+                // Close modal and clear form
+                setIsAddressModalOpen(false);
+                setIsLocationOpen(false);
+                clearForm();
+            } catch (error) {
+                console.error("Failed to update address:", error);
+                // You might want to show an error message to the user here
+            } finally {
+                setIsSubmitting(false);
+            }
         }
-    };    
+    };
 
     const clearForm = () => {
         setTemporarySelectedRegion("");
@@ -691,8 +708,20 @@ function Navigation() {
                                     {errors.ward && <span className={cx('errorMessage')}>{errors.ward}</span>}
                                 </div>
                                 <div className={cx('modalActions')}>
-                                    <button className={cx('closeButton')} onClick={() => { setIsAddressModalOpen(false); clearForm(); }}>Đóng</button>
-                                    <button className={cx('confirmButton')} onClick={handleSubmit}>Xác nhận</button>
+                                    <button
+                                        className={cx('closeButton')}
+                                        onClick={() => { setIsAddressModalOpen(false); clearForm(); }}
+                                        disabled={isSubmitting}
+                                    >
+                                        Đóng
+                                    </button>
+                                    <button
+                                        className={cx('confirmButton')}
+                                        onClick={handleSubmit}
+                                        disabled={isSubmitting}
+                                    >
+                                        {isSubmitting ? 'Đang xử lý...' : 'Xác nhận'}
+                                    </button>
                                 </div>
                             </div>
                         </div>

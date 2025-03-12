@@ -1,4 +1,4 @@
-import React, { useContext, useState } from "react";
+import React, { useContext, useState, useEffect } from "react";
 import styles from './Payment.module.scss';
 import classNames from 'classnames/bind';
 import logo from '~/assets/beautySkin.png';
@@ -9,8 +9,82 @@ import routes from '~/config/routes'
 import { CartContext } from "~/context/CartContext";
 import { useNavigate } from "react-router-dom";
 import { zaloPayAxios } from "~/services/paymentAxios";
+import { updateAddressAxios, getUserByIdAxios } from "~/services/userAxios";
 
 const cx = classNames.bind(styles);
+
+// Location data for address dropdowns
+const locationData = {
+  regions: [
+    "Hồ Chí Minh",
+    "Hà Nội",
+    "Đà Nẵng"
+  ],
+  districts: {
+    "Hồ Chí Minh": [
+      "Quận 1",
+      "Quận 2",
+      "Quận 3"
+    ],
+    "Hà Nội": [
+      "Ba Đình",
+      "Hoàn Kiếm",
+      "Hai Bà Trưng"
+    ],
+    "Đà Nẵng": [
+      "Hải Châu",
+      "Thanh Khê",
+      "Sơn Trà"
+    ]
+  },
+  wards: {
+    "Quận 1": [
+      "Phường Bến Nghé",
+      "Phường Bến Thành",
+      "Phường Cô Giang"
+    ],
+    "Quận 2": [
+      "Phường Thảo Điền",
+      "Phường An Phú",
+      "Phường Bình An"
+    ],
+    "Quận 3": [
+      "Phường 1",
+      "Phường 2",
+      "Phường 3"
+    ],
+    "Ba Đình": [
+      "Phường Trúc Bạch",
+      "Phường Vĩnh Phúc",
+      "Phường Cống Vị"
+    ],
+    "Hoàn Kiếm": [
+      "Phường Hàng Bạc",
+      "Phường Hàng Bồ",
+      "Phường Hàng Đào"
+    ],
+    "Hai Bà Trưng": [
+      "Phường Bách Khoa",
+      "Phường Bạch Đằng",
+      "Phường Bùi Thị Xuân"
+    ],
+    "Hải Châu": [
+      "Phường Hải Châu 1",
+      "Phường Hải Châu 2",
+      "Phường Nam Dương"
+    ],
+    "Thanh Khê": [
+      "Phường Thanh Khê Đông",
+      "Phường Thanh Khê Tây",
+      "Phường Xuân Hà"
+    ],
+    "Sơn Trà": [
+      "Phường An Hải Bắc",
+      "Phường An Hải Đông",
+      "Phường An Hải Tây"
+    ]
+  }
+};
 
 const Payment = () => {
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
@@ -22,6 +96,47 @@ const Payment = () => {
   const calculateTotal = () => cartItems.reduce((total, item) => total + item.price * item.quantity, 0);
   const formatPrice = (price) => new Intl.NumberFormat("vi-VN").format(price) + " ₫";
   const navigate = useNavigate();
+  
+  // User address state
+  const [userAddress, setUserAddress] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  
+  // Address modal state
+  const [temporarySelectedRegion, setTemporarySelectedRegion] = useState("");
+  const [temporarySelectedDistrict, setTemporarySelectedDistrict] = useState("");
+  const [temporarySelectedWard, setTemporarySelectedWard] = useState("");
+  const [addressErrors, setAddressErrors] = useState({
+    region: "",
+    district: "",
+    ward: ""
+  });
+  const [isAddressUpdating, setIsAddressUpdating] = useState(false);
+
+  // Fetch user data when component mounts
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        setIsLoading(true);
+        // Get user ID from localStorage
+        const userData = JSON.parse(localStorage.getItem('user') || '{}');
+        
+        if (userData && userData._id) {
+          const response = await getUserByIdAxios(userData._id);
+          
+          if (response && response.data && response.data.user) {
+            // Set user address from the API response
+            setUserAddress(response.data.user.address);
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching user data:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchUserData();
+  }, []);
 
   // ✅ Handle All Payment Success
   const handlePayment = async () => {
@@ -53,6 +168,31 @@ const Payment = () => {
 
   const toggleAddressModal = () => {
     setShowAddressModal(!showAddressModal);
+    // Reset form on open
+    if (!showAddressModal) {
+      if (userAddress) {
+        const addressParts = userAddress.split(', ');
+        if (addressParts.length >= 3) {
+          setTemporarySelectedWard(addressParts[0]);
+          setTemporarySelectedDistrict(addressParts[1]);
+          setTemporarySelectedRegion(addressParts[2]);
+        } else {
+          setTemporarySelectedRegion("");
+          setTemporarySelectedDistrict("");
+          setTemporarySelectedWard("");
+        }
+      } else {
+        setTemporarySelectedRegion("");
+        setTemporarySelectedDistrict("");
+        setTemporarySelectedWard("");
+      }
+      
+      setAddressErrors({
+        region: "",
+        district: "",
+        ward: ""
+      });
+    }
   };
 
   const togglePaymentModal = () => {
@@ -107,6 +247,73 @@ const Payment = () => {
     }
   };
 
+  // Address form handlers
+  const handleRegionChange = (event) => {
+    setTemporarySelectedRegion(event.target.value);
+    setTemporarySelectedDistrict("");
+    setTemporarySelectedWard("");
+    setAddressErrors(prev => ({ ...prev, region: "" }));
+  };
+
+  const handleDistrictChange = (event) => {
+    setTemporarySelectedDistrict(event.target.value);
+    setTemporarySelectedWard("");
+    setAddressErrors(prev => ({ ...prev, district: "" }));
+  };
+
+  const handleWardChange = (event) => {
+    setTemporarySelectedWard(event.target.value);
+    setAddressErrors(prev => ({ ...prev, ward: "" }));
+  };
+
+  const validateAddressForm = () => {
+    const newErrors = {
+      region: !temporarySelectedRegion ? "Vui lòng chọn khu vực" : "",
+      district: !temporarySelectedDistrict ? "Vui lòng chọn quận/ huyện" : "",
+      ward: !temporarySelectedWard ? "Vui lòng chọn phường/ xã" : ""
+    };
+
+    setAddressErrors(newErrors);
+    return !Object.values(newErrors).some(error => error);
+  };
+
+  const handleSaveAddress = async () => {
+    if (!validateAddressForm()) {
+      return;
+    }
+
+    setIsAddressUpdating(true);
+    
+    try {
+      const formattedAddress = `${temporarySelectedWard}, ${temporarySelectedDistrict}, ${temporarySelectedRegion}`;
+      
+      // Get user email from localStorage
+      const userData = JSON.parse(localStorage.getItem('user') || '{}');
+      const userEmail = userData.email;
+      
+      if (!userEmail) {
+        throw new Error("Không tìm thấy thông tin email người dùng");
+      }
+      
+      // Save to API with both email and address
+      await updateAddressAxios({ 
+        email: userEmail,
+        address: formattedAddress 
+      });
+      
+      // Update local state
+      setUserAddress(formattedAddress);
+      
+      // Close modal
+      setShowAddressModal(false);
+    } catch (error) {
+      console.error("Error saving address:", error);
+      alert("Không thể cập nhật địa chỉ. Vui lòng thử lại sau.");
+    } finally {
+      setIsAddressUpdating(false);
+    }
+  };
+
   return (
     <div className={cx('payment-container')}>
       {/* Header */}
@@ -133,10 +340,16 @@ const Payment = () => {
               <div className={cx('section')}>
                 <h3>📍 Địa chỉ nhận hàng</h3>
                 <div className={cx('address-box')}>
-                  <span className={cx('tag')}>🏠 Nhà riêng</span>
-                  <strong>Hans Nguyen - 0386123599</strong>
-                  <p>Hải sản thiên lý, Phường Đông Hưng Thuận, Quận 12, Hồ Chí Minh</p>
-                  <a href="#" onClick={toggleAddressModal}>Thay đổi</a>
+                  {isLoading ? (
+                    <p>Đang tải thông tin địa chỉ...</p>
+                  ) : userAddress ? (
+                    <p>{userAddress}</p>
+                  ) : (
+                    <p className={cx('no-address')}>Chưa có địa chỉ, vui lòng thêm địa chỉ giao hàng</p>
+                  )}
+                  <a href="#" onClick={toggleAddressModal}>
+                    {userAddress ? 'Thay đổi' : 'Thêm địa chỉ'}
+                  </a>
                 </div>
               </div>
 
@@ -198,11 +411,22 @@ const Payment = () => {
           <>
             <div className={cx('payment-right')}>
 
-              <button className={cx('order-button')} onClick={handlePayment}>Đặt hàng</button>
+              <button 
+                className={cx('order-button')} 
+                onClick={handlePayment}
+                disabled={!userAddress}
+              >
+                Đặt hàng
+              </button>
+              {!userAddress && (
+                <p className={cx('address-required-message')}>
+                  Vui lòng thêm địa chỉ giao hàng để tiếp tục đặt hàng
+                </p>
+              )}
               <p className={cx('order-agreement')}>
                 Nhấn "Đặt hàng" đồng nghĩa việc bạn đồng ý tuân theo
                 <a href="#"> Chính sách xử lý dữ liệu cá nhân </a> &
-                <a href="#"> Điều khoản Hasaki</a>
+                <a href="#"> Điều khoản BeautySkin</a>
               </p>
               {/* Order Summary */}
               <div className={cx('order-summary')}>
@@ -247,36 +471,62 @@ const Payment = () => {
               <button className={cx('close-button')} onClick={toggleAddressModal}>×</button>
             </div>
 
-            <div className={cx('address-selection')}>
-              <div className={cx('address-option', 'selected')}>
-                <div className={cx('radio-container')}>
-                  <input type="radio" id="address1" name="address" defaultChecked />
-                  <label htmlFor="address1"></label>
-                </div>
-                <div className={cx('address-details')}>
-                  <div className={cx('name-actions')}>
-                    <h4>Hans Nguyen - 0386123599</h4>
-                    <div className={cx('action-buttons')}>
-                      <button className={cx('delete-btn')}><i className={cx('trash-icon')}></i></button>
-                      <button className={cx('edit-btn')}>Sửa</button>
-                    </div>
-                  </div>
-                  <p>Hải sản thiên lý, Phường Đông Hưng Thuận, Quận 12, Hồ Chí Minh</p>
-                  <div className={cx('address-tags')}>
-                    <span className={cx('address-tag', 'home')}>Nhà riêng</span>
-                    <span className={cx('address-tag', 'default')}>Địa chỉ mặc định</span>
-                  </div>
-                </div>
+            <div className={cx('address-form')}>
+              <div className={cx('form-group')}>
+                <select
+                  value={temporarySelectedRegion}
+                  onChange={handleRegionChange}
+                  className={cx({ 'error': addressErrors.region })}
+                >
+                  <option value="">Tỉnh/Thành phố</option>
+                  {locationData.regions.map(region => (
+                    <option key={region} value={region}>{region}</option>
+                  ))}
+                </select>
+                {addressErrors.region && <span className={cx('error-message')}>{addressErrors.region}</span>}
+              </div>
+
+              <div className={cx('form-group')}>
+                <select
+                  value={temporarySelectedDistrict}
+                  onChange={handleDistrictChange}
+                  disabled={!temporarySelectedRegion}
+                  className={cx({ 'error': addressErrors.district })}
+                >
+                  <option value="">Quận/huyện</option>
+                  {temporarySelectedRegion && locationData.districts[temporarySelectedRegion]?.map(district => (
+                    <option key={district} value={district}>{district}</option>
+                  ))}
+                </select>
+                {addressErrors.district && <span className={cx('error-message')}>{addressErrors.district}</span>}
+              </div>
+
+              <div className={cx('form-group')}>
+                <select
+                  value={temporarySelectedWard}
+                  onChange={handleWardChange}
+                  disabled={!temporarySelectedDistrict}
+                  className={cx({ 'error': addressErrors.ward })}
+                >
+                  <option value="">Phường/xã</option>
+                  {temporarySelectedDistrict && locationData.wards[temporarySelectedDistrict]?.map(ward => (
+                    <option key={ward} value={ward}>{ward}</option>
+                  ))}
+                </select>
+                {addressErrors.ward && <span className={cx('error-message')}>{addressErrors.ward}</span>}
               </div>
             </div>
 
             <div className={cx('modal-actions')}>
-              <div className={cx('add-address-btn')}>
-                <button>Thêm địa chỉ mới <span>+</span></button>
-              </div>
               <div className={cx('modal-buttons')}>
                 <button className={cx('cancel-btn')} onClick={toggleAddressModal}>Hủy</button>
-                <button className={cx('confirm-btn')}>Tiếp tục</button>
+                <button 
+                  className={cx('confirm-btn')} 
+                  onClick={handleSaveAddress}
+                  disabled={isAddressUpdating}
+                >
+                  {isAddressUpdating ? 'Đang lưu...' : 'Lưu địa chỉ'}
+                </button>
               </div>
             </div>
           </div>
@@ -367,7 +617,7 @@ const Payment = () => {
                 <button className={cx('cancel-btn')} onClick={togglePaymentModal}>Hủy</button>
                 <button
                   className={cx('confirm-btn')}
-                  onClick={confirmPaymentMethod} // Confirm the selected payment method
+                  onClick={confirmPaymentMethod}
                 >
                   Tiếp tục
                 </button>

@@ -1,4 +1,4 @@
-/* PaymentPage.module.scss */
+/* Payment.module.scss */
 :root {
     --primary-color: #356e4e;
     --primary-light: #356e4e;
@@ -228,6 +228,11 @@ body {
                         line-height: 1.4;
                     }
 
+                    .no-address {
+                        color: #f57224;
+                        font-weight: 500;
+                    }
+
                     a {
                         position: absolute;
                         top: 15px;
@@ -342,6 +347,18 @@ body {
                 &:hover {
                     background-color: #2a5a40;
                 }
+
+                &:disabled {
+                    background-color: #ccc;
+                    cursor: not-allowed;
+                }
+            }
+
+            .address-required-message {
+                color: #f57224;
+                font-size: 13px;
+                margin-top: 8px;
+                text-align: center;
             }
 
             .order-agreement {
@@ -439,6 +456,7 @@ body {
     .address-modal {
         background: white;
         width: 600px;
+        max-width: 90%;
         border-radius: 8px;
         overflow: hidden;
 
@@ -461,6 +479,48 @@ body {
                 font-size: 24px;
                 cursor: pointer;
                 color: var(--text-light);
+            }
+        }
+
+        .address-form {
+            padding: 20px;
+            max-height: 400px;
+            overflow-y: auto;
+
+            .form-group {
+                margin-bottom: 15px;
+
+                select {
+                    width: 100%;
+                    padding: 12px;
+                    border: 1px solid #ddd;
+                    border-radius: 4px;
+                    font-size: 14px;
+                    color: #333;
+                    background-color: white;
+                    cursor: pointer;
+
+                    &:focus {
+                        outline: none;
+                        border-color: var(--primary-light);
+                    }
+
+                    &:disabled {
+                        background-color: #f5f5f5;
+                        cursor: not-allowed;
+                    }
+
+                    &.error {
+                        border-color: #ff4d4f;
+                    }
+                }
+
+                .error-message {
+                    color: #ff4d4f;
+                    font-size: 12px;
+                    margin-top: 4px;
+                    display: block;
+                }
             }
         }
 
@@ -600,7 +660,7 @@ body {
 
                 .cancel-btn {
                     background-color: #e8f5f1;
-                    color: var(--primary-light);
+                    color: var(--primary-color);
                     border: none;
                     padding: 10px 20px;
                     border-radius: 5px;
@@ -610,22 +670,27 @@ body {
 
                 .confirm-btn {
                     background-color: var(--primary-light);
-                    color: white;
+                    color: var(--primary-color);
                     border: none;
                     padding: 10px 20px;
                     border-radius: 5px;
                     cursor: pointer;
                     font-size: 14px;
+
+                    &:disabled {
+                        background-color: #ccc;
+                        cursor: not-allowed;
+                    }
                 }
             }
         }
     }
 
-    /* Add these styles to your Payment.module.scss file */
-
+    /* Payment Modal */
     .payment-modal {
         background: white;
         width: 600px;
+        max-width: 90%;
         border-radius: 8px;
         overflow: hidden;
 
@@ -728,7 +793,7 @@ body {
 
                 .cancel-btn {
                     background-color: #e8f5f1;
-                    color: var(--primary-light);
+                    color: var(--primary-color);
                     border: none;
                     padding: 10px 20px;
                     border-radius: 5px;
@@ -738,13 +803,32 @@ body {
 
                 .confirm-btn {
                     background-color: var(--primary-light);
-                    color: white;
+                    color: var(--primary-color);
                     border: none;
                     padding: 10px 20px;
                     border-radius: 5px;
                     cursor: pointer;
                     font-size: 14px;
                 }
+            }
+        }
+    }
+}
+
+/* Media Queries */
+@media (max-width: 768px) {
+    .payment-container {
+        .payment-content {
+            flex-direction: column;
+
+            .payment-left, 
+            .payment-right {
+                width: 100%;
+            }
+
+            .payment-right {
+                position: relative !important;
+                top: 0 !important;
             }
         }
     }

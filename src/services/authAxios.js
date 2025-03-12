@@ -5,26 +5,66 @@ const loginAxios = async (userData) => {
     try {
         const res = await axiosConfig.post('auth/login', userData, { withCredentials: true });
 
-        // Lưu access token vào localStorage nếu tồn tại
+        // Check if login was successful
         if (res.data?.access_token) {
+            // Store access token immediately
             localStorage.setItem('access_token', res.data.access_token);
-            localStorage.setItem(
-                'user',
-                JSON.stringify({
-                    _id: res.data._id,
-                    name: res.data.name,
-                    email: res.data.email,
-                    role: res.data.role,
-                }),
-            );
+            
+            // Store basic user info from login response
+            const basicUserData = {
+                _id: res.data._id,
+                name: res.data.name,
+                email: res.data.email,
+                role: res.data.role,
+            };
+            
+            localStorage.setItem('user', JSON.stringify(basicUserData));
+            
+            // Only attempt to fetch detailed user data if we have an ID
+            if (res.data._id) {
+                try {
+                    // Use the correct endpoint for fetching user info
+                    const endpoint = `users/info/${res.data._id}`;
+                    
+                    const userDetailsRes = await axiosConfig.get(endpoint, {
+                        headers: {
+                            Authorization: `Bearer ${res.data.access_token}`
+                        }
+                    });
+                    
+                    // Check the structure of the response to extract user data correctly
+                    const userData = userDetailsRes.data?.user || userDetailsRes.data;
+                    
+                    if (userData) {
+                        // Ensure password is not included
+                        if (userData.password) {
+                            delete userData.password;
+                        }
+                        
+                        // Make sure to preserve access token and basic info
+                        const completeUserData = { 
+                            ...basicUserData,
+                            ...userData,
+                            access_token: res.data.access_token 
+                        };
+                        
+                        // Update localStorage with complete user data
+                        localStorage.setItem('user', JSON.stringify(completeUserData));
+                    }
+                } catch (detailsError) {
+                    console.error('Error fetching user details:', detailsError.message);
+                    // We already saved the basic info, so login still succeeds
+                }
+            }
+            
+            // Add a short delay to ensure localStorage is updated before reload
+            setTimeout(() => {
+                window.location.reload();
+            }, 300); // 300ms delay
         }
-
-        // Làm mới lại trang sau khi đăng nhập thành công
-        window.location.reload();
 
         return res;
     } catch (error) {
-        // Propagate the error with more details for better handling in the UI
         console.error('Login error:', error.response?.data || error.message);
         throw error; // Let the component handle the error
     }
