@@ -10,7 +10,8 @@ const routes = {
     ordersPage: '/profile/orders',
     googleAuthCallback: '/auth/google/callback',
     itemDetail: '/product/:id',
-    brand: '/brand/:id',  // Add this line for the brand page route
+    brand: '/brand/:id', 
+    staff: '/staff',
 };
 
 export default routes;

@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import classNames from 'classnames/bind';
-import styles from './Admin.module.scss';
+import styles from './Staff.module.scss';
 import { logoutAxios } from '~/services/authAxios';
 import { useNavigate } from 'react-router-dom';
 

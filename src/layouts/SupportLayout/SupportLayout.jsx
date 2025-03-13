@@ -1,6 +1,4 @@
 import React from 'react';
-import SupportHeader from '../components/Header/SupportHeader';
-import SupportFooter from '../components/Footer/SupportFooter';
 
 function SupportLayout({ children }) {
     return (

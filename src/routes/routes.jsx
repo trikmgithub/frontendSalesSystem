@@ -12,7 +12,8 @@ import PasswordChangePage from '~/pages/Profile/PasswordChangePage';
 import OrdersPage from '~/pages/Profile/OrdersPage';
 import GoogleAuthCallback from '~/components/GoogleAuthCallback';
 import ItemDetail from '~/pages/ItemDetail/ItemDetail';
-import BrandPage from '~/pages/Brand/BrandPage';  // Import the BrandPage component
+import BrandPage from '~/pages/Brand/BrandPage'; 
+import StaffPage from '~/pages/Staff/Staff';
 
 const publicRoutes = [
     { path: config.routes.home, component: Home, layout: HeaderOnly },
@@ -26,7 +27,8 @@ const publicRoutes = [
     { path: config.routes.ordersPage, component: OrdersPage, layout: HeaderOnly },
     { path: config.routes.googleAuthCallback, component: GoogleAuthCallback, layout: null },
     { path: config.routes.itemDetail, component: ItemDetail, layout: HeaderOnly },
-    { path: config.routes.brand, component: BrandPage, layout: HeaderOnly },  // Add this line for the brand page route
+    { path: config.routes.brand, component: BrandPage, layout: HeaderOnly },  
+    { path: config.routes.staff, component: StaffPage, layout: null },
 ];
 
 const privateRoutes = [];
