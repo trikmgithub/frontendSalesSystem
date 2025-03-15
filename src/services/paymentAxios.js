@@ -1,70 +1,63 @@
 import * as axiosConfig from '~/utils/axiosConfig';
 
-// ✅ Initiate Payment with Momo
-const momoPayAxios = async (paymentData) => {
+// ✅ Initiate Payment with PayOS
+const payosPayAxios = async (cartItems, totalAmount) => {
     try {
-        const res = await axiosConfig.get('momo/pay', paymentData, { withCredentials: true });
-        if (res.data?.payUrl) {
-            window.location.href = res.data.payUrl; // Redirect user to Momo payment page
-        }
-        return res;
-    } catch (error) {
-        console.error('Momo Pay Error:', error);
-        throw new Error('Failed to initiate payment.');
-    }
-};
+        // Format items data from cart items
+        const items = cartItems.map(item => ({
+            name: item.name,
+            quantity: item.quantity,
+            price: item.price
+        }));
 
-// ✅ Handle Redirect After Payment
-const momoPayRedirectAxios = async () => {
-    try {
-        const res = await axiosConfig.get('momo/pay-redirect', { withCredentials: true });
-        return res.data;
-    } catch (error) {
-        console.error('Momo Pay Redirect Error:', error);
-        throw new Error('Payment redirect failed.');
-    }
-};
+        // Prepare payment data
+        const paymentData = {
+            amount: totalAmount,
+            description: "Thanh toán đơn hàng test",
+            items: items,
+            returnUrl: "http://localhost:8000/success.html",
+            cancelUrl: "http://localhost:8000/cancel.html"
+        };
 
-// ✅ Handle Payment Success
-const momoSuccessAxios = async (transactionId) => {
-    try {
-        const res = await axiosConfig.get('momo/success', { transactionId }, { withCredentials: true });
-        return res.data;
-    } catch (error) {
-        console.error('Momo Payment Success Error:', error);
-        throw new Error('Failed to process successful payment.');
-    }
-};
-
-// ✅ Handle Instant Payment Notification (IPN)
-const momoIpnAxios = async (ipnData) => {
-    try {
-        const res = await axiosConfig.get('momo/ipn', ipnData, { withCredentials: true });
-        return res.data;
-    } catch (error) {
-        console.error('Momo IPN Error:', error);
-        throw new Error('Instant Payment Notification failed.');
-    }
-};
-
-// ✅ Initiate Payment with Zalopay
-const zaloPayAxios = async (paymentData) => {
-    try {
-        const res = await axiosConfig.get('zalo/pay', {
-            withCredentials: true, 
+        // Call the PayOS API endpoint
+        const response = await axiosConfig.post('payos', paymentData, { 
+            withCredentials: true,
             headers: {
                 Authorization: `Bearer ${localStorage.getItem('access_token')}` 
             }
         });
 
-        if (res.data?.order_url) {
-            window.location.href = res.data.order_url; 
+        // Check different possible locations for checkoutUrl
+        if (response && typeof response === 'object') {
+            if (response.data) {
+                if (response.data.data && response.data.data.checkoutUrl) {
+                    window.location.href = response.data.data.checkoutUrl;
+                    return response;
+                }
+                
+                if (response.data.checkoutUrl) {
+                    window.location.href = response.data.checkoutUrl;
+                    return response;
+                }
+            }
+            
+            if (response.checkoutUrl) {
+                window.location.href = response.checkoutUrl;
+                return response;
+            }
         }
-        return res;
+        
+        throw new Error('Could not find checkout URL in payment gateway response');
     } catch (error) {
-        console.error('Zalo Pay Error:', error);
-        throw new Error('Failed to initiate payment.');
+        // Handle specific error types with clean error messages
+        if (error.response) {
+            throw new Error(`Payment API error: ${error.response.status}`);
+        } else if (error.request) {
+            throw new Error('No response received from payment gateway');
+        } else {
+            throw new Error(`Payment setup error: ${error.message}`);
+        }
     }
 };
 
-export { momoPayAxios, momoPayRedirectAxios, momoSuccessAxios, momoIpnAxios, zaloPayAxios };
+export { payosPayAxios };

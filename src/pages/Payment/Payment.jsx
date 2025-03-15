@@ -2,13 +2,11 @@ import React, { useContext, useState, useEffect } from "react";
 import styles from './Payment.module.scss';
 import classNames from 'classnames/bind';
 import logo from '~/assets/beautySkin.png';
-import zalo from '~/assets/zalo.png';
-import momo from '~/assets/momo.png';
 import { Link } from 'react-router-dom';
 import routes from '~/config/routes'
 import { CartContext } from "~/context/CartContext";
 import { useNavigate } from "react-router-dom";
-import { zaloPayAxios } from "~/services/paymentAxios";
+import { payosPayAxios } from "~/services/paymentAxios";
 import { updateAddressAxios, getUserByIdAxios } from "~/services/userAxios";
 
 const cx = classNames.bind(styles);
@@ -160,25 +158,17 @@ const Payment = () => {
 
   // ✅ Handle All Payment Success
   const handlePayment = async () => {
-    if (selectedPayment === "zalopay") {
+    if (selectedPayment === "bank") {
       try {
-        const paymentData = {
-          amount: calculateTotal(), // Send total order amount
-          description: "Thanh toán đơn hàng", // Optional
-        };
-
-        const res = await zaloPayAxios(paymentData);
-
-        // if (res.data?.order_url) {
-        //   window.location.href = res.data.order_url; // Redirect to ZaloPay
-        // } else {
-        //   alert("Lỗi thanh toán ZaloPay. Vui lòng thử lại.");
-        // }
+        // Call the PayOS API with cart items and total amount
+        await payosPayAxios(cartItems, calculateTotal());
+        // The redirect happens in the payosPayAxios function
       } catch (error) {
-        console.error("ZaloPay Payment Error:", error);
-        alert("Không thể kết nối với ZaloPay. Vui lòng thử lại.");
+        console.error("Bank Transfer Payment Error:", error);
+        alert("Không thể kết nối với cổng thanh toán. Vui lòng thử lại.");
       }
     } else {
+      // COD flow remains unchanged
       setShowSuccessMessage(true);
       setTimeout(() => {
         navigate(routes.home);
@@ -218,21 +208,17 @@ const Payment = () => {
 
   const getPaymentIcon = () => {
     switch (selectedPayment) {
-      case 'zalopay':
-        return <img src={zalo} alt="ZaloPay" className={cx('payment-icon')} />;
-      case 'momo':
-        return <img src={momo} alt="Momo" className={cx('payment-icon')} />;
+      case 'bank':
+        return '🏦'; // Bank icon
       default:
-        return '💵';
+        return '💵'; // Cash icon for COD
     }
   };
 
   const getPaymentLabel = () => {
     switch (selectedPayment) {
-      case 'zalopay':
-        return 'Thanh toán bằng ZaloPay';
-      case 'momo':
-        return 'Thanh toán bằng Momo';
+      case 'bank':
+        return 'Thanh toán chuyển khoản';
       default:
         return 'Thanh toán khi nhận hàng (COD)';
     }
@@ -591,51 +577,25 @@ const Payment = () => {
                 </div>
               </div>
 
-              {/* ZaloPay Option */}
+              {/* Bank Transfer Option */}
               <div
-                className={cx('payment-option', { 'selected': tempSelectedPayment === 'zalopay' })}
-                onClick={() => selectPaymentMethod('zalopay')}
+                className={cx('payment-option', { 'selected': tempSelectedPayment === 'bank' })}
+                onClick={() => selectPaymentMethod('bank')}
               >
                 <div className={cx('radio-container')}>
                   <input
                     type="radio"
-                    id="pay-zalopay"
+                    id="pay-bank"
                     name="payment-method"
-                    checked={tempSelectedPayment === 'zalopay'}
-                    onChange={() => selectPaymentMethod('zalopay')}
+                    checked={tempSelectedPayment === 'bank'}
+                    onChange={() => selectPaymentMethod('bank')}
                   />
-                  <label htmlFor="pay-zalopay"></label>
+                  <label htmlFor="pay-bank"></label>
                 </div>
-                <div className={cx('payment-icon')}>
-                  <img src={zalo} alt="ZaloPay" className={cx('wallet-icon')} />
-                </div>
+                <div className={cx('payment-icon')}>🏦</div>
                 <div className={cx('payment-details')}>
-                  <h4>Thanh toán bằng ZaloPay</h4>
-                  <p>Thanh toán an toàn qua ví điện tử ZaloPay</p>
-                </div>
-              </div>
-
-              {/* Momo Option */}
-              <div
-                className={cx('payment-option', { 'selected': tempSelectedPayment === 'momo' })}
-                onClick={() => selectPaymentMethod('momo')}
-              >
-                <div className={cx('radio-container')}>
-                  <input
-                    type="radio"
-                    id="pay-momo"
-                    name="payment-method"
-                    checked={tempSelectedPayment === 'momo'}
-                    onChange={() => selectPaymentMethod('momo')}
-                  />
-                  <label htmlFor="pay-momo"></label>
-                </div>
-                <div className={cx('payment-icon')}>
-                  <img src={momo} alt="Momo" className={cx('wallet-icon')} />
-                </div>
-                <div className={cx('payment-details')}>
-                  <h4>Thanh toán bằng Momo</h4>
-                  <p>Thanh toán an toàn qua ví điện tử Momo</p>
+                  <h4>Thanh toán chuyển khoản</h4>
+                  <p>Quét mã QR để thanh toán qua ngân hàng</p>
                 </div>
               </div>
             </div>
