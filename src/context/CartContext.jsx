@@ -37,8 +37,20 @@ export const CartProvider = ({ children }) => {
         setCartItems((prevItems) => prevItems.filter((cartItem) => cartItem._id !== itemId));
     };
 
+    // New function to clear the entire cart at once
+    const clearCart = () => {
+        setCartItems([]);
+        localStorage.setItem('cartItems', JSON.stringify([]));
+    };
+
     return (
-        <CartContext.Provider value={{ cartItems, addToCart, updateCartItemQuantity, removeFromCart }}>
+        <CartContext.Provider value={{ 
+            cartItems, 
+            addToCart, 
+            updateCartItemQuantity, 
+            removeFromCart,
+            clearCart 
+        }}>
             {children}
         </CartContext.Provider>
     );

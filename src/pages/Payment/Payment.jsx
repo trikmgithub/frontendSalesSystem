@@ -91,7 +91,7 @@ const Payment = () => {
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [selectedPayment, setSelectedPayment] = useState('cod');
   const [tempSelectedPayment, setTempSelectedPayment] = useState('cod');
-  const { cartItems, removeFromCart } = useContext(CartContext);
+  const { cartItems, removeFromCart, clearCart } = useContext(CartContext);
   const calculateTotal = () => cartItems.reduce((total, item) => total + item.price * item.quantity, 0);
   const formatPrice = (price) => new Intl.NumberFormat("vi-VN").format(price) + " ₫";
   const navigate = useNavigate();
@@ -199,8 +199,8 @@ const Payment = () => {
         throw new Error(response.message || "Failed to create cart record");
       }
       
-      // Success! Clear cart items
-      cartItems.forEach(item => removeFromCart(item._id));
+      // Success! Clear cart items by using the clearCart function
+      clearCart();
       return true;
       
     } catch (error) {
@@ -225,6 +225,7 @@ const Payment = () => {
         const cartCreated = await createCartRecord("bank");
         
         if (cartCreated) {
+          // Cart has been cleared in createCartRecord
           // Then process payment via PayOS
           await payosPayAxios(cartItems, calculateTotal());
           // The redirect happens in the payosPayAxios function
@@ -238,6 +239,7 @@ const Payment = () => {
       const cartCreated = await createCartRecord("cod");
       
       if (cartCreated) {
+        // Cart has been cleared in createCartRecord
         setShowSuccessMessage(true);
         setTimeout(() => {
           navigate(routes.home);
