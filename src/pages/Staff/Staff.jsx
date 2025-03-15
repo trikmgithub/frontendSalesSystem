@@ -4,7 +4,7 @@ import styles from './Staff.module.scss';
 import { logoutAxios } from '~/services/authAxios';
 import { useNavigate } from 'react-router-dom';
 import { getAllCartsAxios, updateCartStatusAxios } from '~/services/cartAxios';
-import { FaChevronDown, FaChevronUp, FaTrash, FaEdit, FaBox, FaMoneyBill, FaCalendarAlt, FaUser, FaShoppingCart } from 'react-icons/fa';
+import { FaChevronDown, FaChevronUp, FaEdit, FaMoneyBill, FaCalendarAlt, FaSort, FaSortAmountDown, FaSortAmountUp, FaFilter, FaShoppingCart, FaUndo } from 'react-icons/fa';
 
 const cx = classNames.bind(styles);
 
@@ -15,36 +15,35 @@ function StaffPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [expandedPayments, setExpandedPayments] = useState({});
-  const [activeTab, setActiveTab] = useState('payments');
+  
+  // Sorting and filtering state
+  const [sortField, setSortField] = useState('purchaseDate');
+  const [sortDirection, setSortDirection] = useState('desc');
+  const [filterMethod, setFilterMethod] = useState('all');
+  const [filterStatus, setFilterStatus] = useState('all');
 
   const handleLogout = async () => {
     try {
       await logoutAxios();
-      localStorage.removeItem('user'); // Ensure user info is removed
-      navigate('/'); // Redirect to home or login page
+      localStorage.removeItem('user');
+      navigate('/');
     } catch (error) {
       console.error('Logout failed:', error);
     }
   };
 
-  // Fetch all payment data using our cartAxios service
   const fetchPayments = async () => {
     try {
       setLoading(true);
       
       const response = await getAllCartsAxios();
       
-      // Check if there was an error
       if (response.error) {
         throw new Error(response.message || 'Failed to load payment data');
       }
       
       if (response && response.data) {
-        // Sort by purchase date (newest first)
-        const sortedPayments = response.data.sort((a, b) => 
-          new Date(b.purchaseDate) - new Date(a.purchaseDate)
-        );
-        setPayments(sortedPayments);
+        setPayments(response.data);
       } else {
         setPayments([]);
       }
@@ -60,22 +59,17 @@ function StaffPage() {
     // Check user role on component mount
     const userInfo = JSON.parse(localStorage.getItem('user') || 'null');
     
-    // If no user or not staff, redirect to home
     if (!userInfo || userInfo === 'null') {
       navigate('/');
       return;
     }
     
-    // Check for staff role
     if (!['STAFF', 'MANAGER', 'ADMIN'].includes(userInfo.role)) {
       navigate('/');
       return;
     }
     
-    // Set user data for display
     setUserData(userInfo);
-    
-    // Fetch payment data
     fetchPayments();
   }, [navigate]);
 
@@ -147,7 +141,6 @@ function StaffPage() {
     try {
       const response = await updateCartStatusAxios(paymentId, newStatus);
       
-      // Check if there was an error
       if (response.error) {
         throw new Error(response.message || 'Failed to update payment status');
       }
@@ -165,6 +158,51 @@ function StaffPage() {
     }
   };
 
+  // Handle sorting
+  const handleSort = (field) => {
+    if (sortField === field) {
+      setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDirection('desc');
+    }
+  };
+
+  // Get sort icon
+  const getSortIcon = (field) => {
+    if (sortField !== field) return <FaSort />;
+    return sortDirection === 'asc' ? <FaSortAmountUp /> : <FaSortAmountDown />;
+  };
+  
+  // Reset all filters and sorting
+  const resetFiltersAndSort = () => {
+    setSortField('purchaseDate');
+    setSortDirection('desc');
+    setFilterMethod('all');
+    setFilterStatus('all');
+  };
+
+  // Apply sorting and filtering
+  const getSortedAndFilteredPayments = () => {
+    return [...payments]
+      .filter(payment => filterMethod === 'all' || payment.paymentMethod === filterMethod)
+      .filter(payment => filterStatus === 'all' || payment.status === filterStatus)
+      .sort((a, b) => {
+        if (sortField === 'purchaseDate') {
+          return sortDirection === 'asc' 
+            ? new Date(a.purchaseDate) - new Date(b.purchaseDate)
+            : new Date(b.purchaseDate) - new Date(a.purchaseDate);
+        } else if (sortField === 'totalAmount') {
+          return sortDirection === 'asc'
+            ? a.totalAmount - b.totalAmount
+            : b.totalAmount - a.totalAmount;
+        }
+        return 0;
+      });
+  };
+
+  const sortedAndFilteredPayments = getSortedAndFilteredPayments();
+
   return (
     <div className={cx('adminContainer')}>
       <div className={cx('adminHeader')}>
@@ -178,176 +216,189 @@ function StaffPage() {
         )}
       </div>
       
-      <div className={cx('adminTabs')}>
-        <button 
-          className={cx('tabButton', { active: activeTab === 'payments' })}
-          onClick={() => setActiveTab('payments')}
-        >
-          <FaShoppingCart /> Orders
-        </button>
-        <button 
-          className={cx('tabButton', { active: activeTab === 'users' })}
-          onClick={() => setActiveTab('users')}
-        >
-          <FaUser /> Users
-        </button>
-        <button 
-          className={cx('tabButton', { active: activeTab === 'products' })}
-          onClick={() => setActiveTab('products')}
-        >
-          <FaBox /> Products
-        </button>
-      </div>
-
       <div className={cx('adminContent')}>
-        {activeTab === 'payments' && (
-          <div className={cx('paymentsSection')}>
-            <h2 className={cx('sectionTitle')}>Order Management</h2>
+        <div className={cx('paymentsSection')}>
+          <h2 className={cx('sectionTitle')}>Order Management</h2>
+          
+          <div className={cx('filterBar')}>
+            <div className={cx('filterGroup')}>
+              <label>Payment Method:</label>
+              <select 
+                value={filterMethod}
+                onChange={(e) => setFilterMethod(e.target.value)}
+                className={cx('filterSelect')}
+              >
+                <option value="all">All Methods</option>
+                <option value="cod">COD</option>
+                <option value="credit_card">Bank Transfer</option>
+              </select>
+            </div>
             
-            {loading ? (
-              <div className={cx('loadingIndicator')}>
-                <div className={cx('spinner')}></div>
-                <p>Loading payment data...</p>
-              </div>
-            ) : error ? (
-              <div className={cx('errorMessage')}>{error}</div>
-            ) : payments.length === 0 ? (
-              <div className={cx('emptyState')}>
-                <FaShoppingCart className={cx('emptyIcon')} />
-                <p>No orders found</p>
-              </div>
-            ) : (
-              <div className={cx('paymentList')}>
-                {/* Order list table header */}
-                <div className={cx('orderListHeader')}>
-                  <div className={cx('orderColumn', 'idColumn')}>Order ID</div>
-                  <div className={cx('orderColumn', 'dateColumn')}>Date</div>
-                  <div className={cx('orderColumn', 'methodColumn')}>Payment Method</div>
-                  <div className={cx('orderColumn', 'statusColumn')}>Status</div>
-                  <div className={cx('orderColumn', 'amountColumn')}>Amount</div>
-                  <div className={cx('orderColumn', 'actionColumn')}></div>
+            <div className={cx('filterGroup')}>
+              <label>Order Status:</label>
+              <select 
+                value={filterStatus}
+                onChange={(e) => setFilterStatus(e.target.value)}
+                className={cx('filterSelect')}
+              >
+                <option value="all">All Statuses</option>
+                <option value="pending">Pending</option>
+                <option value="done">Completed</option>
+                <option value="cancelled">Cancelled</option>
+              </select>
+            </div>
+            
+            <button 
+              className={cx('resetButton')} 
+              onClick={resetFiltersAndSort}
+              title="Reset all filters and sorting"
+            >
+              <FaUndo /> Reset
+            </button>
+          </div>
+          
+          {loading ? (
+            <div className={cx('loadingIndicator')}>
+              <div className={cx('spinner')}></div>
+              <p>Loading payment data...</p>
+            </div>
+          ) : error ? (
+            <div className={cx('errorMessage')}>{error}</div>
+          ) : sortedAndFilteredPayments.length === 0 ? (
+            <div className={cx('emptyState')}>
+              <FaShoppingCart className={cx('emptyIcon')} />
+              <p>No orders found</p>
+            </div>
+          ) : (
+            <div className={cx('paymentList')}>
+              <div className={cx('orderListHeader')}>
+                <div className={cx('orderColumn', 'idColumn')}>Order ID</div>
+                <div 
+                  className={cx('orderColumn', 'dateColumn', 'sortableColumn')} 
+                  onClick={() => handleSort('purchaseDate')}
+                >
+                  Date {getSortIcon('purchaseDate')}
                 </div>
-                
-                {payments.map(payment => (
-                  <div key={payment._id} className={cx('paymentCard')}>
-                    <div className={cx('paymentHeader')}>
-                      <div className={cx('orderColumn', 'idColumn')}>
-                        #{payment._id.substring(payment._id.length - 8)}
-                      </div>
-                      
-                      <div className={cx('orderColumn', 'dateColumn')}>
-                        <FaCalendarAlt className={cx('columnIcon')} />
-                        {formatDate(payment.purchaseDate)}
-                      </div>
-                      
-                      <div className={cx('orderColumn', 'methodColumn')}>
-                        {getPaymentMethodIcon(payment.paymentMethod)}
-                        {getPaymentMethodText(payment.paymentMethod)}
-                      </div>
-                      
-                      <div className={cx('orderColumn', 'statusColumn')}>
-                        <span className={cx('paymentStatus', getStatusBadgeClass(payment.status))}>
-                          {payment.status.toUpperCase()}
-                        </span>
-                      </div>
-                      
-                      <div className={cx('orderColumn', 'amountColumn')}>
-                        {formatPrice(payment.totalAmount)}
-                      </div>
-                      
-                      <div 
-                        className={cx('orderColumn', 'actionColumn')}
-                        onClick={() => togglePaymentExpansion(payment._id)}
-                      >
-                        {expandedPayments[payment._id] ? (
-                          <FaChevronUp className={cx('expandIcon')} />
-                        ) : (
-                          <FaChevronDown className={cx('expandIcon')} />
-                        )}
-                      </div>
+                <div className={cx('orderColumn', 'methodColumn')}>
+                  Payment Method
+                </div>
+                <div className={cx('orderColumn', 'statusColumn')}>
+                  Status
+                </div>
+                <div 
+                  className={cx('orderColumn', 'amountColumn', 'sortableColumn')}
+                  onClick={() => handleSort('totalAmount')}
+                >
+                  Amount {getSortIcon('totalAmount')}
+                </div>
+                <div className={cx('orderColumn', 'actionColumn')}></div>
+              </div>
+              
+              {sortedAndFilteredPayments.map(payment => (
+                <div key={payment._id} className={cx('paymentCard')}>
+                  <div className={cx('paymentHeader')}>
+                    <div className={cx('orderColumn', 'idColumn')}>
+                      #{payment._id.substring(payment._id.length - 8)}
                     </div>
                     
-                    {expandedPayments[payment._id] && (
-                      <div className={cx('paymentDetails')}>
-                        <div className={cx('paymentUser')}>
-                          <strong>Customer ID:</strong> {payment.userId}
-                        </div>
-                        
-                        <div className={cx('itemsList')}>
-                          <h3>Order Items</h3>
-                          <table className={cx('itemsTable')}>
-                            <thead>
-                              <tr>
-                                <th>Item ID</th>
-                                <th>Quantity</th>
-                                <th>Price</th>
-                                <th>Total</th>
+                    <div className={cx('orderColumn', 'dateColumn')}>
+                      <FaCalendarAlt className={cx('columnIcon')} />
+                      {formatDate(payment.purchaseDate)}
+                    </div>
+                    
+                    <div className={cx('orderColumn', 'methodColumn')}>
+                      {getPaymentMethodIcon(payment.paymentMethod)}
+                      {getPaymentMethodText(payment.paymentMethod)}
+                    </div>
+                    
+                    <div className={cx('orderColumn', 'statusColumn')}>
+                      <span className={cx('paymentStatus', getStatusBadgeClass(payment.status))}>
+                        {payment.status.toUpperCase()}
+                      </span>
+                    </div>
+                    
+                    <div className={cx('orderColumn', 'amountColumn')}>
+                      {formatPrice(payment.totalAmount)}
+                    </div>
+                    
+                    <div 
+                      className={cx('orderColumn', 'actionColumn')}
+                      onClick={() => togglePaymentExpansion(payment._id)}
+                    >
+                      {expandedPayments[payment._id] ? (
+                        <FaChevronUp className={cx('expandIcon')} />
+                      ) : (
+                        <FaChevronDown className={cx('expandIcon')} />
+                      )}
+                    </div>
+                  </div>
+                  
+                  {expandedPayments[payment._id] && (
+                    <div className={cx('paymentDetails')}>
+                      <div className={cx('paymentUser')}>
+                        <strong>Customer ID:</strong> {payment.userId}
+                      </div>
+                      
+                      <div className={cx('itemsList')}>
+                        <h3>Order Items</h3>
+                        <table className={cx('itemsTable')}>
+                          <thead>
+                            <tr>
+                              <th>Item ID</th>
+                              <th>Quantity</th>
+                              <th>Price</th>
+                              <th>Total</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {payment.items.map(item => (
+                              <tr key={item._id || item.itemId}>
+                                <td>{item.itemId}</td>
+                                <td>{item.quantity}</td>
+                                <td>{formatPrice(item.price)}</td>
+                                <td>{formatPrice(item.price * item.quantity)}</td>
                               </tr>
-                            </thead>
-                            <tbody>
-                              {payment.items.map(item => (
-                                <tr key={item._id}>
-                                  <td>{item.itemId}</td>
-                                  <td>{item.quantity}</td>
-                                  <td>{formatPrice(item.price)}</td>
-                                  <td>{formatPrice(item.price * item.quantity)}</td>
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
-                        </div>
-                        
-                        <div className={cx('paymentActions')}>
-                          <div className={cx('statusActions')}>
-                            <span>Update Status:</span>
-                            <button 
-                              className={cx('actionButton', 'pendingButton')}
-                              onClick={() => updatePaymentStatus(payment._id, 'pending')}
-                              disabled={payment.status === 'pending'}
-                            >
-                              Pending
-                            </button>
-                            <button 
-                              className={cx('actionButton', 'doneButton')}
-                              onClick={() => updatePaymentStatus(payment._id, 'done')}
-                              disabled={payment.status === 'done'}
-                            >
-                              Complete
-                            </button>
-                            <button 
-                              className={cx('actionButton', 'cancelButton')}
-                              onClick={() => updatePaymentStatus(payment._id, 'cancelled')}
-                              disabled={payment.status === 'cancelled'}
-                            >
-                              Cancel
-                            </button>
-                          </div>
-                          <button className={cx('editButton')}>
-                            <FaEdit /> Edit
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                      
+                      <div className={cx('paymentActions')}>
+                        <div className={cx('statusActions')}>
+                          <span>Update Status:</span>
+                          <button 
+                            className={cx('actionButton', 'pendingButton')}
+                            onClick={() => updatePaymentStatus(payment._id, 'pending')}
+                            disabled={payment.status === 'pending'}
+                          >
+                            Pending
+                          </button>
+                          <button 
+                            className={cx('actionButton', 'doneButton')}
+                            onClick={() => updatePaymentStatus(payment._id, 'done')}
+                            disabled={payment.status === 'done'}
+                          >
+                            Complete
+                          </button>
+                          <button 
+                            className={cx('actionButton', 'cancelButton')}
+                            onClick={() => updatePaymentStatus(payment._id, 'cancelled')}
+                            disabled={payment.status === 'cancelled'}
+                          >
+                            Cancel
                           </button>
                         </div>
+                        <button className={cx('editButton')}>
+                          <FaEdit /> Edit
+                        </button>
                       </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-        
-        {activeTab === 'users' && (
-          <div className={cx('usersSection')}>
-            <h2 className={cx('sectionTitle')}>User Management</h2>
-            <p className={cx('comingSoon')}>User management features coming soon</p>
-          </div>
-        )}
-        
-        {activeTab === 'products' && (
-          <div className={cx('productsSection')}>
-            <h2 className={cx('sectionTitle')}>Product Management</h2>
-            <p className={cx('comingSoon')}>Product management features coming soon</p>
-          </div>
-        )}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
