@@ -8,6 +8,7 @@ import { CartContext } from "~/context/CartContext";
 import { useNavigate } from "react-router-dom";
 import { payosPayAxios } from "~/services/paymentAxios";
 import { updateAddressAxios, getUserByIdAxios } from "~/services/userAxios";
+import { createCartAxios } from "~/services/cartAxios";
 
 const cx = classNames.bind(styles);
 
@@ -90,14 +91,17 @@ const Payment = () => {
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [selectedPayment, setSelectedPayment] = useState('cod');
   const [tempSelectedPayment, setTempSelectedPayment] = useState('cod');
-  const { cartItems } = useContext(CartContext);
+  const { cartItems, removeFromCart } = useContext(CartContext);
   const calculateTotal = () => cartItems.reduce((total, item) => total + item.price * item.quantity, 0);
   const formatPrice = (price) => new Intl.NumberFormat("vi-VN").format(price) + " ₫";
   const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
   // User address state
   const [userAddress, setUserAddress] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [userId, setUserId] = useState(null);
 
   // Address modal state
   const [temporarySelectedRegion, setTemporarySelectedRegion] = useState("");
@@ -117,6 +121,11 @@ const Payment = () => {
         setIsLoading(true);
         // Get user data from localStorage
         const userData = JSON.parse(localStorage.getItem('user') || '{}');
+        
+        // Set userId for payment
+        if (userData && userData._id) {
+          setUserId(userData._id);
+        }
 
         // If user data exists in localStorage with address, use it
         if (userData && userData.address) {
@@ -156,23 +165,84 @@ const Payment = () => {
     }
   }, [showAddressModal, userAddress]);
 
+  // Create Cart API function using the cartAxios service
+  const createCartRecord = async (paymentMethod) => {
+    try {
+      setLoading(true);
+      setError("");
+      
+      if (!userId) {
+        throw new Error("User ID not found. Please log in again.");
+      }
+      
+      // Format cart items for API
+      const formattedItems = cartItems.map(item => ({
+        itemId: item._id,
+        quantity: item.quantity,
+        price: item.price
+      }));
+      
+      // Prepare request data
+      const cartData = {
+        userId: userId,
+        items: formattedItems,
+        totalAmount: calculateTotal(),
+        status: "pending",
+        paymentMethod: paymentMethod === "bank" ? "credit_card" : "cod"
+      };
+      
+      // Use our cart service to create the cart
+      const response = await createCartAxios(cartData);
+      
+      // Check if the response contains an error
+      if (response.error) {
+        throw new Error(response.message || "Failed to create cart record");
+      }
+      
+      // Success! Clear cart items
+      cartItems.forEach(item => removeFromCart(item._id));
+      return true;
+      
+    } catch (error) {
+      console.error("Error creating cart record:", error);
+      setError(error.message || "Failed to process payment. Please try again later.");
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // ✅ Handle All Payment Success
   const handlePayment = async () => {
+    if (!userAddress) {
+      setError("Please add a delivery address before proceeding");
+      return;
+    }
+    
     if (selectedPayment === "bank") {
       try {
-        // Call the PayOS API with cart items and total amount
-        await payosPayAxios(cartItems, calculateTotal());
-        // The redirect happens in the payosPayAxios function
+        // First create cart record
+        const cartCreated = await createCartRecord("bank");
+        
+        if (cartCreated) {
+          // Then process payment via PayOS
+          await payosPayAxios(cartItems, calculateTotal());
+          // The redirect happens in the payosPayAxios function
+        }
       } catch (error) {
         console.error("Bank Transfer Payment Error:", error);
-        alert("Không thể kết nối với cổng thanh toán. Vui lòng thử lại.");
+        setError("Could not connect to payment gateway. Please try again.");
       }
     } else {
-      // COD flow remains unchanged
-      setShowSuccessMessage(true);
-      setTimeout(() => {
-        navigate(routes.home);
-      }, 3000);
+      // COD flow
+      const cartCreated = await createCartRecord("cod");
+      
+      if (cartCreated) {
+        setShowSuccessMessage(true);
+        setTimeout(() => {
+          navigate(routes.home);
+        }, 3000);
+      }
     }
   };
 
@@ -307,7 +377,7 @@ const Payment = () => {
       } catch (apiError) {
         console.error("API address update failed:", apiError);
 
-        // Even if API fails, update in localStorage as a fallback
+        // Even if API fails, update in localStorage as fallback
         userData.address = formattedAddress;
         localStorage.setItem('user', JSON.stringify(userData));
 
@@ -424,17 +494,21 @@ const Payment = () => {
         {!showSuccessMessage && (
           <>
             <div className={cx('payment-right')}>
-
               <button
                 className={cx('order-button')}
                 onClick={handlePayment}
-                disabled={!userAddress}
+                disabled={!userAddress || loading}
               >
-                Đặt hàng
+                {loading ? "Đang xử lý..." : "Đặt hàng"}
               </button>
               {!userAddress && (
                 <p className={cx('address-required-message')}>
                   Vui lòng thêm địa chỉ giao hàng để tiếp tục đặt hàng
+                </p>
+              )}
+              {error && (
+                <p className={cx('address-required-message')}>
+                  {error}
                 </p>
               )}
               <p className={cx('order-agreement')}>

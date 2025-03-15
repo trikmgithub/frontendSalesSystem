@@ -1,8 +1,10 @@
-import { BrowserRouter, Routes, Route, Link } from 'react-router';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { publicRoutes } from '~/routes/routes';
-import { Fragment } from 'react';
+import { Fragment, useEffect } from 'react';
 import { ToastContainer } from 'react-toastify';
 import { DefaultLayout } from './layouts/DefaultLayout';
+import AuthGuard from './components/AuthGuard';
+
 function App() {
     return (
         <BrowserRouter>
@@ -16,14 +18,20 @@ function App() {
                         } else if (route.layout === null) {
                             Layout = Fragment;
                         }
+                        
+                        // Check if this route requires staff role
+                        const requireStaff = route.path === '/staff';
+                        
                         return (
                             <Route
                                 key={index}
                                 path={route.path}
                                 element={
-                                    <Layout>
-                                        <Page />
-                                    </Layout>
+                                    <AuthGuard requireStaff={requireStaff}>
+                                        <Layout>
+                                            <Page />
+                                        </Layout>
+                                    </AuthGuard>
                                 }
                             />
                         );

@@ -40,10 +40,34 @@ function Header() {
     );
 
     useEffect(() => {
-        if (userInfo.role && ['STAFF', 'MANAGER', 'ADMIN'].includes(userInfo.role)) {
-            navigate(routes.admin);
+        // When header mounts or user info changes, check for staff role
+        if (userInfo && userInfo.role && ['STAFF', 'MANAGER', 'ADMIN'].includes(userInfo.role)) {
+            navigate(routes.staff);
         }
     }, [userInfo, navigate]);
+
+    useEffect(() => {
+        // This effect will run whenever the header component is rendered
+        const checkUserRole = () => {
+            const userData = JSON.parse(localStorage.getItem('user') || 'null');
+            if (userData && userData.role && ['STAFF', 'MANAGER', 'ADMIN'].includes(userData.role)) {
+                // Only update if the role has changed to prevent infinite redirects
+                if (!userInfo.role || userInfo.role !== userData.role) {
+                    setUserInfo(userData);
+                    navigate(routes.staff);
+                }
+            }
+        };
+        
+        checkUserRole();
+        
+        // Set up an event listener for storage changes (in case another tab updates login state)
+        window.addEventListener('storage', checkUserRole);
+        
+        return () => {
+            window.removeEventListener('storage', checkUserRole);
+        };
+    }, [navigate]);
 
     useEffect(() => {
         const fetchItems = async () => {
