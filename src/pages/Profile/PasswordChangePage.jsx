@@ -36,13 +36,6 @@ const PasswordChangePage = () => {
           </button>
           
           <button 
-            className={cx(styles.navItem, { [styles.active]: selectedTab === 'addresses' })}
-            onClick={() => setSelectedTab('addresses')}
-          >
-            Sổ địa chỉ nhận hàng
-          </button>
-          
-          <button 
             className={cx(styles.navItem, { [styles.active]: selectedTab === 'favorites' })}
             onClick={() => setSelectedTab('favorites')}
           >

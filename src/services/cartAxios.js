@@ -49,6 +49,47 @@ const getAllCartsAxios = async () => {
 };
 
 /**
+ * Get user's orders by user ID
+ * @param {string} userId - The user ID to fetch orders for
+ * @returns {Promise} - API response with user's orders
+ */
+const getUserOrdersAxios = async (userId) => {
+  try {
+    const response = await axiosConfig.get(`cart/user/${userId}`);
+    
+    // Check response format and ensure we return properly structured data
+    if (response && response.data) {
+      // If data is already in correct format, return it
+      return {
+        data: Array.isArray(response.data) ? response.data : 
+              response.data?.data ? response.data.data : 
+              response.data?.orders ? response.data.orders : 
+              [],
+        message: response.message || 'Orders retrieved successfully'
+      };
+    }
+    
+    return response;
+  } catch (error) {
+    console.error('Get user orders error:', error);
+    
+    // Return the error response data if available
+    if (error.response && error.response.data) {
+      return {
+        error: true,
+        ...error.response.data
+      };
+    }
+    
+    return {
+      error: true,
+      message: error.message || 'Failed to fetch user orders',
+      data: []
+    };
+  }
+};
+
+/**
  * Update cart/order status
  * @param {string} cartId - ID of the cart to update
  * @param {string} status - New status (pending, done, cancelled)
@@ -73,4 +114,4 @@ const updateCartStatusAxios = async (cartId, status) => {
   }
 };
 
-export { createCartAxios, getAllCartsAxios, updateCartStatusAxios };
+export { createCartAxios, getAllCartsAxios, updateCartStatusAxios, getUserOrdersAxios };

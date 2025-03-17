@@ -54,13 +54,6 @@ const Sidebar = ({ selectedTab, setSelectedTab }) => {
         </button>
         
         <button 
-          className={cx('navItem', { 'active': selectedTab === 'addresses' })}
-          onClick={() => setSelectedTab('addresses')}
-        >
-          Sổ địa chỉ nhận hàng
-        </button>
-        
-        <button 
           className={cx('navItem', { 'active': selectedTab === 'favorites' })}
           onClick={() => setSelectedTab('favorites')}
         >
