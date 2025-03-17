@@ -155,6 +155,12 @@
 .add-to-cart-section {
   margin: 20px 0;
   
+  .product-buttons {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  
   .add-to-cart-button {
     display: flex;
     align-items: center;
@@ -169,6 +175,8 @@
     font-weight: 500;
     cursor: pointer;
     transition: background-color 0.2s;
+    flex: 1;
+    min-width: 200px;
     
     &:hover {
       background-color: color.adjust(#f26522, $lightness: -5%);
@@ -180,8 +188,38 @@
     }
   }
   
+  .add-to-favorites-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px 24px;
+    background-color: #fff;
+    color: #f26522;
+    border: 1px solid #f26522;
+    border-radius: 4px;
+    font-size: 16px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    min-width: 150px;
+    
+    &:hover {
+      background-color: #fff3e7;
+    }
+    
+    &.in-favorites {
+      background-color: #fff3e7;
+      color: #f26522;
+      
+      svg {
+        color: #f26522;
+      }
+    }
+  }
+  
   .stock-info {
-    margin-top: 8px;
+    margin-top: 12px;
     color: #2B7B60;
     font-size: 14px;
   }

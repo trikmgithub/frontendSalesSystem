@@ -4,7 +4,8 @@ import classNames from 'classnames/bind';
 import styles from './ItemDetail.module.scss';
 import { getItemDetail } from '~/services/itemAxios';
 import { CartContext } from '~/context/CartContext';
-import { FaStar, FaShoppingCart } from 'react-icons/fa';
+import { FavoritesContext } from '~/context/FavoritesContext';
+import { FaStar, FaShoppingCart, FaHeart } from 'react-icons/fa';
 
 const cx = classNames.bind(styles);
 
@@ -15,6 +16,7 @@ function ItemDetail() {
     const [error, setError] = useState(null);
     const [selectedImage, setSelectedImage] = useState(0);
     const { addToCart } = useContext(CartContext);
+    const { addToFavorites, removeFromFavorites, isInFavorites } = useContext(FavoritesContext);
     
     useEffect(() => {
         if (!id) return;
@@ -34,6 +36,16 @@ function ItemDetail() {
     const handleAddToCart = () => {
         if (item) {
             addToCart(item);
+        }
+    };
+    
+    const handleToggleFavorite = () => {
+        if (item) {
+            if (isInFavorites(item._id)) {
+                removeFromFavorites(item._id);
+            } else {
+                addToFavorites(item);
+            }
         }
     };
 
@@ -132,16 +144,28 @@ function ItemDetail() {
                         )}
                     </div>
 
-                    {/* Add to Cart Button */}
+                    {/* Add to Cart Button and Favorites */}
                     <div className={cx('add-to-cart-section')}>
-                        <button 
-                            className={cx('add-to-cart-button')}
-                            onClick={handleAddToCart}
-                            disabled={!item.stock}
-                        >
-                            <FaShoppingCart />
-                            <span>Thêm vào giỏ hàng</span>
-                        </button>
+                        <div className={cx('product-buttons')}>
+                            <button 
+                                className={cx('add-to-cart-button')}
+                                onClick={handleAddToCart}
+                                disabled={!item.stock}
+                            >
+                                <FaShoppingCart />
+                                <span>Thêm vào giỏ hàng</span>
+                            </button>
+                            
+                            <button 
+                                className={cx('add-to-favorites-button', {
+                                    'in-favorites': isInFavorites(item._id)
+                                })}
+                                onClick={handleToggleFavorite}
+                            >
+                                <FaHeart />
+                                <span>{isInFavorites(item._id) ? 'Đã yêu thích' : 'Yêu thích'}</span>
+                            </button>
+                        </div>
                         
                         <div className={cx('stock-info')}>
                             {item.stock ? 'Còn hàng' : 'Hết hàng'}

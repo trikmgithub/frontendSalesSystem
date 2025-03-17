@@ -4,6 +4,8 @@ import classNames from 'classnames/bind';
 import styles from './Home.module.scss';
 import { Link } from 'react-router-dom';
 import { CartContext } from '~/context/CartContext';
+import { FavoritesContext } from '~/context/FavoritesContext';
+import { FaHeart } from 'react-icons/fa';
 
 const cx = classNames.bind(styles);
 
@@ -16,6 +18,7 @@ function Home() {
     const [totalItems, setTotalItems] = useState(0);
     const [itemsPerPage] = useState(12); // 4 products per row, 3 rows or 6 products per row, 2 rows
     const { addToCart } = useContext(CartContext);
+    const { addToFavorites, removeFromFavorites, isInFavorites } = useContext(FavoritesContext);
 
     useEffect(() => {
         fetchItems(currentPage);
@@ -126,15 +129,25 @@ function Home() {
                                         </div>
                                     </div>
                                 </Link>
-                                <button 
-                                    onClick={() => addToCart(item)} 
-                                    className={cx('addToCartButton')}
-                                    disabled={!item.stock}
-                                    aria-label="Add to cart"
-                                    title="Add to cart"
-                                >
-                                    🛒
-                                </button>
+                                <div className={cx('productActions')}>
+                                    <button 
+                                        onClick={() => addToCart(item)} 
+                                        className={cx('addToCartButton')}
+                                        disabled={!item.stock}
+                                        aria-label="Add to cart"
+                                        title="Add to cart"
+                                    >
+                                        🛒
+                                    </button>
+                                    <button 
+                                        onClick={() => isInFavorites(item._id) ? removeFromFavorites(item._id) : addToFavorites(item)} 
+                                        className={cx('favoriteButton', { 'active': isInFavorites(item._id) })}
+                                        aria-label="Toggle favorite"
+                                        title="Add to favorites"
+                                    >
+                                        <FaHeart />
+                                    </button>
+                                </div>
                             </div>
                         );
                     })}

@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { FaUser, FaShoppingCart, FaPhone, FaStore, FaClipboardList, FaHeart, FaMapMarkerAlt, FaSignOutAlt } from 'react-icons/fa';
+import { FaUser, FaShoppingCart, FaPhone, FaStore, FaClipboardList, FaHeart, FaSignOutAlt } from 'react-icons/fa';
 import { IoSearch } from 'react-icons/io5';
 import { FcGoogle } from 'react-icons/fc';
 import classNames from 'classnames/bind';
@@ -467,10 +467,18 @@ function Header() {
                                 (userInfo?.name ? (
                                     <div className={cx('accountPopupAfter')}>
                                         <ul>
-                                            <li><FaUser /> Tài khoản của bạn</li>
-                                            <li><FaClipboardList /> Quản lý đơn hàng</li>
-                                            <li><FaHeart /> Sản phẩm yêu thích</li>
-                                            <li><FaMapMarkerAlt /> Địa chỉ giao hàng</li>
+                                            <li onClick={() => {
+                                                navigate(routes.profile);
+                                                setShowAccountPopup(false);
+                                            }}><FaUser /> Tài khoản của bạn</li>
+                                            <li onClick={() => {
+                                                navigate(routes.ordersPage);
+                                                setShowAccountPopup(false);
+                                            }}><FaClipboardList /> Quản lý đơn hàng</li>
+                                            <li onClick={() => {
+                                                navigate(routes.favorites);
+                                                setShowAccountPopup(false);
+                                            }}><FaHeart /> Sản phẩm yêu thích</li>
                                             <li onClick={handleSignOutClick}><FaSignOutAlt /> Thoát</li>
                                         </ul>
                                     </div>

@@ -12,6 +12,7 @@ const routes = {
     itemDetail: '/product/:id',
     brand: '/brand/:id', 
     staff: '/staff',
+    favorites: '/favorites',
 };
 
 export default routes;

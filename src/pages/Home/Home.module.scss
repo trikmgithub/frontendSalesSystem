@@ -76,7 +76,7 @@
         transform: translateY(-2px);
         box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
         
-        .addToCartButton {
+        .addToCartButton, .favoriteButton {
             opacity: 1;
         }
     }
@@ -168,10 +168,15 @@
     margin-top: 4px;
 }
 
-.addToCartButton {
+.productActions {
     position: absolute;
     bottom: 3px;
     right: 10px;
+    display: flex;
+    gap: 8px;
+}
+
+.addToCartButton {
     background-color: white;
     color: white;
     border: none;
@@ -184,6 +189,30 @@
     cursor: pointer;
     opacity: 0;
     transition: opacity 0.2s, background-color 0.2s;
+}
+
+.favoriteButton {
+    background-color: white;
+    color: #ccc;
+    border: none;
+    border-radius: 50%;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.2s, color 0.2s;
+    
+    &.active {
+        color: #ff6b6b;
+        opacity: 1;
+    }
+    
+    &:hover {
+        color: #ff6b6b;
+    }
 }
 
 .pagination {
