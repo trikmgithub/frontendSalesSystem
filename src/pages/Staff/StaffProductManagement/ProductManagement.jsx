@@ -157,6 +157,47 @@ function ProductManagement() {
       reader.onerror = (error) => reject(error);
     });
   };
+  
+  // Helper function to compress image before upload
+  const compressImage = (file) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = (event) => {
+        const img = new Image();
+        img.src = event.target.result;
+        img.onload = () => {
+          // Create canvas
+          const canvas = document.createElement('canvas');
+          // Calculate new dimensions (max width/height of 800px)
+          const MAX_SIZE = 800;
+          let width = img.width;
+          let height = img.height;
+          
+          if (width > height && width > MAX_SIZE) {
+            height = Math.round((height * MAX_SIZE) / width);
+            width = MAX_SIZE;
+          } else if (height > MAX_SIZE) {
+            width = Math.round((width * MAX_SIZE) / height);
+            height = MAX_SIZE;
+          }
+          
+          canvas.width = width;
+          canvas.height = height;
+          
+          // Draw and compress image
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+          
+          // Get compressed data URL (0.7 quality JPEG)
+          const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.7);
+          resolve(compressedDataUrl);
+        };
+        img.onerror = (error) => reject(error);
+      };
+      reader.onerror = (error) => reject(error);
+    });
+  };
 
   // Validate form before submission
   const validateForm = () => {
@@ -201,23 +242,10 @@ function ProductManagement() {
     try {
       setLoading(true);
       
-      // Convert all image files to base64 strings for API
-      const base64Images = [];
-      
-      // Process new uploaded files
-      for (const file of formData.images) {
-        try {
-          const base64 = await fileToBase64(file);
-          base64Images.push(base64);
-        } catch (err) {
-          console.error('Error converting image to base64:', err);
-        }
-      }
-      
-      // Create a new product data object with base64 images
+      // Prepare product data with original files instead of base64
       const productData = {
         ...formData,
-        imageUrls: base64Images // Replace with base64 versions
+        imageFiles: formData.images // Use the actual File objects
       };
       
       const response = await itemAxios.createItemAxios(productData);
@@ -246,35 +274,23 @@ function ProductManagement() {
     try {
       setLoading(true);
       
-      // Convert all image files to base64 strings for API
-      const base64Images = [];
+      // Separate existing image URLs from new file uploads
+      const existingImageUrls = [];
+      const newImageFiles = [...formData.images];
       
-      // Keep existing image URLs that are not files (from the server)
-      const existingUrls = currentProduct.imageUrls || [];
-      const newFilesStartIndex = existingUrls.length - formData.images.length;
-      
-      for (let i = 0; i < formData.imageUrls.length; i++) {
-        if (i < newFilesStartIndex) {
-          // This is an existing image from the server
-          base64Images.push(formData.imageUrls[i]);
-        } else {
-          // This is a new image file that needs conversion
-          const fileIndex = i - newFilesStartIndex;
-          if (formData.images[fileIndex]) {
-            try {
-              const base64 = await fileToBase64(formData.images[fileIndex]);
-              base64Images.push(base64);
-            } catch (err) {
-              console.error('Error converting image to base64:', err);
-            }
-          }
-        }
+      // If we're editing, we need to track which images were from the server
+      if (currentProduct && currentProduct.imageUrls) {
+        const existingUrls = currentProduct.imageUrls;
+        
+        // Keep track of which URLs to preserve
+        existingImageUrls.push(...existingUrls);
       }
       
-      // Create updated product data
+      // Prepare product data with files and existing URLs properly separated
       const productData = {
         ...formData,
-        imageUrls: base64Images
+        imageFiles: newImageFiles,
+        existingImageUrls: existingImageUrls
       };
       
       const response = await itemAxios.updateItemAxios(currentProduct._id, productData);
@@ -805,7 +821,7 @@ function ProductManagement() {
                   </div>
                 )}
                 <div className={cx('image-upload-help')}>
-                  Upload up to 3 JPG or PNG images. First image will be the main product image.
+                  Upload up to 3 JPG or PNG images. Max 1MB per image recommended.
                 </div>
               </div>
               <div className={cx('form-group')}>

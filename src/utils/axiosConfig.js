@@ -8,6 +8,7 @@ const axiosConfig = axios.create({
         'Content-Type': 'application/json',
     },
     withCredentials: true, // Important! This allows cookies to be sent with requests
+    timeout: 60000, // Increase timeout to 60 seconds for file uploads
 });
 
 // Biến lưu trạng thái refresh token
@@ -23,6 +24,12 @@ const onRefreshed = (token) => {
 // Interceptor để tự động thêm token vào request
 axiosConfig.interceptors.request.use(
     (config) => {
+        // For multipart/form-data requests (file uploads), don't set Content-Type
+        // Let the browser set it with the correct boundary
+        if (config.headers['Content-Type'] === 'multipart/form-data') {
+            delete config.headers['Content-Type'];
+        }
+        
         const accessToken = localStorage.getItem('access_token');
         if (accessToken) {
             config.headers.Authorization = `Bearer ${accessToken}`;
@@ -36,6 +43,17 @@ axiosConfig.interceptors.request.use(
 axiosConfig.interceptors.response.use(
     (response) => response,
     async (error) => {
+        // Log detailed error information for debugging
+        if (error.response) {
+            console.log('Error Response Data:', error.response.data);
+            console.log('Error Response Status:', error.response.status);
+            console.log('Error Response Headers:', error.response.headers);
+        } else if (error.request) {
+            console.log('Error Request:', error.request);
+        } else {
+            console.log('Error Message:', error.message);
+        }
+        
         const originalRequest = error.config;
 
         // Kiểm tra nếu lỗi là 401 (Unauthorized) và chưa thử refresh token
@@ -84,20 +102,48 @@ axiosConfig.interceptors.response.use(
 );
 
 const post = async (url, data, config = {}) => {
-    const response = await axiosConfig.post(url, data, config);
-    return response.data;
+    try {
+        const response = await axiosConfig.post(url, data, config);
+        return response.data;
+    } catch (error) {
+        console.error(`Error in POST to ${url}:`, error);
+        throw error;
+    }
 };
 
 const get = async (url, config = {}) => {
-    const response = await axiosConfig.get(url, config);
-    return response.data;
+    try {
+        const response = await axiosConfig.get(url, config);
+        return response.data;
+    } catch (error) {
+        console.error(`Error in GET to ${url}:`, error);
+        throw error;
+    }
 };
 
 const patch = async (url, data, config = {}) => {
-    const response = await axiosConfig.patch(url, data, config);
-    return response.data;
+    try {
+        const response = await axiosConfig.patch(url, data, config);
+        return response.data;
+    } catch (error) {
+        console.error(`Error in PATCH to ${url}:`, error);
+        throw error;
+    }
 };
 
-export { post, get, patch };
+const del = async (url, config = {}) => {
+    try {
+        const response = await axiosConfig.delete(url, config);
+        return response.data;
+    } catch (error) {
+        console.error(`Error in DELETE to ${url}:`, error);
+        throw error;
+    }
+};
+
+// Alias for delete since it's a reserved keyword
+const delete_ = del;
+
+export { post, get, patch, del, delete_ };
 
 export default axiosConfig;

@@ -46,21 +46,37 @@ const searchItemsAxios = async (searchTerm) => {
     }
 };
 
-// Create new item
+// Create new item with FormData for images
 const createItemAxios = async (itemData) => {
     try {
-        // Format the request body according to API requirements
-        const requestData = {
-            name: itemData.name,
-            price: itemData.price,
-            description: itemData.description,
-            brand: itemData.brand,
-            quantity: itemData.quantity,
-            flashSale: itemData.flashSale,
-            imageUrls: itemData.imageUrls
+        // Create FormData object for multipart/form-data
+        const formData = new FormData();
+        
+        // Add text fields exactly matching the API expectations
+        formData.append('name', itemData.name);
+        formData.append('price', itemData.price);
+        formData.append('description', itemData.description);
+        formData.append('quantity', itemData.quantity);
+        formData.append('flashSale', itemData.flashSale.toString());
+        
+        // Add brand as plain text (the ID string)
+        formData.append('brand', itemData.brand._id);
+        
+        // Add image files to the "files" field (which accepts multiple files)
+        if (itemData.images && itemData.images.length > 0) {
+            itemData.images.forEach(file => {
+                formData.append('files', file);
+            });
+        }
+        
+        // Use custom config to handle multipart/form-data
+        const config = {
+            headers: {
+                'Content-Type': 'multipart/form-data'
+            }
         };
         
-        const res = await axiosConfig.post('items/create', requestData);
+        const res = await axiosConfig.post('items/create', formData, config);
         return res;
     } catch (error) {
         console.log('Error creating item:', error);
@@ -68,20 +84,36 @@ const createItemAxios = async (itemData) => {
     }
 };
 
-// Update item
+// Update item with FormData for images
 const updateItemAxios = async (itemId, itemData) => {
     try {
-        // Format the request body according to API requirements
-        const requestData = {
-            name: itemData.name,
-            price: itemData.price,
-            description: itemData.description,
-            brand: itemData.brand,
-            quantity: itemData.quantity
-            // Note: flashSale is not included in the update request
+        // Create FormData object for multipart/form-data
+        const formData = new FormData();
+        
+        // Add text fields
+        formData.append('name', itemData.name);
+        formData.append('price', itemData.price);
+        formData.append('description', itemData.description);
+        formData.append('quantity', itemData.quantity);
+        
+        // Add brand as plain text (the ID string)
+        formData.append('brand', itemData.brand._id);
+        
+        // Add image files to the "files" field (which accepts multiple files)
+        if (itemData.images && itemData.images.length > 0) {
+            itemData.images.forEach(file => {
+                formData.append('files', file);
+            });
+        }
+        
+        // Use custom config to handle multipart/form-data
+        const config = {
+            headers: {
+                'Content-Type': 'multipart/form-data'
+            }
         };
         
-        const res = await axiosConfig.patch(`items/${itemId}`, requestData);
+        const res = await axiosConfig.patch(`items/${itemId}`, formData, config);
         return res;
     } catch (error) {
         console.log('Error updating item:', error);
