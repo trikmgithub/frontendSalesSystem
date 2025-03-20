@@ -4,10 +4,21 @@ import classNames from 'classnames/bind';
 import styles from './Staff.module.scss';
 import { logoutAxios } from '~/services/authAxios';
 import { useNavigate } from 'react-router-dom';
-import { getAllCartsAxios, updateCartStatusAxios } from '~/services/cartAxios';
-import { FaChevronDown, FaChevronUp, FaEdit, FaMoneyBill, FaCalendarAlt, 
-  FaSort, FaSortAmountDown, FaSortAmountUp, FaFilter, FaShoppingCart, 
-  FaUndo, FaBoxOpen, FaClipboardList } from 'react-icons/fa';
+import {
+  getAllCartsAxios,
+  updateCartStatusAxios,
+  getPendingOrdersAxios,
+  getCompletedOrdersAxios,
+  getCancelledOrdersAxios,
+  downloadInvoiceAxios,
+  sendInvoiceEmailAxios
+} from '~/services/cartAxios';
+import { getUserByIdAxios } from '~/services/userAxios';
+import {
+  FaChevronDown, FaChevronUp, FaEdit, FaMoneyBill, FaCalendarAlt,
+  FaSort, FaSortAmountDown, FaSortAmountUp, FaFilter, FaShoppingCart,
+  FaUndo, FaBoxOpen, FaClipboardList, FaFileInvoice, FaEnvelope, FaSpinner
+} from 'react-icons/fa';
 import ProductManagement from '~/pages/Staff/StaffProductManagement/ProductManagement';
 
 const cx = classNames.bind(styles);
@@ -20,7 +31,9 @@ function StaffPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [expandedPayments, setExpandedPayments] = useState({});
-  
+  const [userEmails, setUserEmails] = useState({}); // Map userId -> email
+  const [actionLoading, setActionLoading] = useState({}); // For download/send invoice buttons
+
   // Sorting and filtering state
   const [sortField, setSortField] = useState('purchaseDate');
   const [sortDirection, setSortDirection] = useState('desc');
@@ -40,15 +53,31 @@ function StaffPage() {
   const fetchPayments = async () => {
     try {
       setLoading(true);
-      
-      const response = await getAllCartsAxios();
-      
+
+      let response;
+
+      // Use the appropriate API based on the selected status filter
+      if (filterStatus === 'pending') {
+        response = await getPendingOrdersAxios();
+      } else if (filterStatus === 'done') {
+        response = await getCompletedOrdersAxios();
+      } else if (filterStatus === 'cancelled') {
+        response = await getCancelledOrdersAxios();
+      } else {
+        // If 'all' is selected or default case
+        response = await getAllCartsAxios();
+      }
+
       if (response.error) {
         throw new Error(response.message || 'Failed to load payment data');
       }
-      
+
       if (response && response.data) {
         setPayments(response.data);
+
+        // Fetch user emails for all orders
+        const userIds = [...new Set(response.data.map(payment => payment.userId))];
+        fetchUserEmails(userIds);
       } else {
         setPayments([]);
       }
@@ -60,27 +89,50 @@ function StaffPage() {
     }
   };
 
+  // Fetch user emails for all orders
+  const fetchUserEmails = async (userIds) => {
+    const emails = {};
+
+    for (const userId of userIds) {
+      if (!userEmails[userId]) {
+        try {
+          const userData = await getUserByIdAxios(userId);
+          if (userData && userData.user && userData.user.email) {
+            emails[userId] = userData.user.email;
+          } else {
+            emails[userId] = 'Unknown';
+          }
+        } catch (error) {
+          console.error(`Error fetching user data for ${userId}:`, error);
+          emails[userId] = 'Unknown';
+        }
+      }
+    }
+
+    setUserEmails(prev => ({ ...prev, ...emails }));
+  };
+
   useEffect(() => {
     // Check user role on component mount
     const userInfo = JSON.parse(localStorage.getItem('user') || 'null');
-    
+
     if (!userInfo || userInfo === 'null') {
       navigate('/');
       return;
     }
-    
+
     if (!['STAFF', 'MANAGER', 'ADMIN'].includes(userInfo.role)) {
       navigate('/');
       return;
     }
-    
+
     setUserData(userInfo);
 
     // Only fetch payments data if the active tab is 'orders'
     if (activeTab === 'orders') {
       fetchPayments();
     }
-  }, [navigate, activeTab]);
+  }, [navigate, activeTab, filterStatus]); // Added filterStatus as a dependency
 
   // Toggle payment item expansion
   const togglePaymentExpansion = (paymentId) => {
@@ -92,9 +144,9 @@ function StaffPage() {
 
   // Format date to readable format
   const formatDate = (dateString) => {
-    const options = { 
-      year: 'numeric', 
-      month: 'long', 
+    const options = {
+      year: 'numeric',
+      month: 'long',
       day: 'numeric',
       hour: '2-digit',
       minute: '2-digit'
@@ -109,12 +161,13 @@ function StaffPage() {
 
   // Get status badge class based on status
   const getStatusBadgeClass = (status) => {
-    switch (status) {
+    switch (status.toLowerCase()) {
       case 'done':
         return 'statusBadgeDone';
       case 'pending':
         return 'statusBadgePending';
       case 'cancelled':
+      case 'cancel':  // Handle both versions
         return 'statusBadgeCancelled';
       default:
         return 'statusBadgePending';
@@ -148,22 +201,71 @@ function StaffPage() {
   // Update payment status using our cartAxios service
   const updatePaymentStatus = async (paymentId, newStatus) => {
     try {
-      const response = await updateCartStatusAxios(paymentId, newStatus);
-      
+      // Convert 'cancelled' to 'cancel' for API request
+      const apiStatus = newStatus === 'cancelled' ? 'cancel' : newStatus;
+
+      const response = await updateCartStatusAxios(paymentId, apiStatus);
+
       if (response.error) {
         throw new Error(response.message || 'Failed to update payment status');
       }
-      
-      // Update local state
-      setPayments(prevPayments => 
-        prevPayments.map(payment => 
+
+      // Always use 'cancelled' in the UI when the API status is 'cancel'
+      setPayments(prevPayments =>
+        prevPayments.map(payment =>
           payment._id === paymentId ? { ...payment, status: newStatus } : payment
         )
       );
-      
+
     } catch (error) {
       console.error('Error updating payment status:', error);
       alert('Failed to update payment status. Please try again.');
+    }
+  };
+
+  // Download invoice PDF
+  const handleDownloadInvoice = async (paymentId) => {
+    setActionLoading(prev => ({ ...prev, [`download_${paymentId}`]: true }));
+
+    try {
+      const result = await downloadInvoiceAxios(paymentId);
+
+      if (result.error) {
+        alert('Failed to download invoice. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error downloading invoice:', error);
+      alert('Failed to download invoice. Please try again.');
+    } finally {
+      setActionLoading(prev => ({ ...prev, [`download_${paymentId}`]: false }));
+    }
+  };
+
+  // Send invoice by email
+  const handleSendInvoice = async (paymentId, userId) => {
+    setActionLoading(prev => ({ ...prev, [`email_${paymentId}`]: true }));
+
+    try {
+      // Get the email for this user
+      const email = userEmails[userId] || '';
+
+      if (!email || email === 'Unknown') {
+        alert('Customer email not available. Cannot send invoice.');
+        return;
+      }
+
+      const result = await sendInvoiceEmailAxios(paymentId, email);
+
+      if (result.error) {
+        alert(`Failed to send invoice: ${result.message || 'Unknown error'}`);
+      } else {
+        alert('Invoice sent successfully to customer email.');
+      }
+    } catch (error) {
+      console.error('Error sending invoice:', error);
+      alert('Failed to send invoice. Please try again.');
+    } finally {
+      setActionLoading(prev => ({ ...prev, [`email_${paymentId}`]: false }));
     }
   };
 
@@ -182,7 +284,7 @@ function StaffPage() {
     if (sortField !== field) return <FaSort />;
     return sortDirection === 'asc' ? <FaSortAmountUp /> : <FaSortAmountDown />;
   };
-  
+
   // Reset all filters and sorting
   const resetFiltersAndSort = () => {
     setSortField('purchaseDate');
@@ -191,14 +293,13 @@ function StaffPage() {
     setFilterStatus('all');
   };
 
-  // Apply sorting and filtering
+  // Apply sorting and filtering - now only uses client-side filtering for payment method
   const getSortedAndFilteredPayments = () => {
     return [...payments]
       .filter(payment => filterMethod === 'all' || payment.paymentMethod === filterMethod)
-      .filter(payment => filterStatus === 'all' || payment.status === filterStatus)
       .sort((a, b) => {
         if (sortField === 'purchaseDate') {
-          return sortDirection === 'asc' 
+          return sortDirection === 'asc'
             ? new Date(a.purchaseDate) - new Date(b.purchaseDate)
             : new Date(b.purchaseDate) - new Date(a.purchaseDate);
         } else if (sortField === 'totalAmount') {
@@ -224,17 +325,17 @@ function StaffPage() {
           </div>
         )}
       </div>
-      
+
       {/* Tab Navigation */}
       <div className={cx('tabNavigation')}>
-        <button 
+        <button
           className={cx('tabButton', { active: activeTab === 'orders' })}
           onClick={() => setActiveTab('orders')}
         >
           <FaClipboardList />
           <span>Order Management</span>
         </button>
-        <button 
+        <button
           className={cx('tabButton', { active: activeTab === 'products' })}
           onClick={() => setActiveTab('products')}
         >
@@ -242,17 +343,17 @@ function StaffPage() {
           <span>Product Management</span>
         </button>
       </div>
-      
+
       <div className={cx('adminContent')}>
         {/* Orders Tab Content */}
         {activeTab === 'orders' && (
           <div className={cx('paymentsSection')}>
             <h2 className={cx('sectionTitle')}>Order Management</h2>
-            
+
             <div className={cx('filterBar')}>
               <div className={cx('filterGroup')}>
                 <label>Payment Method:</label>
-                <select 
+                <select
                   value={filterMethod}
                   onChange={(e) => setFilterMethod(e.target.value)}
                   className={cx('filterSelect')}
@@ -262,10 +363,10 @@ function StaffPage() {
                   <option value="credit_card">Bank Transfer</option>
                 </select>
               </div>
-              
+
               <div className={cx('filterGroup')}>
                 <label>Order Status:</label>
-                <select 
+                <select
                   value={filterStatus}
                   onChange={(e) => setFilterStatus(e.target.value)}
                   className={cx('filterSelect')}
@@ -276,16 +377,16 @@ function StaffPage() {
                   <option value="cancelled">Cancelled</option>
                 </select>
               </div>
-              
-              <button 
-                className={cx('resetButton')} 
+
+              <button
+                className={cx('resetButton')}
                 onClick={resetFiltersAndSort}
                 title="Reset all filters and sorting"
               >
                 <FaUndo /> Reset
               </button>
             </div>
-            
+
             {loading ? (
               <div className={cx('loadingIndicator')}>
                 <div className={cx('spinner')}></div>
@@ -302,8 +403,8 @@ function StaffPage() {
               <div className={cx('paymentList')}>
                 <div className={cx('orderListHeader')}>
                   <div className={cx('orderColumn', 'idColumn')}>Order ID</div>
-                  <div 
-                    className={cx('orderColumn', 'dateColumn', 'sortableColumn')} 
+                  <div
+                    className={cx('orderColumn', 'dateColumn', 'sortableColumn')}
                     onClick={() => handleSort('purchaseDate')}
                   >
                     Date {getSortIcon('purchaseDate')}
@@ -314,7 +415,7 @@ function StaffPage() {
                   <div className={cx('orderColumn', 'statusColumn')}>
                     Status
                   </div>
-                  <div 
+                  <div
                     className={cx('orderColumn', 'amountColumn', 'sortableColumn')}
                     onClick={() => handleSort('totalAmount')}
                   >
@@ -322,35 +423,35 @@ function StaffPage() {
                   </div>
                   <div className={cx('orderColumn', 'actionColumn')}></div>
                 </div>
-                
+
                 {sortedAndFilteredPayments.map(payment => (
                   <div key={payment._id} className={cx('paymentCard')}>
                     <div className={cx('paymentHeader')}>
                       <div className={cx('orderColumn', 'idColumn')}>
                         #{payment._id.substring(payment._id.length - 8)}
                       </div>
-                      
+
                       <div className={cx('orderColumn', 'dateColumn')}>
                         <FaCalendarAlt className={cx('columnIcon')} />
                         {formatDate(payment.purchaseDate)}
                       </div>
-                      
+
                       <div className={cx('orderColumn', 'methodColumn')}>
                         {getPaymentMethodIcon(payment.paymentMethod)}
                         {getPaymentMethodText(payment.paymentMethod)}
                       </div>
-                      
+
                       <div className={cx('orderColumn', 'statusColumn')}>
                         <span className={cx('paymentStatus', getStatusBadgeClass(payment.status))}>
-                          {payment.status.toUpperCase()}
+                          {payment.status.toLowerCase() === 'cancel' ? 'CANCELLED' : payment.status.toUpperCase()}
                         </span>
                       </div>
-                      
+
                       <div className={cx('orderColumn', 'amountColumn')}>
                         {formatPrice(payment.totalAmount)}
                       </div>
-                      
-                      <div 
+
+                      <div
                         className={cx('orderColumn', 'actionColumn')}
                         onClick={() => togglePaymentExpansion(payment._id)}
                       >
@@ -361,13 +462,13 @@ function StaffPage() {
                         )}
                       </div>
                     </div>
-                    
+
                     {expandedPayments[payment._id] && (
                       <div className={cx('paymentDetails')}>
                         <div className={cx('paymentUser')}>
-                          <strong>Customer ID:</strong> {payment.userId}
+                          <strong>Customer Email:</strong> {userEmails[payment.userId] || 'Loading...'}
                         </div>
-                        
+
                         <div className={cx('itemsList')}>
                           <h3>Order Items</h3>
                           <table className={cx('itemsTable')}>
@@ -391,25 +492,25 @@ function StaffPage() {
                             </tbody>
                           </table>
                         </div>
-                        
+
                         <div className={cx('paymentActions')}>
                           <div className={cx('statusActions')}>
                             <span>Update Status:</span>
-                            <button 
+                            <button
                               className={cx('actionButton', 'pendingButton')}
                               onClick={() => updatePaymentStatus(payment._id, 'pending')}
                               disabled={payment.status === 'pending'}
                             >
                               Pending
                             </button>
-                            <button 
+                            <button
                               className={cx('actionButton', 'doneButton')}
                               onClick={() => updatePaymentStatus(payment._id, 'done')}
                               disabled={payment.status === 'done'}
                             >
                               Complete
                             </button>
-                            <button 
+                            <button
                               className={cx('actionButton', 'cancelButton')}
                               onClick={() => updatePaymentStatus(payment._id, 'cancelled')}
                               disabled={payment.status === 'cancelled'}
@@ -417,9 +518,36 @@ function StaffPage() {
                               Cancel
                             </button>
                           </div>
-                          <button className={cx('editButton')}>
-                            <FaEdit /> Edit
-                          </button>
+
+                          <div className={cx('invoiceActions')}>
+                            <button
+                              className={cx('invoiceButton', 'downloadButton')}
+                              onClick={() => handleDownloadInvoice(payment._id)}
+                              disabled={actionLoading[`download_${payment._id}`]}
+                              title="Download Invoice"
+                            >
+                              {actionLoading[`download_${payment._id}`] ? (
+                                <FaSpinner className={cx('spinnerIcon')} />
+                              ) : (
+                                <FaFileInvoice />
+                              )}
+                              <span>Download Invoice</span>
+                            </button>
+
+                            <button
+                              className={cx('invoiceButton', 'emailButton')}
+                              onClick={() => handleSendInvoice(payment._id, payment.userId)}
+                              disabled={actionLoading[`email_${payment._id}`]}
+                              title="Send Invoice by Email"
+                            >
+                              {actionLoading[`email_${payment._id}`] ? (
+                                <FaSpinner className={cx('spinnerIcon')} />
+                              ) : (
+                                <FaEnvelope />
+                              )}
+                              <span>Email Invoice</span>
+                            </button>
+                          </div>
                         </div>
                       </div>
                     )}

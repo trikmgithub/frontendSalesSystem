@@ -84,32 +84,25 @@ const createItemAxios = async (itemData) => {
     }
 };
 
-// Update item with FormData for images
+// Update item with x-www-form-urlencoded format
 const updateItemAxios = async (itemId, itemData) => {
     try {
-        // Create FormData object for multipart/form-data
-        const formData = new FormData();
+        // For PATCH requests, the API expects form-urlencoded data
+        const formData = new URLSearchParams();
         
-        // Add text fields
+        // Add fields exactly as shown in Postman
         formData.append('name', itemData.name);
         formData.append('price', itemData.price);
         formData.append('description', itemData.description);
         formData.append('quantity', itemData.quantity);
         
-        // Add brand as plain text (the ID string)
+        // Add brand as the ID string directly (not as an object)
         formData.append('brand', itemData.brand._id);
         
-        // Add image files to the "files" field (which accepts multiple files)
-        if (itemData.images && itemData.images.length > 0) {
-            itemData.images.forEach(file => {
-                formData.append('files', file);
-            });
-        }
-        
-        // Use custom config to handle multipart/form-data
+        // Set the correct content type for x-www-form-urlencoded
         const config = {
             headers: {
-                'Content-Type': 'multipart/form-data'
+                'Content-Type': 'application/x-www-form-urlencoded'
             }
         };
         
@@ -124,7 +117,7 @@ const updateItemAxios = async (itemId, itemData) => {
 // Delete item
 const deleteItemAxios = async (itemId) => {
     try {
-        const res = await axiosConfig.delete(`items/${itemId}`);
+        const res = await axiosConfig.del(`items/${itemId}`);
         return res;
     } catch (error) {
         console.log('Error deleting item:', error);

@@ -141,6 +141,9 @@ const del = async (url, config = {}) => {
     }
 };
 
+// Add the delete function to axiosConfig so it can be called directly
+axiosConfig.del = del;
+
 // Alias for delete since it's a reserved keyword
 const delete_ = del;
 

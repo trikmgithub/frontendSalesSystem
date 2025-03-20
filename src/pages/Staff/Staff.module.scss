@@ -635,3 +635,87 @@
     align-self: flex-end;
   }
 }
+
+.invoiceActions {
+  display: flex;
+  gap: 10px;
+  margin-top: 15px;
+  flex-wrap: wrap;
+}
+
+.invoiceButton {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border-radius: 4px;
+  border: none;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+  
+  &.downloadButton {
+    background-color: #4a148c;
+    color: white;
+    
+    &:hover:not(:disabled) {
+      background-color: #6a1b9a;
+    }
+  }
+  
+  &.emailButton {
+    background-color: #01579b;
+    color: white;
+    
+    &:hover:not(:disabled) {
+      background-color: #0277bd;
+    }
+  }
+}
+
+.spinnerIcon {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Update existing styles */
+.paymentActions {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  margin-top: 20px;
+  padding-top: 15px;
+  border-top: 1px solid #e8e8e8;
+}
+
+.statusActions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  
+  span {
+    font-size: 14px;
+    color: #666;
+  }
+}
+
+/* Responsive adjustments */
+@media (min-width: 768px) {
+  .paymentActions {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+  }
+}

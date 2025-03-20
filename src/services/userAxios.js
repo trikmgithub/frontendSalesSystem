@@ -11,29 +11,10 @@ const getUsersAxios = async () => {
     }
 };
 
-// Get user by ID and automatically update localStorage
+// Get user by ID without saving to localStorage
 const getUserByIdAxios = async (userId) => {
     try {
         const res = await axiosConfig.get(`users/info/${userId}`);
-
-        // If successful, automatically update the user data in localStorage
-        if (res.data && res.data.user) {
-            // Extract all user data, but don't store password
-            const userData = res.data.user;
-
-            // Make sure password is not stored in localStorage
-            const { password, ...safeUserData } = userData;
-
-            // Get current user data from localStorage
-            const currentUserData = JSON.parse(localStorage.getItem('user') || '{}');
-
-            // Merge with new data (preserve fields like access_token that might not be in the API response)
-            const updatedUserData = { ...currentUserData, ...safeUserData };
-
-            // Update localStorage
-            localStorage.setItem('user', JSON.stringify(updatedUserData));
-        }
-
         return res;
     } catch (error) {
         console.error('Error fetching user by ID:', error);
@@ -56,24 +37,21 @@ const updateAddressAxios = async (addressData) => {
             }
         });
 
-        // If successful, update the address in localStorage
-        if (res.data && res.data.user) {
-            // Get current user data from localStorage
-            const currentUserData = JSON.parse(localStorage.getItem('user') || '{}');
-
-            // Update only the address field
-            const updatedUserData = {
-                ...currentUserData,
-                address: res.data.user.address
-            };
-
-            // Update localStorage
-            localStorage.setItem('user', JSON.stringify(updatedUserData));
-
-            // Also update confirmedAddress for backward compatibility
-            localStorage.setItem('confirmedAddress', res.data.user.address);
-
-            console.log('Address updated successfully in localStorage');
+        // If successful and user object exists in localStorage, update it there too
+        if (res.data && res.data.user && res.data.user.address) {
+            try {
+                const userData = JSON.parse(localStorage.getItem('user') || '{}');
+                
+                // Only update localStorage if we already have valid user data
+                if (userData && userData._id) {
+                    userData.address = res.data.user.address;
+                    localStorage.setItem('user', JSON.stringify(userData));
+                    console.log('Address updated in localStorage after API success');
+                }
+            } catch (localStorageError) {
+                console.error('Error updating address in localStorage:', localStorageError);
+                // Continue since API call was successful
+            }
         }
 
         return res;

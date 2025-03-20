@@ -274,23 +274,16 @@ function ProductManagement() {
     try {
       setLoading(true);
       
-      // Separate existing image URLs from new file uploads
-      const existingImageUrls = [];
-      const newImageFiles = [...formData.images];
-      
-      // If we're editing, we need to track which images were from the server
-      if (currentProduct && currentProduct.imageUrls) {
-        const existingUrls = currentProduct.imageUrls;
-        
-        // Keep track of which URLs to preserve
-        existingImageUrls.push(...existingUrls);
-      }
-      
-      // Prepare product data with files and existing URLs properly separated
+      // Create product data for the update
+      // Note: For updating, we don't need to send images
       const productData = {
         ...formData,
-        imageFiles: newImageFiles,
-        existingImageUrls: existingImageUrls
+        // Keep only the data needed for the update
+        name: formData.name,
+        price: formData.price,
+        description: formData.description,
+        quantity: formData.quantity,
+        brand: formData.brand
       };
       
       const response = await itemAxios.updateItemAxios(currentProduct._id, productData);
@@ -886,57 +879,82 @@ function ProductManagement() {
                 <label htmlFor="name">Product Name</label>
                 <input
                   type="text"
-                  id="name"
+                  id="edit-name"
                   name="name"
                   value={formData.name}
                   onChange={handleInputChange}
+                  className={cx({ 'error-input': formErrors.name })}
                   required
                 />
+                {formErrors.name && (
+                  <div className={cx('error-message')}>
+                    <FaExclamationTriangle /> {formErrors.name}
+                  </div>
+                )}
               </div>
               <div className={cx('form-group')}>
                 <label htmlFor="description">Description</label>
                 <textarea
-                  id="description"
+                  id="edit-description"
                   name="description"
                   value={formData.description}
                   onChange={handleInputChange}
                   rows="4"
+                  className={cx({ 'error-input': formErrors.description })}
                 />
+                {formErrors.description && (
+                  <div className={cx('error-message')}>
+                    <FaExclamationTriangle /> {formErrors.description}
+                  </div>
+                )}
               </div>
               <div className={cx('form-row')}>
                 <div className={cx('form-group', 'half')}>
                   <label htmlFor="price">Price (VND)</label>
                   <input
                     type="number"
-                    id="price"
+                    id="edit-price"
                     name="price"
                     value={formData.price}
                     onChange={handleInputChange}
                     min="0"
                     step="1000"
                     required
+                    className={cx({ 'error-input': formErrors.price })}
                   />
+                  {formErrors.price && (
+                    <div className={cx('error-message')}>
+                      <FaExclamationTriangle /> {formErrors.price}
+                    </div>
+                  )}
                 </div>
                 <div className={cx('form-group', 'half')}>
                   <label htmlFor="quantity">Quantity</label>
                   <input
                     type="number"
-                    id="quantity"
+                    id="edit-quantity"
                     name="quantity"
                     value={formData.quantity}
                     onChange={handleInputChange}
                     min="0"
                     required
+                    className={cx({ 'error-input': formErrors.quantity })}
                   />
+                  {formErrors.quantity && (
+                    <div className={cx('error-message')}>
+                      <FaExclamationTriangle /> {formErrors.quantity}
+                    </div>
+                  )}
                 </div>
               </div>
               <div className={cx('form-group')}>
                 <label htmlFor="brand">Brand</label>
                 <select
-                  id="brand"
+                  id="edit-brand"
                   name="brand"
-                  value={formData.brand}
+                  value={formData.brand._id || ''}
                   onChange={handleInputChange}
+                  className={cx({ 'error-input': formErrors.brand })}
                 >
                   <option value="">Select a brand</option>
                   {brands.map(brand => (
@@ -945,68 +963,11 @@ function ProductManagement() {
                     </option>
                   ))}
                 </select>
-              </div>
-              <div className={cx('form-group')}>
-                <label>Product Images (Maximum 3)</label>
-                <div className={cx('image-upload-container')}>
-                  <div className={cx('image-previews')}>
-                    {formData.imageUrls.map((url, index) => (
-                      <div key={index} className={cx('image-preview-item')}>
-                        <img 
-                          src={url} 
-                          alt={`Product ${index + 1}`} 
-                          className={cx('image-preview')}
-                        />
-                        <button 
-                          type="button"
-                          className={cx('remove-image-button')}
-                          onClick={() => removeImage(index)}
-                        >
-                          <FaTimes />
-                        </button>
-                      </div>
-                    ))}
-                    
-                    {/* Show upload button if less than 3 images */}
-                    {formData.imageUrls.length < 3 && (
-                      <label className={cx('image-upload-button')}>
-                        <input
-                          type="file"
-                          accept="image/jpeg,image/png,image/jpg"
-                          onChange={handleImageUpload}
-                          multiple={formData.imageUrls.length < 2} // Allow multiple only if we can accept more than 1
-                          className={cx('file-input')}
-                        />
-                        <FaPlus /> Upload Image
-                      </label>
-                    )}
-                  </div>
-                </div>
-                {formErrors.images && (
+                {formErrors.brand && (
                   <div className={cx('error-message')}>
-                    <FaExclamationTriangle /> {formErrors.images}
+                    <FaExclamationTriangle /> {formErrors.brand}
                   </div>
                 )}
-                <div className={cx('image-upload-help')}>
-                  Upload up to 3 JPG or PNG images. First image will be the main product image.
-                </div>
-              </div>
-              <div className={cx('form-group')}>
-                <label>Flash Sale Status</label>
-                <div className={cx('toggle-container')}>
-                  <button
-                    type="button"
-                    className={cx('toggle-button', { active: formData.flashSale })}
-                    onClick={() => setFormData(prev => ({ ...prev, flashSale: !prev.flashSale }))}
-                  >
-                    <div className={cx('toggle-slider')}>
-                      <div className={cx('toggle-knob')}></div>
-                    </div>
-                    <span className={cx('toggle-label')}>
-                      {formData.flashSale ? 'On Sale' : 'Regular Price'}
-                    </span>
-                  </button>
-                </div>
               </div>
             </div>
             <div className={cx('modal-footer')}>

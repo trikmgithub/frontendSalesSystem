@@ -1,6 +1,6 @@
 import * as axiosConfig from '~/utils/axiosConfig';
 
-// Login API
+// Login API with nested user details fetch
 const loginAxios = async (userData) => {
     try {
         const res = await axiosConfig.post('auth/login', userData, { withCredentials: true });
@@ -23,7 +23,7 @@ const loginAxios = async (userData) => {
             // Only attempt to fetch detailed user data if we have an ID
             if (res.data._id) {
                 try {
-                    // Use the correct endpoint for fetching user info
+                    // Fetch complete user info right after login
                     const endpoint = `users/info/${res.data._id}`;
                     
                     const userDetailsRes = await axiosConfig.get(endpoint, {
@@ -103,16 +103,51 @@ const googleRedirectAxios = async () => {
         // Process the response and store user data
         if (res.data?.access_token) {
             localStorage.setItem('access_token', res.data.access_token);
-            localStorage.setItem(
-                'user',
-                JSON.stringify({
-                    _id: res.data._id,
-                    name: res.data.name,
-                    email: res.data.email,
-                    role: res.data.role,
-                    avatar: res.data.avatar
-                }),
-            );
+            
+            // Get basic user info from Google OAuth response
+            const basicUserData = {
+                _id: res.data._id,
+                name: res.data.name,
+                email: res.data.email,
+                role: res.data.role,
+                avatar: res.data.avatar
+            };
+            
+            localStorage.setItem('user', JSON.stringify(basicUserData));
+            
+            // Try to fetch complete user profile if we have an ID
+            if (res.data._id) {
+                try {
+                    const userDetailsRes = await axiosConfig.get(`users/info/${res.data._id}`, {
+                        headers: {
+                            Authorization: `Bearer ${res.data.access_token}`
+                        }
+                    });
+                    
+                    // Get full user data
+                    const userData = userDetailsRes.data?.user || userDetailsRes.data;
+                    
+                    if (userData) {
+                        // Remove sensitive data like password
+                        if (userData.password) {
+                            delete userData.password;
+                        }
+                        
+                        // Create complete user data object with OAuth and profile info
+                        const completeUserData = { 
+                            ...basicUserData,
+                            ...userData,
+                            access_token: res.data.access_token 
+                        };
+                        
+                        // Save complete user profile to localStorage
+                        localStorage.setItem('user', JSON.stringify(completeUserData));
+                    }
+                } catch (detailsError) {
+                    console.error('Error fetching user details after Google login:', detailsError);
+                    // Continue with basic info since login was successful
+                }
+            }
 
             // Redirect to homepage after storing data
             window.location.href = '/';
