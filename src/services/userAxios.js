@@ -11,14 +11,33 @@ const getUsersAxios = async () => {
     }
 };
 
-// Get user by ID without saving to localStorage
+// Improved getUserById function with better error handling
 const getUserByIdAxios = async (userId) => {
     try {
-        const res = await axiosConfig.get(`users/info/${userId}`);
+        // Make sure to include authorization header
+        const token = localStorage.getItem('access_token');
+        const config = token ? {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        } : {};
+        
+        console.log(`Fetching user data for ID: ${userId}`);
+        const res = await axiosConfig.get(`users/info/${userId}`, config);
+        
+        // Log response to help with debugging
+        console.log(`Response for user ${userId}:`, res);
+        
         return res;
     } catch (error) {
         console.error('Error fetching user by ID:', error);
-        throw new Error(error);
+        
+        // Return a structured error response instead of throwing
+        return {
+            error: true,
+            message: error.response?.data?.message || error.message || 'Failed to fetch user data',
+            status: error.response?.status
+        };
     }
 };
 

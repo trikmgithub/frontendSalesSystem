@@ -39,6 +39,9 @@ function StaffPage() {
   const [sortDirection, setSortDirection] = useState('desc');
   const [filterMethod, setFilterMethod] = useState('all');
   const [filterStatus, setFilterStatus] = useState('all');
+  
+  // Add email loading state to show loading indicator
+  const [emailsLoading, setEmailsLoading] = useState({});
 
   const handleLogout = async () => {
     try {
@@ -77,7 +80,9 @@ function StaffPage() {
 
         // Fetch user emails for all orders
         const userIds = [...new Set(response.data.map(payment => payment.userId))];
-        fetchUserEmails(userIds);
+        if (userIds.length > 0) {
+          fetchUserEmails(userIds);
+        }
       } else {
         setPayments([]);
       }
@@ -89,26 +94,61 @@ function StaffPage() {
     }
   };
 
-  // Fetch user emails for all orders
+  // Improved function to fetch user emails
   const fetchUserEmails = async (userIds) => {
+    // Mark all userIds as loading
+    const loadingState = {};
+    userIds.forEach(id => {
+      loadingState[id] = true;
+    });
+    setEmailsLoading(loadingState);
+    
     const emails = {};
 
     for (const userId of userIds) {
-      if (!userEmails[userId]) {
-        try {
-          const userData = await getUserByIdAxios(userId);
-          if (userData && userData.user && userData.user.email) {
-            emails[userId] = userData.user.email;
-          } else {
-            emails[userId] = 'Unknown';
+      // Skip if we already have this email and it's not "Unknown"
+      if (userEmails[userId] && userEmails[userId] !== 'Unknown') {
+        continue;
+      }
+      
+      try {
+        // Fetch user data with auth token
+        const response = await getUserByIdAxios(userId);
+        console.log(`User data response for ${userId}:`, response);
+        
+        let email = 'Unknown';
+        
+        // Try different possible response structures to find the email
+        if (response && response.data) {
+          if (response.data.user && response.data.user.email) {
+            // Structure: { data: { user: { email: '...' } } }
+            email = response.data.user.email;
+          } else if (response.data.email) {
+            // Structure: { data: { email: '...' } }
+            email = response.data.email;
+          } else if (typeof response.data === 'object') {
+            // The user object might be directly in data
+            const userData = response.data;
+            if (userData.email) {
+              email = userData.email;
+            }
           }
-        } catch (error) {
-          console.error(`Error fetching user data for ${userId}:`, error);
-          emails[userId] = 'Unknown';
         }
+        
+        emails[userId] = email;
+      } catch (error) {
+        console.error(`Error fetching user data for ${userId}:`, error);
+        emails[userId] = 'Unknown';
+      } finally {
+        // Mark this userId as done loading
+        setEmailsLoading(prev => ({
+          ...prev,
+          [userId]: false
+        }));
       }
     }
 
+    // Update the emails state with all the newly fetched emails
     setUserEmails(prev => ({ ...prev, ...emails }));
   };
 
@@ -269,6 +309,37 @@ function StaffPage() {
     }
   };
 
+  // Manually refresh customer email
+  const refreshCustomerEmail = async (userId) => {
+    if (!userId) return;
+    
+    setEmailsLoading(prev => ({ ...prev, [userId]: true }));
+    
+    try {
+      const response = await getUserByIdAxios(userId);
+      
+      let email = 'Unknown';
+      if (response && response.data) {
+        if (response.data.user && response.data.user.email) {
+          email = response.data.user.email;
+        } else if (response.data.email) {
+          email = response.data.email;
+        } else if (typeof response.data === 'object') {
+          const userData = response.data;
+          if (userData.email) {
+            email = userData.email;
+          }
+        }
+      }
+      
+      setUserEmails(prev => ({ ...prev, [userId]: email }));
+    } catch (error) {
+      console.error(`Error refreshing email for user ${userId}:`, error);
+    } finally {
+      setEmailsLoading(prev => ({ ...prev, [userId]: false }));
+    }
+  };
+
   // Handle sorting
   const handleSort = (field) => {
     if (sortField === field) {
@@ -312,6 +383,30 @@ function StaffPage() {
   };
 
   const sortedAndFilteredPayments = getSortedAndFilteredPayments();
+
+  // Customer email display component with loading state
+  const CustomerEmail = ({ userId }) => {
+    if (emailsLoading[userId]) {
+      return <span>Loading email...</span>;
+    }
+    
+    const email = userEmails[userId] || 'Unknown';
+    
+    return (
+      <div className={cx('customerEmail')}>
+        <strong>Customer Email:</strong> {email}
+        {email === 'Unknown' && (
+          <button 
+            className={cx('refreshEmailButton')} 
+            onClick={() => refreshCustomerEmail(userId)}
+            title="Refresh email"
+          >
+            <FaUndo />
+          </button>
+        )}
+      </div>
+    );
+  };
 
   return (
     <div className={cx('adminContainer')}>
@@ -466,7 +561,7 @@ function StaffPage() {
                     {expandedPayments[payment._id] && (
                       <div className={cx('paymentDetails')}>
                         <div className={cx('paymentUser')}>
-                          <strong>Customer Email:</strong> {userEmails[payment.userId] || 'Loading...'}
+                          <CustomerEmail userId={payment.userId} />
                         </div>
 
                         <div className={cx('itemsList')}>
@@ -537,7 +632,7 @@ function StaffPage() {
                             <button
                               className={cx('invoiceButton', 'emailButton')}
                               onClick={() => handleSendInvoice(payment._id, payment.userId)}
-                              disabled={actionLoading[`email_${payment._id}`]}
+                              disabled={actionLoading[`email_${payment._id}`] || !userEmails[payment.userId] || userEmails[payment.userId] === 'Unknown'}
                               title="Send Invoice by Email"
                             >
                               {actionLoading[`email_${payment._id}`] ? (

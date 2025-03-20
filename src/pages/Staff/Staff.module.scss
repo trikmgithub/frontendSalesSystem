@@ -658,6 +658,7 @@
   &:disabled {
     opacity: 0.6;
     cursor: not-allowed;
+    background-color: #999 !important;
   }
   
   &.downloadButton {
@@ -717,5 +718,42 @@
     flex-direction: row;
     justify-content: space-between;
     align-items: center;
+  }
+}
+
+/* Add these styles to your existing Staff.module.scss file */
+
+.customerEmail {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  
+  strong {
+    font-weight: 600;
+    color: #333;
+  }
+}
+
+.refreshEmailButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #f0f0f0;
+  border: none;
+  color: #666;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-left: 8px;
+  
+  &:hover {
+    background: #e0e0e0;
+    color: #356e4e;
+  }
+  
+  svg {
+    font-size: 12px;
   }
 }

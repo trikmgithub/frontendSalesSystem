@@ -10,13 +10,16 @@ const payosPayAxios = async (cartItems, totalAmount) => {
             price: item.price
         }));
 
-        // Prepare payment data
+        // Get base URL from window location or environment
+        const baseUrl = window.location.origin; // e.g. http://localhost:3000
+
+        // Prepare payment data with environment variables for URLs
         const paymentData = {
             amount: totalAmount,
             description: "Thanh toán đơn hàng test",
             items: items,
-            returnUrl: "http://localhost:8000/success.html",
-            cancelUrl: "http://localhost:8000/cancel.html"
+            returnUrl: import.meta.env.VITE_PAYMENT_RETURN_URL || `${baseUrl}/`,
+            cancelUrl: import.meta.env.VITE_PAYMENT_CANCEL_URL || `${baseUrl}/payment`
         };
 
         // Call the PayOS API endpoint
