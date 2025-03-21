@@ -22,11 +22,7 @@ const getUserByIdAxios = async (userId) => {
             }
         } : {};
         
-        console.log(`Fetching user data for ID: ${userId}`);
         const res = await axiosConfig.get(`users/info/${userId}`, config);
-        
-        // Log response to help with debugging
-        console.log(`Response for user ${userId}:`, res);
         
         return res;
     } catch (error) {

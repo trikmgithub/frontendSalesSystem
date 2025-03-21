@@ -1,45 +1,37 @@
 // src/pages/Staff/Staff.jsx
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import classNames from 'classnames/bind';
 import styles from './Staff.module.scss';
 import { logoutAxios } from '~/services/authAxios';
-import { useNavigate } from 'react-router-dom';
 import ProductManagement from '~/pages/ProductManagement/ProductManagement';
 import OrderManagement from '~/pages/OrderManagement/OrderManagement';
 
 const cx = classNames.bind(styles);
 
 function StaffPage() {
-  const navigate = useNavigate();
   const [userData, setUserData] = useState(null);
   const [activeTab, setActiveTab] = useState('orders'); // 'orders' or 'products'
 
+  // Simplified logout handler - Uses logoutAxios which handles everything
   const handleLogout = async () => {
     try {
       await logoutAxios();
-      localStorage.removeItem('user');
-      navigate('/');
+      // No need for additional code - logoutAxios handles everything
     } catch (error) {
       console.error('Logout failed:', error);
     }
   };
 
+  // Load user data on component mount - NO REDIRECTION LOGIC
   useEffect(() => {
-    // Check user role on component mount
+    // Get user info from localStorage
     const userInfo = JSON.parse(localStorage.getItem('user') || 'null');
-
-    if (!userInfo || userInfo === 'null') {
-      navigate('/');
-      return;
+    
+    // Just set user data without any redirection
+    if (userInfo && userInfo !== 'null') {
+      setUserData(userInfo);
     }
-
-    if (!['STAFF', 'MANAGER', 'ADMIN'].includes(userInfo.role)) {
-      navigate('/');
-      return;
-    }
-
-    setUserData(userInfo);
-  }, [navigate]);
+  }, []);
 
   return (
     <div className={cx('adminContainer')}>

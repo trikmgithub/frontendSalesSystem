@@ -9,7 +9,7 @@ const loginAxios = async (userData) => {
         if (res.data?.access_token) {
             // Store access token immediately
             localStorage.setItem('access_token', res.data.access_token);
-            
+
             // Store basic user info from login response
             const basicUserData = {
                 _id: res.data._id,
@@ -17,37 +17,37 @@ const loginAxios = async (userData) => {
                 email: res.data.email,
                 role: res.data.role,
             };
-            
+
             localStorage.setItem('user', JSON.stringify(basicUserData));
-            
+
             // Only attempt to fetch detailed user data if we have an ID
             if (res.data._id) {
                 try {
                     // Fetch complete user info right after login
                     const endpoint = `users/info/${res.data._id}`;
-                    
+
                     const userDetailsRes = await axiosConfig.get(endpoint, {
                         headers: {
                             Authorization: `Bearer ${res.data.access_token}`
                         }
                     });
-                    
+
                     // Check the structure of the response to extract user data correctly
                     const userData = userDetailsRes.data?.user || userDetailsRes.data;
-                    
+
                     if (userData) {
                         // Ensure password is not included
                         if (userData.password) {
                             delete userData.password;
                         }
-                        
+
                         // Make sure to preserve access token and basic info
-                        const completeUserData = { 
+                        const completeUserData = {
                             ...basicUserData,
                             ...userData,
-                            access_token: res.data.access_token 
+                            access_token: res.data.access_token
                         };
-                        
+
                         // Update localStorage with complete user data
                         localStorage.setItem('user', JSON.stringify(completeUserData));
                     }
@@ -56,10 +56,20 @@ const loginAxios = async (userData) => {
                     // We already saved the basic info, so login still succeeds
                 }
             }
-            
-            // Add a short delay to ensure localStorage is updated before reload
+
+            // SIMPLE ROLE-BASED REDIRECTION
+            const role = res.data.role;
+
+            // Add a short delay to ensure localStorage is updated before redirection
             setTimeout(() => {
-                window.location.reload();
+                if (['ADMIN', 'MANAGER'].includes(role)) {
+                    window.location.href = '/admin';
+                } else if (role === 'STAFF') {
+                    window.location.href = '/staff';
+                } else {
+                    // Regular users go to homepage
+                    window.location.reload();
+                }
             }, 300); // 300ms delay
         }
 
@@ -78,6 +88,18 @@ const googleLoginAxios = async () => {
 
         // Redirect the user to Google login page
         window.location.href = `${apiBaseUrl}/auth/google/login`;
+
+        const role = res.data.role;
+
+        // Redirect based on role after Google OAuth login
+        if (['ADMIN', 'MANAGER'].includes(role)) {
+            window.location.href = '/admin';
+        } else if (role === 'STAFF') {
+            window.location.href = '/staff';
+        } else {
+            // Regular users go to homepage
+            window.location.href = '/';
+        }
     } catch (error) {
         console.error("Google Login Error:", error);
         throw new Error("Google login failed.");
@@ -103,7 +125,7 @@ const googleRedirectAxios = async () => {
         // Process the response and store user data
         if (res.data?.access_token) {
             localStorage.setItem('access_token', res.data.access_token);
-            
+
             // Get basic user info from Google OAuth response
             const basicUserData = {
                 _id: res.data._id,
@@ -112,9 +134,9 @@ const googleRedirectAxios = async () => {
                 role: res.data.role,
                 avatar: res.data.avatar
             };
-            
+
             localStorage.setItem('user', JSON.stringify(basicUserData));
-            
+
             // Try to fetch complete user profile if we have an ID
             if (res.data._id) {
                 try {
@@ -123,23 +145,23 @@ const googleRedirectAxios = async () => {
                             Authorization: `Bearer ${res.data.access_token}`
                         }
                     });
-                    
+
                     // Get full user data
                     const userData = userDetailsRes.data?.user || userDetailsRes.data;
-                    
+
                     if (userData) {
                         // Remove sensitive data like password
                         if (userData.password) {
                             delete userData.password;
                         }
-                        
+
                         // Create complete user data object with OAuth and profile info
-                        const completeUserData = { 
+                        const completeUserData = {
                             ...basicUserData,
                             ...userData,
-                            access_token: res.data.access_token 
+                            access_token: res.data.access_token
                         };
-                        
+
                         // Save complete user profile to localStorage
                         localStorage.setItem('user', JSON.stringify(completeUserData));
                     }

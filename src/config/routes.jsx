@@ -12,6 +12,7 @@ const routes = {
     itemDetail: '/product/:id',
     brand: '/brand/:id', 
     staff: '/staff',
+    admin: '/admin',
     favorites: '/favorites',
 };
 

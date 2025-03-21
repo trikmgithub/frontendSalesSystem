@@ -15,6 +15,7 @@ import ItemDetail from '~/pages/ItemDetail/ItemDetail';
 import BrandPage from '~/pages/Brand/BrandPage'; 
 import StaffPage from '~/pages/Staff/Staff';
 import Favorites from '~/pages/Profile/Favorites';
+import AdminDashboard from '~/pages/Admin/AdminDashboard';
 
 const publicRoutes = [
     { path: config.routes.home, component: Home, layout: HeaderOnly },
@@ -31,6 +32,7 @@ const publicRoutes = [
     { path: config.routes.itemDetail, component: ItemDetail, layout: HeaderOnly },
     { path: config.routes.brand, component: BrandPage, layout: HeaderOnly },  
     { path: config.routes.staff, component: StaffPage, layout: null },
+    { path: config.routes.admin, component: AdminDashboard, layout: null },
 ];
 
 const privateRoutes = [];

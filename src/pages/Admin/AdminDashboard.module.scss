@@ -1,0 +1,133 @@
+// src/pages/Admin/AdminDashboard.module.scss
+.adminContainer {
+  display: flex;
+  flex-direction: column;
+  padding: 30px;
+  background: #f7f9fc;
+  min-height: 100vh;
+  width: 100%;
+}
+
+.adminHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.adminTitle {
+  font-size: 28px;
+  font-weight: 700;
+  color: #356e4e;
+  margin: 0;
+}
+
+.userInfo {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.userName {
+  font-weight: 500;
+  font-size: 16px;
+}
+
+.userRole {
+  background: #356e4e;
+  color: white;
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  text-transform: uppercase;
+}
+
+.logoutButton {
+  background: #f26522;
+  color: white;
+  border: none;
+  padding: 8px 15px;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+
+  &:hover {
+    background: #e55511;
+  }
+}
+
+/* Tab Navigation */
+.tabNavigation {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+  background: white;
+  padding: 5px;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.tabButton {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  border: none;
+  background: transparent;
+  color: #555;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: all 0.2s;
+
+  svg {
+    font-size: 16px;
+  }
+
+  &:hover {
+    background: #f5f5f5;
+    color: #333;
+  }
+
+  &.active {
+    background: #356e4e;
+    color: white;
+  }
+}
+
+.adminContent {
+  flex: 1;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  padding: 25px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 992px) {
+  .adminContainer {
+    padding: 20px 15px;
+  }
+}
+
+@media (max-width: 768px) {
+  .adminHeader {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 15px;
+  }
+
+  .userInfo {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .tabNavigation {
+    flex-direction: column;
+    gap: 5px;
+  }
+}
