@@ -4,12 +4,14 @@ import classNames from 'classnames/bind';
 import styles from './AdminDashboard.module.scss';
 import { logoutAxios } from '~/services/authAxios';
 import ProductManagement from '~/pages/ProductManagement/ProductManagement';
+import UserManagement from '~/pages/UserManagement/UserManagement';
+import { FaBox, FaUsers } from 'react-icons/fa';
 
 const cx = classNames.bind(styles);
 
 function AdminDashboard() {
   const [userData, setUserData] = useState(null);
-    const [activeTab, setActiveTab] = useState('products');
+  const [activeTab, setActiveTab] = useState('products');
 
   // Simplified logout handler - Uses logoutAxios which handles everything
   const handleLogout = async () => {
@@ -51,13 +53,25 @@ function AdminDashboard() {
           className={cx('tabButton', { active: activeTab === 'products' })}
           onClick={() => setActiveTab('products')}
         >
+          <FaBox />
           <span>Product Management</span>
+        </button>
+        
+        <button
+          className={cx('tabButton', { active: activeTab === 'users' })}
+          onClick={() => setActiveTab('users')}
+        >
+          <FaUsers />
+          <span>User Management</span>
         </button>
       </div>
 
       <div className={cx('adminContent')}>
         {/* Products Tab Content */}
         {activeTab === 'products' && <ProductManagement />}
+        
+        {/* Users Tab Content */}
+        {activeTab === 'users' && <UserManagement />}
       </div>
     </div>
   );

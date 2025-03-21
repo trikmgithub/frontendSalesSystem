@@ -1,17 +1,21 @@
 import * as axiosConfig from '~/utils/axiosConfig';
 
-// Get all users
-const getUsersAxios = async () => {
+// Get all users with pagination
+const getUsersAxios = async (page = 1, limit = 10) => {
     try {
-        const res = await axiosConfig.get('users/all');
+        const res = await axiosConfig.get(`users/all?page=${page}&limit=${limit}`);
         return res;
     } catch (error) {
-        console.log('Error at userAxios.js');
-        throw new Error(error);
+        console.error('Error fetching users:', error);
+        return {
+            error: true,
+            message: error.response?.data?.message || error.message || 'Failed to fetch users',
+            status: error.response?.status
+        };
     }
 };
 
-// Improved getUserById function with better error handling
+// Get user by ID
 const getUserByIdAxios = async (userId) => {
     try {
         // Make sure to include authorization header
@@ -32,6 +36,51 @@ const getUserByIdAxios = async (userId) => {
         return {
             error: true,
             message: error.response?.data?.message || error.message || 'Failed to fetch user data',
+            status: error.response?.status
+        };
+    }
+};
+
+// Create a new user
+const createUserAxios = async (userData) => {
+    try {
+        const res = await axiosConfig.post('users/create', userData);
+        return res;
+    } catch (error) {
+        console.error('Error creating user:', error);
+        return {
+            error: true,
+            message: error.response?.data?.message || error.message || 'Failed to create user',
+            status: error.response?.status
+        };
+    }
+};
+
+// Update user
+const updateUserAxios = async (userData) => {
+    try {
+        const res = await axiosConfig.patch('users/update', userData);
+        return res;
+    } catch (error) {
+        console.error('Error updating user:', error);
+        return {
+            error: true,
+            message: error.response?.data?.message || error.message || 'Failed to update user',
+            status: error.response?.status
+        };
+    }
+};
+
+// Soft delete user
+const deleteUserAxios = async (userId) => {
+    try {
+        const res = await axiosConfig.patch(`users/delete/${userId}`);
+        return res;
+    } catch (error) {
+        console.error('Error deleting user:', error);
+        return {
+            error: true,
+            message: error.response?.data?.message || error.message || 'Failed to delete user',
             status: error.response?.status
         };
     }
@@ -76,4 +125,11 @@ const updateAddressAxios = async (addressData) => {
     }
 };
 
-export { getUsersAxios, getUserByIdAxios, updateAddressAxios };
+export { 
+    getUsersAxios, 
+    getUserByIdAxios, 
+    createUserAxios,
+    updateUserAxios,
+    deleteUserAxios,
+    updateAddressAxios 
+};

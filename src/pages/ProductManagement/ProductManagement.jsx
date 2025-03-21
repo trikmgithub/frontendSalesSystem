@@ -1,17 +1,16 @@
-// src/components/StaffProductManagement/ProductManagement.jsx
 import React, { useState, useEffect } from 'react';
 import classNames from 'classnames/bind';
 import styles from './ProductManagement.module.scss';
-import { 
-  FaEdit, 
-  FaTrashAlt, 
-  FaEye, 
-  FaEyeSlash, 
-  FaPlus, 
-  FaSearch, 
-  FaSort, 
-  FaSortAmountDown, 
-  FaSortAmountUp, 
+import {
+  FaEdit,
+  FaTrashAlt,
+  FaEye,
+  FaEyeSlash,
+  FaPlus,
+  FaSearch,
+  FaSort,
+  FaSortAmountDown,
+  FaSortAmountUp,
   FaUndo,
   FaChevronLeft,
   FaChevronRight,
@@ -35,18 +34,18 @@ function ProductManagement() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
-  
+
   // State for search and sorting
   const [searchTerm, setSearchTerm] = useState('');
   const [sortField, setSortField] = useState('createdAt');
   const [sortDirection, setSortDirection] = useState('desc');
-  
+
   // State for modals
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [currentProduct, setCurrentProduct] = useState(null);
-  
+
   // State for new product form
   const [formData, setFormData] = useState({
     name: '',
@@ -58,7 +57,7 @@ function ProductManagement() {
     imageUrls: [], // For the API
     flashSale: false
   });
-  
+
   // State for brands (to populate dropdowns)
   const [brands, setBrands] = useState([]);
 
@@ -71,11 +70,11 @@ function ProductManagement() {
   const fetchProducts = async () => {
     try {
       setLoading(true);
-      
+
       // If there's a search term, use the fuzzy search endpoint
       if (searchTerm.trim()) {
         const response = await itemAxios.searchItemsAxios(searchTerm);
-        
+
         if (response && response.data) {
           setProducts(response.data);
           setTotalItems(response.data.length);
@@ -84,7 +83,7 @@ function ProductManagement() {
       } else {
         // Otherwise use the paginated endpoint
         const response = await itemAxios.getItemsPaginatedAxios(currentPage, PAGE_SIZE);
-        
+
         if (response && response.data && response.data.paginateItem) {
           setProducts(response.data.paginateItem.result);
           setTotalItems(response.data.paginateItem.meta.numberItems);
@@ -101,7 +100,7 @@ function ProductManagement() {
 
   // State for form validation
   const [formErrors, setFormErrors] = useState({});
-  
+
   // Fetch brands when component mounts
   useEffect(() => {
     fetchBrands();
@@ -157,7 +156,7 @@ function ProductManagement() {
       reader.onerror = (error) => reject(error);
     });
   };
-  
+
   // Helper function to compress image before upload
   const compressImage = (file) => {
     return new Promise((resolve, reject) => {
@@ -173,7 +172,7 @@ function ProductManagement() {
           const MAX_SIZE = 800;
           let width = img.width;
           let height = img.height;
-          
+
           if (width > height && width > MAX_SIZE) {
             height = Math.round((height * MAX_SIZE) / width);
             width = MAX_SIZE;
@@ -181,14 +180,14 @@ function ProductManagement() {
             width = Math.round((width * MAX_SIZE) / height);
             height = MAX_SIZE;
           }
-          
+
           canvas.width = width;
           canvas.height = height;
-          
+
           // Draw and compress image
           const ctx = canvas.getContext('2d');
           ctx.drawImage(img, 0, 0, width, height);
-          
+
           // Get compressed data URL (0.7 quality JPEG)
           const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.7);
           resolve(compressedDataUrl);
@@ -202,32 +201,32 @@ function ProductManagement() {
   // Validate form before submission
   const validateForm = () => {
     const errors = {};
-    
+
     if (!formData.name.trim()) {
       errors.name = 'Product name is required';
     }
-    
+
     if (formData.price <= 0) {
       errors.price = 'Price must be greater than 0';
     }
-    
+
     if (formData.quantity < 0 || !Number.isInteger(Number(formData.quantity))) {
       errors.quantity = 'Quantity must be a non-negative integer';
     }
-    
+
     if (!formData.brand._id) {
       errors.brand = 'Brand is required';
     }
-    
+
     if (!formData.description.trim()) {
       errors.description = 'Description is required';
     }
-    
+
     // Validate at least one image
     if (formData.images.length === 0 && formData.imageUrls.length === 0) {
       errors.images = 'At least one image is required';
     }
-    
+
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
   };
@@ -238,18 +237,18 @@ function ProductManagement() {
     if (!validateForm()) {
       return;
     }
-    
+
     try {
       setLoading(true);
-      
+
       // Prepare product data with original files instead of base64
       const productData = {
         ...formData,
         imageFiles: formData.images // Use the actual File objects
       };
-      
+
       const response = await itemAxios.createItemAxios(productData);
-      
+
       if (response && response.data) {
         // Clear form and refresh product list
         resetForm();
@@ -270,10 +269,10 @@ function ProductManagement() {
     if (!validateForm()) {
       return;
     }
-    
+
     try {
       setLoading(true);
-      
+
       // Create product data for the update
       // Note: For updating, we don't need to send images
       const productData = {
@@ -285,9 +284,9 @@ function ProductManagement() {
         quantity: formData.quantity,
         brand: formData.brand
       };
-      
+
       const response = await itemAxios.updateItemAxios(currentProduct._id, productData);
-      
+
       if (response && response.data) {
         // Clear form and refresh product list
         resetForm();
@@ -306,9 +305,9 @@ function ProductManagement() {
   const deleteProduct = async () => {
     try {
       setLoading(true);
-      
+
       const response = await itemAxios.deleteItemAxios(currentProduct._id);
-      
+
       if (response) {
         setShowDeleteModal(false);
         fetchProducts();
@@ -325,9 +324,9 @@ function ProductManagement() {
   const toggleProductVisibility = async (productId, isHidden) => {
     try {
       setLoading(true);
-      
+
       const response = await itemAxios.hideItemAxios(productId, !isHidden);
-      
+
       if (response) {
         fetchProducts();
       }
@@ -342,16 +341,16 @@ function ProductManagement() {
   // Function to handle form input changes
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
-    
+
     if (type === 'checkbox') {
       setFormData(prev => ({ ...prev, [name]: checked }));
     } else if (name === 'price' || name === 'quantity') {
       setFormData(prev => ({ ...prev, [name]: parseFloat(value) || 0 }));
     } else if (name === 'brand') {
       // Handle brand as object
-      setFormData(prev => ({ 
-        ...prev, 
-        brand: { _id: value } 
+      setFormData(prev => ({
+        ...prev,
+        brand: { _id: value }
       }));
     } else {
       setFormData(prev => ({ ...prev, [name]: value }));
@@ -361,56 +360,56 @@ function ProductManagement() {
   // Handle file upload for images
   const handleImageUpload = (e) => {
     const files = Array.from(e.target.files);
-    
+
     // Restrict to a maximum of 3 images
     const totalImages = formData.images.length + files.length;
     if (totalImages > 3) {
       alert('Maximum 3 images allowed');
       return;
     }
-    
+
     // Check file types
     const invalidFiles = files.filter(
       file => !['image/jpeg', 'image/png', 'image/jpg'].includes(file.type)
     );
-    
+
     if (invalidFiles.length > 0) {
       alert('Only JPG and PNG image formats are allowed');
       return;
     }
-    
+
     // Process each file
     const newImages = [...formData.images];
     const newImageUrls = [...formData.imageUrls];
-    
+
     files.forEach(file => {
       // Create a URL for preview
       const fileUrl = URL.createObjectURL(file);
-      
+
       newImages.push(file);
       newImageUrls.push(fileUrl); // This will be temporary for preview only
     });
-    
+
     setFormData(prev => ({
       ...prev,
       images: newImages,
       imageUrls: newImageUrls
     }));
   };
-  
+
   // Remove an image
   const removeImage = (index) => {
     const newImages = [...formData.images];
     const newImageUrls = [...formData.imageUrls];
-    
+
     // If it's a file we uploaded, revoke the object URL to prevent memory leaks
     if (newImages[index]) {
       URL.revokeObjectURL(newImageUrls[index]);
     }
-    
+
     newImages.splice(index, 1);
     newImageUrls.splice(index, 1);
-    
+
     setFormData(prev => ({
       ...prev,
       images: newImages,
@@ -436,10 +435,10 @@ function ProductManagement() {
   // Function to open edit modal
   const openEditModal = (product) => {
     setCurrentProduct(product);
-    
+
     // For editing, we'll need to fetch the existing images
     const existingImageUrls = product.imageUrls?.length ? product.imageUrls : [];
-    
+
     setFormData({
       name: product.name || '',
       description: product.description || '',
@@ -468,7 +467,7 @@ function ProductManagement() {
     <div className={cx('product-management')}>
       <div className={cx('header')}>
         <h2 className={cx('title')}>Product Management</h2>
-        <button 
+        <button
           className={cx('create-button')}
           onClick={() => setShowCreateModal(true)}
         >
@@ -492,7 +491,7 @@ function ProductManagement() {
           </div>
         </form>
 
-        <button 
+        <button
           className={cx('reset-button')}
           onClick={() => {
             setSearchTerm('');
@@ -522,7 +521,7 @@ function ProductManagement() {
         <div className={cx('empty-state')}>
           <FaImage className={cx('empty-icon')} />
           <p>No products found</p>
-          <button 
+          <button
             onClick={() => setShowCreateModal(true)}
             className={cx('create-button')}
           >
@@ -536,19 +535,19 @@ function ProductManagement() {
               <thead>
                 <tr>
                   <th className={cx('image-column')}>Image</th>
-                  <th 
+                  <th
                     className={cx('name-column', 'sortable')}
                     onClick={() => handleSort('name')}
                   >
                     Name {getSortIcon('name')}
                   </th>
-                  <th 
+                  <th
                     className={cx('price-column', 'sortable')}
                     onClick={() => handleSort('price')}
                   >
                     Price {getSortIcon('price')}
                   </th>
-                  <th 
+                  <th
                     className={cx('stock-column', 'sortable')}
                     onClick={() => handleSort('quantity')}
                   >
@@ -563,8 +562,8 @@ function ProductManagement() {
                 {products.map(product => (
                   <tr key={product._id} className={cx({ 'hidden-row': product.hidden })}>
                     <td className={cx('image-column')}>
-                      <img 
-                        src={product.imageUrls?.[0] || '/placeholder-image.jpg'} 
+                      <img
+                        src={product.imageUrls?.[0] || '/placeholder-image.jpg'}
                         alt={product.name}
                         onError={(e) => {
                           e.target.onerror = null;
@@ -588,21 +587,21 @@ function ProductManagement() {
                       {product.flashSale ? <FaCheck className={cx('flash-sale-icon')} /> : <FaTimes />}
                     </td>
                     <td className={cx('actions-column')}>
-                      <button 
+                      <button
                         className={cx('action-button', 'edit')}
                         onClick={() => openEditModal(product)}
                         title="Edit product"
                       >
                         <FaEdit />
                       </button>
-                      <button 
+                      <button
                         className={cx('action-button', 'delete')}
                         onClick={() => openDeleteModal(product)}
                         title="Delete product"
                       >
                         <FaTrashAlt />
                       </button>
-                      <button 
+                      <button
                         className={cx('action-button', product.hidden ? 'show' : 'hide')}
                         onClick={() => toggleProductVisibility(product._id, product.hidden)}
                         title={product.hidden ? "Show product" : "Hide product"}
@@ -619,43 +618,47 @@ function ProductManagement() {
           {/* Pagination */}
           {totalPages > 1 && (
             <div className={cx('pagination')}>
-              <button 
-                className={cx('page-button', 'prev')}
-                disabled={currentPage === 1}
-                onClick={() => handlePageChange(currentPage - 1)}
-              >
-                <FaChevronLeft />
-              </button>
-              {Array.from({ length: totalPages }, (_, i) => i + 1)
-                .filter(page => (
-                  page === 1 || 
-                  page === totalPages || 
-                  (page >= currentPage - 1 && page <= currentPage + 1)
-                ))
-                .map((page, index, array) => (
-                  <React.Fragment key={page}>
-                    {index > 0 && array[index - 1] !== page - 1 && (
-                      <span className={cx('ellipsis')}>...</span>
-                    )}
-                    <button 
-                      className={cx('page-button', { active: currentPage === page })}
-                      onClick={() => handlePageChange(page)}
-                    >
-                      {page}
-                    </button>
-                  </React.Fragment>
-                ))}
-              <button 
-                className={cx('page-button', 'next')}
-                disabled={currentPage === totalPages}
-                onClick={() => handlePageChange(currentPage + 1)}
-              >
-                <FaChevronRight />
-              </button>
-              <span className={cx('page-info')}>
-                Showing {((currentPage - 1) * PAGE_SIZE) + 1}-
-                {Math.min(currentPage * PAGE_SIZE, totalItems)} of {totalItems} products
-              </span>
+              <div className={cx('pagination-buttons')}>
+                <button
+                  className={cx('page-button', 'prev')}
+                  disabled={currentPage === 1}
+                  onClick={() => handlePageChange(currentPage - 1)}
+                >
+                  <FaChevronLeft />
+                </button>
+                {Array.from({ length: totalPages }, (_, i) => i + 1)
+                  .filter(page => (
+                    page === 1 ||
+                    page === totalPages ||
+                    (page >= currentPage - 1 && page <= currentPage + 1)
+                  ))
+                  .map((page, index, array) => (
+                    <React.Fragment key={page}>
+                      {index > 0 && array[index - 1] !== page - 1 && (
+                        <span className={cx('ellipsis')}>...</span>
+                      )}
+                      <button
+                        className={cx('page-button', { active: currentPage === page })}
+                        onClick={() => handlePageChange(page)}
+                      >
+                        {page}
+                      </button>
+                    </React.Fragment>
+                  ))}
+                <button
+                  className={cx('page-button', 'next')}
+                  disabled={currentPage === totalPages}
+                  onClick={() => handlePageChange(currentPage + 1)}
+                >
+                  <FaChevronRight />
+                </button>
+              </div>
+              <div className={cx('page-info-container')}>
+                <span className={cx('page-info')}>
+                  Showing {((currentPage - 1) * PAGE_SIZE) + 1}-
+                  {Math.min(currentPage * PAGE_SIZE, totalItems)} of {totalItems} products
+                </span>
+              </div>
             </div>
           )}
         </>
@@ -667,7 +670,7 @@ function ProductManagement() {
           <div className={cx('modal')}>
             <div className={cx('modal-header')}>
               <h3>Create New Product</h3>
-              <button 
+              <button
                 className={cx('close-button')}
                 onClick={() => {
                   resetForm();
@@ -711,7 +714,7 @@ function ProductManagement() {
                   </div>
                 )}
               </div>
-                              <div className={cx('form-row')}>
+              <div className={cx('form-row')}>
                 <div className={cx('form-group', 'half')}>
                   <label htmlFor="price">Price (VND)</label>
                   <input
@@ -778,12 +781,12 @@ function ProductManagement() {
                   <div className={cx('image-previews')}>
                     {formData.imageUrls.map((url, index) => (
                       <div key={index} className={cx('image-preview-item')}>
-                        <img 
-                          src={url} 
-                          alt={`Product ${index + 1}`} 
+                        <img
+                          src={url}
+                          alt={`Product ${index + 1}`}
                           className={cx('image-preview')}
                         />
-                        <button 
+                        <button
                           type="button"
                           className={cx('remove-image-button')}
                           onClick={() => removeImage(index)}
@@ -792,7 +795,7 @@ function ProductManagement() {
                         </button>
                       </div>
                     ))}
-                    
+
                     {/* Show upload button if less than 3 images */}
                     {formData.imageUrls.length < 3 && (
                       <label className={cx('image-upload-button')}>
@@ -836,7 +839,7 @@ function ProductManagement() {
               </div>
             </div>
             <div className={cx('modal-footer')}>
-              <button 
+              <button
                 className={cx('cancel-button')}
                 onClick={() => {
                   resetForm();
@@ -845,7 +848,7 @@ function ProductManagement() {
               >
                 Cancel
               </button>
-              <button 
+              <button
                 className={cx('submit-button')}
                 onClick={createProduct}
                 disabled={!formData.name || formData.price < 0 || loading}
@@ -863,7 +866,7 @@ function ProductManagement() {
           <div className={cx('modal')}>
             <div className={cx('modal-header')}>
               <h3>Edit Product</h3>
-              <button 
+              <button
                 className={cx('close-button')}
                 onClick={() => {
                   resetForm();
@@ -971,7 +974,7 @@ function ProductManagement() {
               </div>
             </div>
             <div className={cx('modal-footer')}>
-              <button 
+              <button
                 className={cx('cancel-button')}
                 onClick={() => {
                   resetForm();
@@ -980,7 +983,7 @@ function ProductManagement() {
               >
                 Cancel
               </button>
-              <button 
+              <button
                 className={cx('submit-button')}
                 onClick={updateProduct}
                 disabled={!formData.name || formData.price < 0 || loading}
@@ -998,7 +1001,7 @@ function ProductManagement() {
           <div className={cx('modal', 'delete-modal')}>
             <div className={cx('modal-header')}>
               <h3>Confirm Deletion</h3>
-              <button 
+              <button
                 className={cx('close-button')}
                 onClick={() => setShowDeleteModal(false)}
               >
@@ -1010,13 +1013,13 @@ function ProductManagement() {
               <p className={cx('delete-warning')}>This action cannot be undone.</p>
             </div>
             <div className={cx('modal-footer')}>
-              <button 
+              <button
                 className={cx('cancel-button')}
                 onClick={() => setShowDeleteModal(false)}
               >
                 Cancel
               </button>
-              <button 
+              <button
                 className={cx('delete-button')}
                 onClick={deleteProduct}
               >
