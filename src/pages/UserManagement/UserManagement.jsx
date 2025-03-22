@@ -2,16 +2,16 @@
 import React, { useState, useEffect } from 'react';
 import classNames from 'classnames/bind';
 import styles from './UserManagement.module.scss';
-import { 
-  FaEdit, 
-  FaTrashAlt, 
+import {
+  FaEdit,
+  FaTrashAlt,
   FaLock,
   FaUnlock,
-  FaPlus, 
-  FaSearch, 
-  FaSort, 
-  FaSortAmountDown, 
-  FaSortAmountUp, 
+  FaPlus,
+  FaSearch,
+  FaSort,
+  FaSortAmountDown,
+  FaSortAmountUp,
   FaUndo,
   FaChevronLeft,
   FaChevronRight,
@@ -20,13 +20,15 @@ import {
   FaUserAlt,
   FaExclamationTriangle
 } from 'react-icons/fa';
-import { 
-  getUsersAxios, 
-  getUserByIdAxios, 
-  createUserAxios, 
-  updateUserAxios, 
-  deleteUserAxios 
+import {
+  getUsersAxios,
+  getUserByIdAxios,
+  createUserAxios,
+  updateUserAxios,
+  softDeleteUserAxios,
+  permanentDeleteUserAxios
 } from '~/services/userAxios';
+import { getRoleByIdAxios } from '~/services/roleAxios';
 
 const cx = classNames.bind(styles);
 
@@ -40,52 +42,95 @@ function UserManagement() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
-  
+
   // State for search and sorting
   const [searchTerm, setSearchTerm] = useState('');
   const [sortField, setSortField] = useState('createdAt');
   const [sortDirection, setSortDirection] = useState('desc');
-  
+
   // State for modals
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showSoftDeleteModal, setShowSoftDeleteModal] = useState(false);
+  const [showPermanentDeleteModal, setShowPermanentDeleteModal] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
-  
+
   // State for new user form
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     password: '',
-    role: 'USER',
+    role: 'user',
     gender: '',
     dateOfBirth: '',
     address: '',
-    confirmPassword: '' // This is for frontend validation only, not sent to API
+    confirmPassword: ''
   });
-  
+
   // State for form validation
   const [formErrors, setFormErrors] = useState({});
+
+  // State for role names cache
+  const [roleNames, setRoleNames] = useState({});
+
+  // Function to fetch role name by roleId
+  const fetchRoleName = async (roleId) => {
+    // Return from cache if available
+    if (roleNames[roleId]) {
+      return roleNames[roleId];
+    }
+
+    try {
+      const response = await getRoleByIdAxios(roleId);
+
+      if (response.error) {
+        console.error('Error fetching role:', response.message);
+        return 'Unknown';
+      }
+
+      // Get the role name from the API response
+      const roleName = response.data?.name?.toLowerCase() || 'unknown';
+
+      // Cache the role name
+      setRoleNames(prev => ({
+        ...prev,
+        [roleId]: roleName
+      }));
+
+      return roleName;
+    } catch (error) {
+      console.error('Error in fetchRoleName:', error);
+      return 'unknown';
+    }
+  };
 
   // Function to fetch users using the API
   const fetchUsers = async () => {
     try {
       setLoading(true);
       setError(null);
-      
+
       const response = await getUsersAxios(currentPage, PAGE_SIZE);
-      
+
       if (response.error) {
         throw new Error(response.message || 'Failed to fetch users');
       }
-      
+
       if (response.data && response.data.result) {
         setUsers(response.data.result);
-        
+
         // Update pagination based on meta data
         if (response.data.meta) {
           setTotalItems(response.data.meta.numberUsers || 0);
           setTotalPages(response.data.meta.totalPages || 1);
+        }
+
+        // Fetch role names for all users
+        const userList = response.data.result;
+        for (const user of userList) {
+          if (user.roleId && !roleNames[user.roleId]) {
+            await fetchRoleName(user.roleId);
+          }
         }
       } else {
         setUsers([]);
@@ -101,7 +146,7 @@ function UserManagement() {
     }
   };
 
-  // Fetch users when component mounts or when page, sort, or search changes
+  // Fetch users when component mounts or when page changes
   useEffect(() => {
     fetchUsers();
   }, [currentPage]);
@@ -111,8 +156,6 @@ function UserManagement() {
     e.preventDefault();
     setCurrentPage(1); // Reset to first page when searching
     fetchUsers();
-    // Note: This is a simple implementation. For actual search, 
-    // we would need a separate API endpoint or filter on the frontend
   };
 
   // Function to handle sort (client-side since the API doesn't support sorting)
@@ -123,25 +166,25 @@ function UserManagement() {
       setSortField(field);
       setSortDirection('desc');
     }
-    
+
     // Apply sorting to the current data
     const sortedUsers = [...users].sort((a, b) => {
       let valueA = a[field];
       let valueB = b[field];
-      
+
       // Handle dates
       if (field === 'createdAt') {
         valueA = new Date(valueA);
         valueB = new Date(valueB);
       }
-      
+
       if (sortDirection === 'asc') {
         return valueA > valueB ? 1 : -1;
       } else {
         return valueA < valueB ? 1 : -1;
       }
     });
-    
+
     setUsers(sortedUsers);
   };
 
@@ -159,25 +202,29 @@ function UserManagement() {
   // Validate form before submission
   const validateForm = () => {
     const errors = {};
-    
+
     if (!formData.name.trim()) {
       errors.name = 'Name is required';
     }
-    
+
     if (!formData.email.trim()) {
       errors.email = 'Email is required';
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
       errors.email = 'Email is invalid';
     }
-    
+
     if (showCreateModal && !formData.password) {
       errors.password = 'Password is required';
     }
-    
+
     if (showCreateModal && formData.password !== formData.confirmPassword) {
       errors.confirmPassword = 'Passwords do not match';
     }
-    
+
+    if (!formData.role) {
+      errors.role = 'Role is required';
+    }
+
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
   };
@@ -194,7 +241,7 @@ function UserManagement() {
       name: '',
       email: '',
       password: '',
-      role: 'USER',
+      role: 'user', // Default role
       gender: '',
       dateOfBirth: '',
       address: '',
@@ -208,31 +255,37 @@ function UserManagement() {
   const openEditModal = async (user) => {
     try {
       setLoading(true);
-      
+
       // Fetch detailed user info
       const response = await getUserByIdAxios(user._id);
-      
+
       if (response.error) {
         throw new Error(response.message || 'Failed to fetch user details');
       }
-      
+
       const userData = response.data || user;
-      
+
       setCurrentUser(userData);
-      
+
+      // Get role name for this user's roleId
+      let roleName = 'user'; // Default
+      if (userData.roleId) {
+        roleName = await fetchRoleName(userData.roleId);
+      }
+
       // Set form data with the fetched user info
       setFormData({
         _id: userData._id,
         name: userData.name || '',
         email: userData.email || '',
-        role: userData.roleId || 'USER', // This might need adjustment based on API response
+        role: roleName,
         gender: userData.gender || '',
         dateOfBirth: userData.dateOfBirth ? new Date(userData.dateOfBirth).toISOString().split('T')[0] : '',
         address: userData.address || '',
         password: '',
         confirmPassword: ''
       });
-      
+
       setShowEditModal(true);
     } catch (err) {
       console.error('Error fetching user details:', err);
@@ -242,33 +295,39 @@ function UserManagement() {
     }
   };
 
-  // Function to open delete modal
-  const openDeleteModal = (user) => {
+  // Function to open soft delete modal
+  const openSoftDeleteModal = (user) => {
     setCurrentUser(user);
-    setShowDeleteModal(true);
+    setShowSoftDeleteModal(true);
   };
 
-  // Function to toggle user active status (soft delete/undelete)
+  // Function to open permanent delete modal
+  const openPermanentDeleteModal = (user) => {
+    setCurrentUser(user);
+    setShowPermanentDeleteModal(true);
+  };
+
+  // Function to toggle user active/inactive status
   const toggleUserStatus = async (userId, isDeleted) => {
     try {
       setLoading(true);
-      
+
       // If already deleted, we would need an "undelete" endpoint
       // For now, we only support deletion
       if (!isDeleted) {
-        const response = await deleteUserAxios(userId);
-        
+        const response = await softDeleteUserAxios(userId);
+
         if (response.error) {
           throw new Error(response.message || 'Failed to update user status');
         }
-        
+
         // Update UI optimistically
-        setUsers(prevUsers => 
-          prevUsers.map(user => 
+        setUsers(prevUsers =>
+          prevUsers.map(user =>
             user._id === userId ? { ...user, isDeleted: true } : user
           )
         );
-        
+
         // Refresh data to ensure UI is in sync with backend
         fetchUsers();
       } else {
@@ -288,32 +347,32 @@ function UserManagement() {
     if (!validateForm()) {
       return;
     }
-    
+
     try {
       setLoading(true);
-      
-      // Prepare user data for API
+
+      // Prepare user data for API - send role name directly
       const userData = {
         name: formData.name,
         email: formData.email,
         password: formData.password,
-        role: formData.role,
+        role: formData.role, // Send role name directly
         gender: formData.gender,
         dateOfBirth: formData.dateOfBirth,
         address: formData.address
       };
-      
+
       const response = await createUserAxios(userData);
-      
+
       if (response.error) {
         throw new Error(response.message || 'Failed to create user');
       }
-      
+
       // Success - refresh user list and close modal
       fetchUsers();
       resetForm();
       setShowCreateModal(false);
-      
+
     } catch (err) {
       console.error('Error creating user:', err);
       alert(err.message || 'Failed to create user. Please try again.');
@@ -327,37 +386,37 @@ function UserManagement() {
     if (!validateForm()) {
       return;
     }
-    
+
     try {
       setLoading(true);
-      
-      // Prepare user data for API
+
+      // Prepare user data for API - send role name directly
       const userData = {
         _id: currentUser._id,
         name: formData.name,
         email: formData.email,
-        role: formData.role,
+        role: formData.role, // Send role name directly
         gender: formData.gender,
         dateOfBirth: formData.dateOfBirth,
         address: formData.address
       };
-      
+
       // Only include password if it was changed
       if (formData.password) {
         userData.password = formData.password;
       }
-      
+
       const response = await updateUserAxios(userData);
-      
+
       if (response.error) {
         throw new Error(response.message || 'Failed to update user');
       }
-      
+
       // Success - refresh user list and close modal
       fetchUsers();
       resetForm();
       setShowEditModal(false);
-      
+
     } catch (err) {
       console.error('Error updating user:', err);
       alert(err.message || 'Failed to update user. Please try again.');
@@ -366,24 +425,48 @@ function UserManagement() {
     }
   };
 
-  // Function to delete a user
-  const deleteUser = async () => {
+  // Function to soft delete a user (deactivate)
+  const softDeleteUser = async () => {
     try {
       setLoading(true);
-      
-      const response = await deleteUserAxios(currentUser._id);
-      
+
+      const response = await softDeleteUserAxios(currentUser._id);
+
       if (response.error) {
-        throw new Error(response.message || 'Failed to delete user');
+        throw new Error(response.message || 'Failed to deactivate user');
       }
-      
+
       // Success - refresh user list and close modal
       fetchUsers();
-      setShowDeleteModal(false);
-      
+      setShowSoftDeleteModal(false);
+
     } catch (err) {
-      console.error('Error deleting user:', err);
-      alert(err.message || 'Failed to delete user. Please try again.');
+      console.error('Error deactivating user:', err);
+      alert(err.message || 'Failed to deactivate user. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Function to permanently delete a user
+  const permanentDeleteUser = async () => {
+    try {
+      setLoading(true);
+
+      const response = await permanentDeleteUserAxios(currentUser._id);
+
+      if (response.error) {
+        throw new Error(response.message || 'Failed to permanently delete user');
+      }
+
+      // Success - refresh user list and close modal
+      alert('User has been permanently deleted from the database.');
+      fetchUsers();
+      setShowPermanentDeleteModal(false);
+
+    } catch (err) {
+      console.error('Error permanently deleting user:', err);
+      alert(err.message || 'Failed to permanently delete user. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -392,7 +475,7 @@ function UserManagement() {
   // Format date for display
   const formatDate = (dateString) => {
     if (!dateString) return '-';
-    
+
     try {
       return new Date(dateString).toLocaleDateString('vi-VN', {
         year: 'numeric',
@@ -404,37 +487,34 @@ function UserManagement() {
     }
   };
 
-  // Helper function to map roleId to a display name
-  const getRoleDisplay = (roleId) => {
-    // This is a simplified mapping - adjust based on your system's role IDs
-    const roleMap = {
-      '67bbe4fd48a9a527b0332e4e': 'USER',
-      '67bbe4fd48a9a527b0332e4f': 'STAFF',
-      '67bbe4fd48a9a527b0332e50': 'ADMIN'
-    };
-    
-    return roleMap[roleId] || 'USER';
-  };
+  // Get role badge class based on role name
+  const getRoleBadgeClass = (roleName) => {
+    if (!roleName) return 'roleBadgeUser'; // Default for unknown roles
 
-  // Get role badge class
-  const getRoleBadgeClass = (roleId) => {
-    const role = getRoleDisplay(roleId);
-    
+    const role = roleName.toLowerCase();
+
     switch (role) {
-      case 'ADMIN':
+      case 'admin':
+      case 'manager': // Added MANAGER to use the same style as ADMIN
         return 'roleBadgeAdmin';
-      case 'STAFF':
+      case 'staff':
         return 'roleBadgeStaff';
       default:
         return 'roleBadgeUser';
     }
   };
 
+  // Capitalize first letter for display
+  const capitalizeFirstLetter = (string) => {
+    if (!string) return '';
+    return string.charAt(0).toUpperCase() + string.slice(1).toLowerCase();
+  };
+
   return (
     <div className={cx('user-management')}>
       <div className={cx('header')}>
         <h2 className={cx('title')}>User Management</h2>
-        <button 
+        <button
           className={cx('create-button')}
           onClick={() => setShowCreateModal(true)}
         >
@@ -458,7 +538,7 @@ function UserManagement() {
           </div>
         </form>
 
-        <button 
+        <button
           className={cx('reset-button')}
           onClick={() => {
             setSearchTerm('');
@@ -488,7 +568,7 @@ function UserManagement() {
         <div className={cx('empty-state')}>
           <FaUserAlt className={cx('empty-icon')} />
           <p>No users found</p>
-          <button 
+          <button
             onClick={() => setShowCreateModal(true)}
             className={cx('create-button')}
           >
@@ -502,20 +582,20 @@ function UserManagement() {
               <thead>
                 <tr>
                   <th className={cx('avatar-column')}>Avatar</th>
-                  <th 
+                  <th
                     className={cx('name-column', 'sortable')}
                     onClick={() => handleSort('name')}
                   >
                     Name {getSortIcon('name')}
                   </th>
-                  <th 
+                  <th
                     className={cx('email-column', 'sortable')}
                     onClick={() => handleSort('email')}
                   >
                     Email {getSortIcon('email')}
                   </th>
                   <th className={cx('role-column')}>Role</th>
-                  <th 
+                  <th
                     className={cx('date-column', 'sortable')}
                     onClick={() => handleSort('createdAt')}
                   >
@@ -530,9 +610,9 @@ function UserManagement() {
                   <tr key={user._id} className={cx({ 'inactive-row': user.isDeleted })}>
                     <td className={cx('avatar-column')}>
                       {user.avatar ? (
-                        <img 
-                          src={user.avatar} 
-                          alt={user.name} 
+                        <img
+                          src={user.avatar}
+                          alt={user.name}
                           className={cx('user-avatar')}
                         />
                       ) : (
@@ -544,8 +624,8 @@ function UserManagement() {
                     <td className={cx('name-column')}>{user.name}</td>
                     <td className={cx('email-column')}>{user.email}</td>
                     <td className={cx('role-column')}>
-                      <span className={cx('role-badge', getRoleBadgeClass(user.roleId))}>
-                        {getRoleDisplay(user.roleId)}
+                      <span className={cx('role-badge', getRoleBadgeClass(roleNames[user.roleId]))}>
+                        {capitalizeFirstLetter(roleNames[user.roleId] || 'Loading...')}
                       </span>
                     </td>
                     <td className={cx('date-column')}>{formatDate(user.createdAt)}</td>
@@ -555,26 +635,26 @@ function UserManagement() {
                       </span>
                     </td>
                     <td className={cx('actions-column')}>
-                      <button 
+                      <button
                         className={cx('action-button', 'edit')}
                         onClick={() => openEditModal(user)}
                         title="Edit user"
                       >
                         <FaEdit />
                       </button>
-                      <button 
+                      <button
+                        className={cx('action-button', 'soft-delete')}
+                        onClick={() => openSoftDeleteModal(user)}
+                        title="Deactivate user"
+                      >
+                        <FaLock />
+                      </button>
+                      <button
                         className={cx('action-button', 'delete')}
-                        onClick={() => openDeleteModal(user)}
-                        title="Delete user"
+                        onClick={() => openPermanentDeleteModal(user)}
+                        title="Permanently delete user"
                       >
                         <FaTrashAlt />
-                      </button>
-                      <button 
-                        className={cx('action-button', user.isDeleted ? 'unlock' : 'lock')}
-                        onClick={() => toggleUserStatus(user._id, user.isDeleted)}
-                        title={user.isDeleted ? "Activate user" : "Deactivate user"}
-                      >
-                        {user.isDeleted ? <FaUnlock /> : <FaLock />}
                       </button>
                     </td>
                   </tr>
@@ -587,7 +667,7 @@ function UserManagement() {
           {totalPages > 1 && (
             <div className={cx('pagination')}>
               <div className={cx('pagination-buttons')}>
-                <button 
+                <button
                   className={cx('page-button', 'prev')}
                   disabled={currentPage === 1}
                   onClick={() => handlePageChange(currentPage - 1)}
@@ -596,8 +676,8 @@ function UserManagement() {
                 </button>
                 {Array.from({ length: totalPages }, (_, i) => i + 1)
                   .filter(page => (
-                    page === 1 || 
-                    page === totalPages || 
+                    page === 1 ||
+                    page === totalPages ||
                     (page >= currentPage - 1 && page <= currentPage + 1)
                   ))
                   .map((page, index, array) => (
@@ -605,7 +685,7 @@ function UserManagement() {
                       {index > 0 && array[index - 1] !== page - 1 && (
                         <span className={cx('ellipsis')}>...</span>
                       )}
-                      <button 
+                      <button
                         className={cx('page-button', { active: currentPage === page })}
                         onClick={() => handlePageChange(page)}
                       >
@@ -613,7 +693,7 @@ function UserManagement() {
                       </button>
                     </React.Fragment>
                   ))}
-                <button 
+                <button
                   className={cx('page-button', 'next')}
                   disabled={currentPage === totalPages}
                   onClick={() => handlePageChange(currentPage + 1)}
@@ -638,7 +718,7 @@ function UserManagement() {
           <div className={cx('modal')}>
             <div className={cx('modal-header')}>
               <h3>Create New User</h3>
-              <button 
+              <button
                 className={cx('close-button')}
                 onClick={() => {
                   resetForm();
@@ -666,7 +746,7 @@ function UserManagement() {
                   </div>
                 )}
               </div>
-              
+
               <div className={cx('form-group')}>
                 <label htmlFor="email">Email Address</label>
                 <input
@@ -684,7 +764,7 @@ function UserManagement() {
                   </div>
                 )}
               </div>
-              
+
               <div className={cx('form-row')}>
                 <div className={cx('form-group', 'half')}>
                   <label htmlFor="password">Password</label>
@@ -703,7 +783,7 @@ function UserManagement() {
                     </div>
                   )}
                 </div>
-                
+
                 <div className={cx('form-group', 'half')}>
                   <label htmlFor="confirmPassword">Confirm Password</label>
                   <input
@@ -722,7 +802,7 @@ function UserManagement() {
                   )}
                 </div>
               </div>
-              
+
               <div className={cx('form-row')}>
                 <div className={cx('form-group', 'half')}>
                   <label htmlFor="role">User Role</label>
@@ -733,12 +813,18 @@ function UserManagement() {
                     onChange={handleInputChange}
                     className={cx({ 'error-input': formErrors.role })}
                   >
-                    <option value="67bbe4fd48a9a527b0332e4e">Regular User</option>
-                    <option value="67bbe4fd48a9a527b0332e4f">Staff</option>
-                    <option value="67bbe4fd48a9a527b0332e50">Administrator</option>
+                    <option value="user">User</option>
+                    <option value="staff">Staff</option>
+                    <option value="admin">Admin</option>
+                    <option value="manager">Manager</option>
                   </select>
+                  {formErrors.role && (
+                    <div className={cx('error-message')}>
+                      <FaExclamationTriangle /> {formErrors.role}
+                    </div>
+                  )}
                 </div>
-                
+
                 <div className={cx('form-group', 'half')}>
                   <label htmlFor="gender">Gender</label>
                   <select
@@ -750,11 +836,10 @@ function UserManagement() {
                     <option value="">Select Gender</option>
                     <option value="male">Male</option>
                     <option value="female">Female</option>
-                    <option value="other">Other</option>
                   </select>
                 </div>
               </div>
-              
+
               <div className={cx('form-group')}>
                 <label htmlFor="dateOfBirth">Date of Birth</label>
                 <input
@@ -765,7 +850,7 @@ function UserManagement() {
                   onChange={handleInputChange}
                 />
               </div>
-              
+
               <div className={cx('form-group')}>
                 <label htmlFor="address">Address</label>
                 <textarea
@@ -778,7 +863,7 @@ function UserManagement() {
               </div>
             </div>
             <div className={cx('modal-footer')}>
-              <button 
+              <button
                 className={cx('cancel-button')}
                 onClick={() => {
                   resetForm();
@@ -787,7 +872,7 @@ function UserManagement() {
               >
                 Cancel
               </button>
-              <button 
+              <button
                 className={cx('submit-button')}
                 onClick={createUser}
                 disabled={loading}
@@ -805,7 +890,7 @@ function UserManagement() {
           <div className={cx('modal')}>
             <div className={cx('modal-header')}>
               <h3>Edit User</h3>
-              <button 
+              <button
                 className={cx('close-button')}
                 onClick={() => {
                   resetForm();
@@ -833,7 +918,7 @@ function UserManagement() {
                   </div>
                 )}
               </div>
-              
+
               <div className={cx('form-group')}>
                 <label htmlFor="edit-email">Email Address</label>
                 <input
@@ -851,7 +936,7 @@ function UserManagement() {
                   </div>
                 )}
               </div>
-              
+
               <div className={cx('form-row')}>
                 <div className={cx('form-group', 'half')}>
                   <label htmlFor="edit-role">User Role</label>
@@ -860,13 +945,20 @@ function UserManagement() {
                     name="role"
                     value={formData.role}
                     onChange={handleInputChange}
+                    className={cx({ 'error-input': formErrors.role })}
                   >
-                    <option value="67bbe4fd48a9a527b0332e4e">Regular User</option>
-                    <option value="67bbe4fd48a9a527b0332e4f">Staff</option>
-                    <option value="67bbe4fd48a9a527b0332e50">Administrator</option>
+                    <option value="user">User</option>
+                    <option value="staff">Staff</option>
+                    <option value="admin">Admin</option>
+                    <option value="manager">Manager</option>
                   </select>
+                  {formErrors.role && (
+                    <div className={cx('error-message')}>
+                      <FaExclamationTriangle /> {formErrors.role}
+                    </div>
+                  )}
                 </div>
-                
+
                 <div className={cx('form-group', 'half')}>
                   <label htmlFor="edit-gender">Gender</label>
                   <select
@@ -878,11 +970,10 @@ function UserManagement() {
                     <option value="">Select Gender</option>
                     <option value="male">Male</option>
                     <option value="female">Female</option>
-                    <option value="other">Other</option>
                   </select>
                 </div>
               </div>
-              
+
               <div className={cx('form-group')}>
                 <label htmlFor="edit-dateOfBirth">Date of Birth</label>
                 <input
@@ -893,7 +984,7 @@ function UserManagement() {
                   onChange={handleInputChange}
                 />
               </div>
-              
+
               <div className={cx('form-group')}>
                 <label htmlFor="edit-address">Address</label>
                 <textarea
@@ -904,51 +995,9 @@ function UserManagement() {
                   rows="3"
                 />
               </div>
-              
-              <div className={cx('form-group')}>
-                <p className={cx('password-note')}>
-                  <FaExclamationTriangle /> Leave password fields empty if you don't want to change the password.
-                </p>
-                
-                <div className={cx('form-row')}>
-                  <div className={cx('form-group', 'half')}>
-                    <label htmlFor="edit-password">New Password</label>
-                    <input
-                      type="password"
-                      id="edit-password"
-                      name="password"
-                      value={formData.password}
-                      onChange={handleInputChange}
-                      className={cx({ 'error-input': formErrors.password })}
-                    />
-                    {formErrors.password && (
-                      <div className={cx('error-message')}>
-                        <FaExclamationTriangle /> {formErrors.password}
-                      </div>
-                    )}
-                  </div>
-                  
-                  <div className={cx('form-group', 'half')}>
-                    <label htmlFor="edit-confirmPassword">Confirm New Password</label>
-                    <input
-                      type="password"
-                      id="edit-confirmPassword"
-                      name="confirmPassword"
-                      value={formData.confirmPassword}
-                      onChange={handleInputChange}
-                      className={cx({ 'error-input': formErrors.confirmPassword })}
-                    />
-                    {formErrors.confirmPassword && (
-                      <div className={cx('error-message')}>
-                        <FaExclamationTriangle /> {formErrors.confirmPassword}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
             </div>
             <div className={cx('modal-footer')}>
-              <button 
+              <button
                 className={cx('cancel-button')}
                 onClick={() => {
                   resetForm();
@@ -957,7 +1006,7 @@ function UserManagement() {
               >
                 Cancel
               </button>
-              <button 
+              <button
                 className={cx('submit-button')}
                 onClick={updateUser}
                 disabled={loading}
@@ -969,35 +1018,72 @@ function UserManagement() {
         </div>
       )}
 
-      {/* Delete Confirmation Modal */}
-      {showDeleteModal && (
+      {/* Soft Delete (Deactivate) Confirmation Modal */}
+      {showSoftDeleteModal && (
         <div className={cx('modal-overlay')}>
           <div className={cx('modal', 'delete-modal')}>
             <div className={cx('modal-header')}>
-              <h3>Confirm Deletion</h3>
-              <button 
+              <h3>Confirm Deactivation</h3>
+              <button
                 className={cx('close-button')}
-                onClick={() => setShowDeleteModal(false)}
+                onClick={() => setShowSoftDeleteModal(false)}
               >
                 <FaTimes />
               </button>
             </div>
             <div className={cx('modal-body')}>
               <p>Are you sure you want to deactivate the user <strong>{currentUser?.name}</strong>?</p>
-              <p className={cx('delete-warning')}>This user will be marked as inactive.</p>
+              <p>This user will be marked as inactive but their data will remain in the database.</p>
             </div>
             <div className={cx('modal-footer')}>
-              <button 
+              <button
                 className={cx('cancel-button')}
-                onClick={() => setShowDeleteModal(false)}
+                onClick={() => setShowSoftDeleteModal(false)}
               >
                 Cancel
               </button>
-              <button 
+              <button
                 className={cx('delete-button')}
-                onClick={deleteUser}
+                onClick={softDeleteUser}
               >
                 {loading ? 'Deactivating...' : 'Deactivate User'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Permanent Delete Confirmation Modal */}
+      {showPermanentDeleteModal && (
+        <div className={cx('modal-overlay')}>
+          <div className={cx('modal', 'delete-modal')}>
+            <div className={cx('modal-header')}>
+              <h3>Confirm Permanent Deletion</h3>
+              <button
+                className={cx('close-button')}
+                onClick={() => setShowPermanentDeleteModal(false)}
+              >
+                <FaTimes />
+              </button>
+            </div>
+            <div className={cx('modal-body')}>
+              <p>Are you sure you want to permanently delete the user <strong>{currentUser?.name}</strong>?</p>
+              <p className={cx('delete-warning')}>
+                <FaExclamationTriangle /> Warning: This action cannot be undone! All user data will be permanently removed from the database.
+              </p>
+            </div>
+            <div className={cx('modal-footer')}>
+              <button
+                className={cx('cancel-button')}
+                onClick={() => setShowPermanentDeleteModal(false)}
+              >
+                Cancel
+              </button>
+              <button
+                className={cx('permanent-delete-button')}
+                onClick={permanentDeleteUser}
+              >
+                {loading ? 'Deleting...' : 'Permanently Delete'}
               </button>
             </div>
           </div>

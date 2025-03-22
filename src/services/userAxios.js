@@ -71,16 +71,32 @@ const updateUserAxios = async (userData) => {
     }
 };
 
-// Soft delete user
-const deleteUserAxios = async (userId) => {
+const softDeleteUserAxios = async (userId) => {
     try {
+        // Keep the existing API endpoint for soft delete/deactivate
         const res = await axiosConfig.patch(`users/delete/${userId}`);
         return res;
     } catch (error) {
-        console.error('Error deleting user:', error);
+        console.error('Error deactivating user:', error);
         return {
             error: true,
-            message: error.response?.data?.message || error.message || 'Failed to delete user',
+            message: error.response?.data?.message || error.message || 'Failed to deactivate user',
+            status: error.response?.status
+        };
+    }
+};
+
+// Soft delete user
+const permanentDeleteUserAxios = async (userId) => {
+    try {
+        // Use the DELETE method for permanent deletion
+        const res = await axiosConfig.del(`users/delete/${userId}`);
+        return res;
+    } catch (error) {
+        console.error('Error permanently deleting user:', error);
+        return {
+            error: true,
+            message: error.response?.data?.message || error.message || 'Failed to permanently delete user',
             status: error.response?.status
         };
     }
@@ -130,6 +146,7 @@ export {
     getUserByIdAxios, 
     createUserAxios,
     updateUserAxios,
-    deleteUserAxios,
+    softDeleteUserAxios,
+    permanentDeleteUserAxios,
     updateAddressAxios 
 };
