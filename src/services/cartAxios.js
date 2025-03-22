@@ -115,6 +115,41 @@ const getCancelledOrdersAxios = async () => {
 };
 
 /**
+ * Get detailed information for a specific cart/order
+ * @param {string} cartId - The cart ID to get details for
+ * @returns {Promise} - API response with detailed cart information
+ */
+const getCartDetailAxios = async (cartId) => {
+  try {
+    // Get the authorization token
+    const token = localStorage.getItem('access_token');
+    const config = token ? {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    } : {};
+
+    const response = await axiosConfig.get(`cart/info/${cartId}`, config);
+    return response;
+  } catch (error) {
+    console.error(`Error fetching cart details for ${cartId}:`, error);
+    
+    // Return the error response data if available
+    if (error.response && error.response.data) {
+      return {
+        error: true,
+        ...error.response.data
+      };
+    }
+    
+    return {
+      error: true,
+      message: error.message || 'Failed to fetch cart details'
+    };
+  }
+};
+
+/**
  * Get user's orders by user ID
  * @param {string} userId - The user ID to fetch orders for
  * @returns {Promise} - API response with user's orders
@@ -492,5 +527,6 @@ export {
   downloadInvoiceAxios,
   sendInvoiceEmailAxios,
   downloadInvoiceDirectAxios,
-  testApiConfig
+  testApiConfig,
+  getCartDetailAxios // Added the new function export
 };

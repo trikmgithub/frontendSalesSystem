@@ -14,7 +14,8 @@ import {
   getCompletedOrdersAxios,
   getCancelledOrdersAxios,
   downloadInvoiceAxios,
-  sendInvoiceEmailAxios
+  sendInvoiceEmailAxios,
+  getCartDetailAxios
 } from '~/services/cartAxios';
 import { getUserByIdAxios } from '~/services/userAxios';
 import SendInvoiceEmailForm from './SendInvoiceEmailForm';
@@ -104,6 +105,39 @@ function OrderManagement() {
     }
   };
 
+  // Fetch detailed cart information when expanded
+  const fetchCartDetails = async (cartId) => {
+    // If we already have detailed info, don't fetch again
+    if (payments.find(p => p._id === cartId && p.items && p.items.some(item => item.itemName))) {
+      return;
+    }
+
+    try {
+      // Show loading state
+      setActionLoading(prev => ({ ...prev, [`details_${cartId}`]: true }));
+
+      // Use the imported service function
+      const response = await getCartDetailAxios(cartId);
+
+      // Check if we got valid data
+      if (response && response.data && !response.error) {
+        // Update the payments state with detailed information
+        setPayments(prevPayments => 
+          prevPayments.map(payment => 
+            payment._id === cartId ? { ...payment, ...response.data } : payment
+          )
+        );
+      } else if (response.error) {
+        console.error(`Error fetching cart details: ${response.message}`);
+      }
+    } catch (error) {
+      console.error(`Error in fetchCartDetails for cart ${cartId}:`, error);
+    } finally {
+      // Clear loading state
+      setActionLoading(prev => ({ ...prev, [`details_${cartId}`]: false }));
+    }
+  };
+
   // Improved function to fetch user emails with batch processing and caching
   const fetchUserEmails = async (userIds) => {
     if (!userIds || userIds.length === 0) return;
@@ -185,10 +219,18 @@ function OrderManagement() {
 
   // Toggle payment item expansion
   const togglePaymentExpansion = (paymentId) => {
+    // Toggle the expansion state
+    const newExpandedState = !expandedPayments[paymentId];
+    
     setExpandedPayments(prev => ({
       ...prev,
-      [paymentId]: !prev[paymentId]
+      [paymentId]: newExpandedState
     }));
+    
+    // If we're expanding this payment, fetch its detailed information
+    if (newExpandedState) {
+      fetchCartDetails(paymentId);
+    }
   };
 
   // Format date to readable format
@@ -399,30 +441,6 @@ function OrderManagement() {
 
   const sortedAndFilteredPayments = getSortedAndFilteredPayments();
 
-  // Customer email display component with loading state
-  const CustomerEmail = ({ userId }) => {
-    if (emailsLoading[userId]) {
-      return <span>Loading email...</span>;
-    }
-
-    const email = userEmails[userId] || 'Unknown';
-
-    return (
-      <div className={cx('customerEmail')}>
-        <strong>Customer Email:</strong> {email}
-        {email === 'Unknown' && (
-          <button
-            className={cx('refreshEmailButton')}
-            onClick={() => refreshCustomerEmail(userId)}
-            title="Refresh email"
-          >
-            <FaUndo />
-          </button>
-        )}
-      </div>
-    );
-  };
-
   // Get status update confirmation message
   const getStatusUpdateMessage = (status) => {
     switch (status.toLowerCase()) {
@@ -558,31 +576,71 @@ function OrderManagement() {
               {expandedPayments[payment._id] && (
                 <div className={cx('paymentDetails')}>
                   <div className={cx('paymentUser')}>
-                    <CustomerEmail userId={payment.userId} />
+                    <div className={cx('customerInfo')}>
+                      <div className={cx('customerEmail')}>
+                        <strong>Customer Email:</strong> {emailsLoading[payment.userId] ? (
+                          <span className={cx('loadingText')}>Loading email...</span>
+                        ) : (
+                          <span>{userEmails[payment.userId] || payment.username || 'Unknown'}</span>
+                        )}
+                        {(!userEmails[payment.userId] || userEmails[payment.userId] === 'Unknown') && (
+                          <button
+                            className={cx('refreshEmailButton')}
+                            onClick={() => refreshCustomerEmail(payment.userId)}
+                            title="Refresh email"
+                          >
+                            <FaUndo />
+                          </button>
+                        )}
+                      </div>
+                      {payment.username && payment.username !== userEmails[payment.userId] && (
+                        <div className={cx('customerUsername')}>
+                          <strong>Username:</strong> {payment.username}
+                        </div>
+                      )}
+                      <div className={cx('orderDate')}>
+                        <strong>Order Date:</strong> {formatDate(payment.purchaseDate)}
+                      </div>
+                    </div>
                   </div>
 
                   <div className={cx('itemsList')}>
                     <h3>Order Items</h3>
-                    <table className={cx('itemsTable')}>
-                      <thead>
-                        <tr>
-                          <th>Item ID</th>
-                          <th>Quantity</th>
-                          <th>Price</th>
-                          <th>Total</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {payment.items.map(item => (
-                          <tr key={item._id || item.itemId}>
-                            <td>{item.itemId}</td>
-                            <td>{item.quantity}</td>
-                            <td>{formatPrice(item.price)}</td>
-                            <td>{formatPrice(item.price * item.quantity)}</td>
+                    {actionLoading[`details_${payment._id}`] ? (
+                      <div className={cx('loadingItems')}>
+                        <div className={cx('spinner-small')}></div>
+                        <p>Loading item details...</p>
+                      </div>
+                    ) : (
+                      <table className={cx('itemsTable')}>
+                        <thead>
+                          <tr>
+                            <th>Item ID</th>
+                            <th>Item Name</th>
+                            <th>Quantity</th>
+                            <th>Price</th>
+                            <th>Total</th>
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                        </thead>
+                        <tbody>
+                          {payment.items.map(item => (
+                            <tr key={item._id || item.itemId}>
+                              <td>{item.itemId}</td>
+                              <td>{item.itemName || 'Unknown Item'}</td>
+                              <td>{item.quantity}</td>
+                              <td>{formatPrice(item.price)}</td>
+                              <td>{formatPrice(item.price * item.quantity)}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                        <tfoot>
+                          <tr>
+                            <td colSpan="4" className={cx('totalRow')}>Total Amount:</td>
+                            <td className={cx('totalValue')}>{formatPrice(payment.totalAmount)}</td>
+                          </tr>
+                        </tfoot>
+                      </table>
+                    )}
                   </div>
 
                   <div className={cx('paymentActions')}>
