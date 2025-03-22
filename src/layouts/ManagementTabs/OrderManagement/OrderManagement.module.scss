@@ -733,3 +733,203 @@
     font-size: 12px;
   }
 }
+
+.emailFormModal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.emailFormContent {
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  width: 100%;
+  max-width: 450px;
+  max-height: 90vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.emailFormHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid #f0f0f0;
+  background-color: #f9f9f9;
+  
+  h3 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+    color: #333;
+  }
+  
+  .closeButton {
+    background: none;
+    border: none;
+    color: #999;
+    cursor: pointer;
+    font-size: 18px;
+    padding: 0;
+    line-height: 1;
+    
+    &:hover {
+      color: #666;
+    }
+  }
+}
+
+.emailFormBody {
+  padding: 20px;
+}
+
+.formGroup {
+  margin-bottom: 20px;
+  
+  label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 500;
+    font-size: 14px;
+    color: #333;
+  }
+}
+
+.emailInputContainer {
+  position: relative;
+  
+  .emailIcon {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #aaa;
+    font-size: 16px;
+  }
+}
+
+.emailInput {
+  width: 100%;
+  padding: 10px 12px 10px 38px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+  
+  &:focus {
+    outline: none;
+    border-color: #356e4e;
+    box-shadow: 0 0 0 2px rgba(53, 110, 78, 0.1);
+  }
+  
+  &.errorInput {
+    border-color: #ff4d4f;
+    background-color: #fff2f0;
+  }
+  
+  &:disabled {
+    background-color: #f5f5f5;
+    cursor: not-allowed;
+  }
+}
+
+.errorMessage {
+  margin-top: 8px;
+  color: #ff4d4f;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  
+  svg {
+    font-size: 12px;
+  }
+}
+
+.successMessage {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background-color: #f6ffed;
+  border: 1px solid #b7eb8f;
+  border-radius: 4px;
+  padding: 16px;
+  color: #52c41a;
+  
+  svg {
+    font-size: 18px;
+  }
+  
+  p {
+    margin: 0;
+    color: #333;
+  }
+}
+
+.formDescription {
+  margin-bottom: 20px;
+  
+  p {
+    font-size: 13px;
+    color: #666;
+    margin: 0;
+    line-height: 1.5;
+  }
+}
+
+.formButtons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.cancelButton {
+  padding: 8px 16px;
+  background-color: #f5f5f5;
+  color: #666;
+  border: 1px solid #d9d9d9;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s;
+  
+  &:hover {
+    background-color: #e8e8e8;
+    color: #333;
+  }
+  
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
+.submitButton {
+  padding: 8px 16px;
+  background-color: #01579b;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s;
+  
+  &:hover:not(:disabled) {
+    background-color: #0277bd;
+  }
+  
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}

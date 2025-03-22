@@ -17,6 +17,7 @@ import {
   sendInvoiceEmailAxios
 } from '~/services/cartAxios';
 import { getUserByIdAxios } from '~/services/userAxios';
+import SendInvoiceEmailForm from './SendInvoiceEmailForm';
 
 const cx = classNames.bind(styles);
 
@@ -36,13 +37,20 @@ function OrderManagement() {
 
   // Add email loading state to show loading indicator
   const [emailsLoading, setEmailsLoading] = useState({});
-  
+
   // Status confirmation modal state
   const [showStatusModal, setShowStatusModal] = useState(false);
   const [selectedPayment, setSelectedPayment] = useState(null);
   const [targetStatus, setTargetStatus] = useState('');
   const [statusUpdateLoading, setStatusUpdateLoading] = useState(false);
-  
+  const [showEmailModal, setShowEmailModal] = useState(false);
+  const [selectedPaymentForEmail, setSelectedPaymentForEmail] = useState(null);
+
+  const handleOpenEmailForm = (payment) => {
+    setSelectedPaymentForEmail(payment);
+    setShowEmailModal(true);
+  };
+
   // Use hook to disable body scroll when modal is open
   useDisableBodyScroll(showStatusModal);
 
@@ -249,10 +257,10 @@ function OrderManagement() {
   // Update payment status using our cartAxios service
   const updatePaymentStatus = async () => {
     if (!selectedPayment || !targetStatus) return;
-    
+
     try {
       setStatusUpdateLoading(true);
-      
+
       // Convert 'cancelled' to 'cancel' for API request
       const apiStatus = targetStatus === 'cancelled' ? 'cancel' : targetStatus;
 
@@ -268,7 +276,7 @@ function OrderManagement() {
           payment._id === selectedPayment._id ? { ...payment, status: targetStatus } : payment
         )
       );
-      
+
       // Close the modal
       setShowStatusModal(false);
       setSelectedPayment(null);
@@ -290,42 +298,30 @@ function OrderManagement() {
       const result = await downloadInvoiceAxios(paymentId);
 
       if (result.error) {
-        alert('Failed to download invoice. Please try again.');
+        console.error('Download failed with error:', result.message);
+      } else if (result.method === 'direct') {
+        // If we used the direct URL method, show a different message
+        console.log('Using direct URL download method');
       }
     } catch (error) {
       console.error('Error downloading invoice:', error);
-      alert('Failed to download invoice. Please try again.');
+      alert(`Download error: ${error.message || 'Unknown error'}`);
     } finally {
       setActionLoading(prev => ({ ...prev, [`download_${paymentId}`]: false }));
     }
   };
 
   // Send invoice by email
-  const handleSendInvoice = async (paymentId, userId) => {
-    setActionLoading(prev => ({ ...prev, [`email_${paymentId}`]: true }));
-
-    try {
-      // Get the email for this user
-      const email = userEmails[userId] || '';
-
-      if (!email || email === 'Unknown') {
-        alert('Customer email not available. Cannot send invoice.');
-        return;
-      }
-
-      const result = await sendInvoiceEmailAxios(paymentId, email);
-
-      if (result.error) {
-        alert(`Failed to send invoice: ${result.message || 'Unknown error'}`);
-      } else {
-        alert('Invoice sent successfully to customer email.');
-      }
-    } catch (error) {
-      console.error('Error sending invoice:', error);
-      alert('Failed to send invoice. Please try again.');
-    } finally {
-      setActionLoading(prev => ({ ...prev, [`email_${paymentId}`]: false }));
+  const handleSendInvoice = (paymentId, userId) => {
+    // Get the payment object by ID
+    const payment = payments.find(p => p._id === paymentId);
+    if (!payment) {
+      alert('Payment not found');
+      return;
     }
+
+    // Open the email form modal
+    handleOpenEmailForm(payment);
   };
 
   // Manually refresh customer email
@@ -652,42 +648,52 @@ function OrderManagement() {
         </div>
       )}
 
+      {/* Email Form Modal */}
+      {showEmailModal && selectedPaymentForEmail && (
+        <SendInvoiceEmailForm
+          isOpen={showEmailModal}
+          onClose={() => setShowEmailModal(false)}
+          cartId={selectedPaymentForEmail._id}
+          defaultEmail={userEmails[selectedPaymentForEmail.userId] || ''}
+        />
+      )}
+
       {/* Status Update Confirmation Modal */}
       {showStatusModal && selectedPayment && (
         <div className={cx('statusConfirmModal')}>
           <div className={cx('statusConfirmContent')}>
             <div className={cx('statusConfirmHeader')}>
               <h3>Confirm Status Update</h3>
-              <button 
+              <button
                 className={cx('closeButton')}
                 onClick={() => setShowStatusModal(false)}
               >
                 <FaTimes />
               </button>
             </div>
-            
+
             <div className={cx('statusConfirmBody')}>
               <div className={cx('confirmMessage')}>
                 <FaExclamationTriangle className={cx('warningIcon')} />
                 <p>{getStatusUpdateMessage(targetStatus)}</p>
               </div>
-              
+
               <div className={cx('orderSummary')}>
                 <div className={cx('summaryRow')}>
                   <span className={cx('summaryLabel')}>Order ID:</span>
                   <span className={cx('summaryValue')}>{selectedPayment._id}</span>
                 </div>
-                
+
                 <div className={cx('summaryRow')}>
                   <span className={cx('summaryLabel')}>Date:</span>
                   <span className={cx('summaryValue')}>{formatDate(selectedPayment.purchaseDate)}</span>
                 </div>
-                
+
                 <div className={cx('summaryRow')}>
                   <span className={cx('summaryLabel')}>Amount:</span>
                   <span className={cx('summaryValue')}>{formatPrice(selectedPayment.totalAmount)}</span>
                 </div>
-                
+
                 <div className={cx('summaryRow')}>
                   <span className={cx('summaryLabel')}>Current Status:</span>
                   <span className={cx('summaryValue')}>
@@ -696,7 +702,7 @@ function OrderManagement() {
                     </span>
                   </span>
                 </div>
-                
+
                 <div className={cx('summaryRow')}>
                   <span className={cx('summaryLabel')}>New Status:</span>
                   <span className={cx('summaryValue')}>
@@ -707,15 +713,15 @@ function OrderManagement() {
                 </div>
               </div>
             </div>
-            
+
             <div className={cx('statusConfirmFooter')}>
-              <button 
+              <button
                 className={cx('cancelButton')}
                 onClick={() => setShowStatusModal(false)}
               >
                 Cancel
               </button>
-              <button 
+              <button
                 className={cx('confirmButton')}
                 onClick={updatePaymentStatus}
                 disabled={statusUpdateLoading}

@@ -188,96 +188,120 @@ const updateCartStatusAxios = async (cartId, status) => {
 const downloadInvoiceAxios = async (cartId) => {
   try {
     console.log(`Attempting to download invoice for cart ID: ${cartId}`);
-    
-    // Log the authorization token (remove sensitive parts)
+
+    // Get the authorization token
     const token = localStorage.getItem('access_token');
+    if (!token) {
+      throw new Error('No authentication token found. Please log in again.');
+    }
+
+    // Get base URL from environment variables with fallback
+    const baseURL = import.meta.env.VITE_API_URL ||
+      import.meta.env.VITE_APP_API_URL ||
+      'http://localhost:8000/api/v1';
+
+    // Log token for debugging (hide most of it)
     const tokenShort = token ? `${token.substring(0, 10)}...` : 'none';
     console.log(`Using auth token: ${tokenShort}`);
-    
-    // Make the request with detailed logging
-    console.log(`Making request to: cart/download/${cartId}`);
-    const response = await axiosConfig.get(`cart/download/${cartId}`, {
-      responseType: 'blob',
-      headers: {
-        Authorization: `Bearer ${token}`,
-        Accept: 'application/pdf,application/octet-stream,*/*' // Accept more formats
-      }
-    });
-    
-    // Log response info
-    console.log('Response received:', {
-      status: response.status,
-      statusText: response.statusText,
-      headers: response.headers,
-      dataType: typeof response.data,
-      dataSize: response.data ? response.data.size : 0
-    });
-    
-    // Check if response actually has data
-    if (response.data && response.data.size > 0) {
-      console.log(`Invoice data received (${response.data.size} bytes)`);
-      
-      // Get content type from response headers
-      const contentType = response.headers?.['content-type'] || 'application/pdf';
-      console.log(`Content-Type: ${contentType}`);
-      
-      // Try to open the file directly in a new tab first
-      try {
+    console.log(`Making request to download invoice for cart ID: ${cartId}`);
+
+    // Try approach 1: Using axios with blob response type
+    try {
+      const response = await axiosConfig.get(`cart/download/${cartId}`, {
+        responseType: 'blob',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: 'application/pdf,application/octet-stream,*/*'
+        }
+      });
+
+      console.log('Response received:', {
+        status: response.status,
+        statusText: response.statusText,
+        headers: response.headers,
+        dataType: typeof response.data,
+        dataSize: response.data ? response.data.size : 0
+      });
+
+      // Check if response actually has data
+      if (response.data && response.data.size > 0) {
+        const contentType = response.headers?.['content-type'] || 'application/pdf';
         const blob = new Blob([response.data], { type: contentType });
         const url = window.URL.createObjectURL(blob);
-        
-        // Try opening in a new tab first
-        window.open(url, '_blank');
-        
-        // Clean up the object URL after a delay
+
+        // Try to download the file
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', `invoice-${cartId}.pdf`);
+        document.body.appendChild(link);
+        link.click();
+
         setTimeout(() => {
           window.URL.revokeObjectURL(url);
+          document.body.removeChild(link);
         }, 1000);
-        
+
         return { success: true };
-      } catch (openError) {
-        console.error('Error opening file in new tab:', openError);
-        
-        // Fall back to download approach if opening fails
-        try {
-          const blob = new Blob([response.data], { type: contentType });
-          const url = window.URL.createObjectURL(blob);
-          const link = document.createElement('a');
-          link.href = url;
-          link.setAttribute('download', `invoice-${cartId}.pdf`);
-          document.body.appendChild(link);
-          link.click();
-          
-          setTimeout(() => {
-            window.URL.revokeObjectURL(url);
-            document.body.removeChild(link);
-          }, 1000);
-          
-          return { success: true };
-        } catch (downloadError) {
-          console.error('Error with download fallback:', downloadError);
-          throw new Error(`Error creating downloadable file: ${downloadError.message}`);
-        }
+      } else {
+        console.warn('Empty response data received, trying fetch API approach');
+        throw new Error('Empty response data');
       }
-    } else {
-      console.error('Empty response data received');
-      throw new Error('Received empty file data from server');
+    } catch (axiosError) {
+      console.warn('Axios approach failed, trying fetch API approach', axiosError);
+
+      // Try approach 2: Fetch API approach
+      const response = await fetch(`${baseURL}/cart/download/${cartId}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/pdf,application/octet-stream,*/*'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`Server returned ${response.status}: ${response.statusText}`);
+      }
+
+      const blob = await response.blob();
+      if (blob.size === 0) {
+        throw new Error('Server returned empty file');
+      }
+
+      // Create download link
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `invoice-${cartId}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+
+      // Clean up
+      setTimeout(() => {
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(link);
+      }, 1000);
+
+      return { success: true, method: 'fetch' };
     }
   } catch (error) {
     console.error('Invoice download error:', error);
-    
-    // Check if we can access the response for more details
+
+    // Check if error was caused by CORS
+    const errorMessage = error.message || '';
+    if (errorMessage.includes('CORS') ||
+      errorMessage.includes('cross-origin') ||
+      error.name === 'NetworkError') {
+      console.warn('Possible CORS issue detected, trying alternative download method');
+      return downloadInvoiceDirectAxios(cartId);
+    }
+
+    // Provide helpful error messages based on error type
     if (error.response) {
       console.error('Response error details:', {
         status: error.response.status,
-        statusText: error.response.statusText,
-        headers: error.response.headers,
-        data: error.response.data
+        statusText: error.response.statusText
       });
-    }
-    
-    // More detailed error messages
-    if (error.response) {
+
       if (error.response.status === 404) {
         alert('Invoice not found. The invoice may not exist for this order yet.');
       } else if (error.response.status === 403) {
@@ -290,31 +314,140 @@ const downloadInvoiceAxios = async (cartId) => {
     } else {
       alert(`Error downloading invoice: ${error.message}`);
     }
-    
+
     return { error: true, message: error.message };
   }
 };
 
-// // Alternative: Direct download without processing
-// const downloadInvoiceDirectAxios = async (cartId) => {
-//   try {
-//     // Get base URL from environment or configuration
-//     const baseURL = process.env.REACT_APP_API_URL || 'http://localhost:8000/api/v1';
-//     const token = localStorage.getItem('access_token');
-    
-//     // Create a direct URL to the invoice endpoint
-//     const invoiceUrl = `${baseURL}/cart/download/${cartId}`;
-    
-//     // Open the URL in a new tab
-//     window.open(invoiceUrl, '_blank');
-    
-//     return { success: true };
-//   } catch (error) {
-//     console.error('Error with direct download:', error);
-//     alert(`Error opening invoice: ${error.message}`);
-//     return { error: true, message: error.message };
-//   }
-// };
+// Direct download fallback function - add this to cartAxios.js
+const downloadInvoiceDirectAxios = async (cartId) => {
+  try {
+    // Get base URL from environment or configuration
+    const baseURL = import.meta.env.VITE_API_URL ||
+      import.meta.env.VITE_APP_API_URL ||
+      'http://localhost:8000/api/v1';
+
+    const token = localStorage.getItem('access_token');
+    if (!token) {
+      throw new Error('No authentication token found. Please log in again.');
+    }
+
+    // Approach 1: Using Fetch API with proper headers
+    try {
+      const response = await fetch(`${baseURL}/cart/download/${cartId}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/pdf,application/octet-stream,*/*'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`Server returned ${response.status}: ${response.statusText}`);
+      }
+
+      const blob = await response.blob();
+      if (blob.size === 0) {
+        throw new Error('Server returned empty file');
+      }
+
+      // Create download link
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `invoice-${cartId}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+
+      // Clean up
+      setTimeout(() => {
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(link);
+      }, 1000);
+
+      return { success: true, method: 'fetch' };
+    } catch (fetchError) {
+      console.warn('Fetch API approach failed:', fetchError);
+
+      // Approach 2: Open in new window with proper auth
+      // This can work for same-origin downloads and avoids CORS issues
+      const popupWindow = window.open('', '_blank');
+      if (!popupWindow) {
+        throw new Error('Popup blocked. Please allow popups for this site.');
+      }
+
+      // Write a form to the new window that will POST with the auth token
+      popupWindow.document.write(`
+        <html>
+          <body>
+            <form id="downloadForm" action="${baseURL}/cart/download/${cartId}" method="GET">
+              <input type="hidden" name="token" value="${token}">
+            </form>
+            <script>
+              // Add auth header to all requests in this window
+              const originalFetch = window.fetch;
+              window.fetch = function(url, options = {}) {
+                if (!options.headers) options.headers = {};
+                options.headers['Authorization'] = 'Bearer ${token}';
+                return originalFetch(url, options);
+              };
+              
+              // Submit the form
+              document.getElementById('downloadForm').submit();
+              
+              // Display message while loading
+              document.write('<div style="font-family: sans-serif; padding: 20px; text-align: center;">'+
+                '<h3>Downloading invoice, please wait...</h3>'+
+                '<p>If download doesn\'t start automatically, please check your popup settings.</p>'+
+              '</div>');
+            </script>
+          </body>
+        </html>
+      `);
+
+      return { success: true, method: 'popup' };
+    }
+  } catch (error) {
+    console.error('Error with direct download:', error);
+    alert(`Error opening invoice: ${error.message}`);
+    return { error: true, message: error.message };
+  }
+};
+
+// Function to test API configuration - add this to cartAxios.js
+const testApiConfig = () => {
+  try {
+    // Get what axiosConfig is using as the base URL
+    let baseURL = "Unknown";
+
+    // Check available environment variables
+    const envVars = {
+      VITE_API_URL: import.meta.env.VITE_API_URL,
+      VITE_APP_API_URL: import.meta.env.VITE_APP_API_URL,
+      NODE_ENV: import.meta.env.NODE_ENV
+    };
+
+    // Check if axiosConfig has a default base URL
+    if (axiosConfig.defaults && axiosConfig.defaults.baseURL) {
+      baseURL = axiosConfig.defaults.baseURL;
+    }
+
+    console.info('API Configuration:', {
+      detectedBaseURL: baseURL,
+      environmentVariables: envVars,
+      authTokenExists: !!localStorage.getItem('access_token')
+    });
+
+    return {
+      baseURL,
+      envVars,
+      hasToken: !!localStorage.getItem('access_token')
+    };
+  } catch (error) {
+    console.error('Error checking API configuration:', error);
+    return { error: true, message: error.message };
+  }
+};
 
 /**
  * Send invoice to customer's email
@@ -357,5 +490,7 @@ export {
   updateCartStatusAxios,
   getUserOrdersAxios,
   downloadInvoiceAxios,
-  sendInvoiceEmailAxios
+  sendInvoiceEmailAxios,
+  downloadInvoiceDirectAxios,
+  testApiConfig
 };
