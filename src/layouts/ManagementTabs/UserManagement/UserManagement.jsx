@@ -34,6 +34,7 @@ const PAGE_SIZE = 10;
 function UserManagement() {
   // State for user list and filtering
   const [users, setUsers] = useState([]);
+  const [filteredUsers, setFilteredUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
@@ -109,30 +110,32 @@ function UserManagement() {
       setLoading(true);
       setError(null);
 
-      const response = await getUsersAxios(currentPage, PAGE_SIZE);
+      // Fetch all users we can get (or use a larger limit if needed)
+      const response = await getUsersAxios(1, 50);
 
       if (response.error) {
         throw new Error(response.message || 'Failed to fetch users');
       }
 
       if (response.data && response.data.result) {
-        setUsers(response.data.result);
+        const allUsers = response.data.result;
+        
+        // Store all users and set initial filtered users to all users
+        setUsers(allUsers);
+        setFilteredUsers(allUsers);
 
-        // Update pagination based on meta data
-        if (response.data.meta) {
-          setTotalItems(response.data.meta.numberUsers || 0);
-          setTotalPages(response.data.meta.totalPages || 1);
-        }
+        // Update pagination based on filtered results
+        updatePagination(allUsers);
 
         // Fetch role names for all users
-        const userList = response.data.result;
-        for (const user of userList) {
+        for (const user of allUsers) {
           if (user.roleId && !roleNames[user.roleId]) {
             await fetchRoleName(user.roleId);
           }
         }
       } else {
         setUsers([]);
+        setFilteredUsers([]);
         setTotalItems(0);
         setTotalPages(1);
       }
@@ -140,21 +143,49 @@ function UserManagement() {
       console.error('Error fetching users:', err);
       setError(err.message || 'Failed to load users. Please try again.');
       setUsers([]);
+      setFilteredUsers([]);
     } finally {
       setLoading(false);
     }
   };
+  
+  // Helper function to update pagination based on filtered results
+  const updatePagination = (userList) => {
+    setTotalItems(userList.length);
+    setTotalPages(Math.ceil(userList.length / PAGE_SIZE));
+    // If current page is now invalid, reset to page 1
+    if (currentPage > Math.ceil(userList.length / PAGE_SIZE)) {
+      setCurrentPage(1);
+    }
+  };
 
-  // Fetch users when component mounts or when page changes
+  // Fetch users when component mounts - only once
   useEffect(() => {
     fetchUsers();
-  }, [currentPage]);
+  }, []);
 
-  // Function to handle search
+  // Function to handle search (client-side filtering)
   const handleSearch = (e) => {
     e.preventDefault();
-    setCurrentPage(1); // Reset to first page when searching
-    fetchUsers();
+    
+    // If search term is empty, show all users
+    if (!searchTerm.trim()) {
+      setFilteredUsers(users);
+      updatePagination(users);
+      setCurrentPage(1);
+      return;
+    }
+    
+    // Filter users based on search term (case-insensitive)
+    const term = searchTerm.toLowerCase().trim();
+    const filtered = users.filter(user => 
+      user.name?.toLowerCase().includes(term) || 
+      user.email?.toLowerCase().includes(term)
+    );
+    
+    setFilteredUsers(filtered);
+    updatePagination(filtered);
+    setCurrentPage(1);
   };
 
   // Function to handle sort (client-side since the API doesn't support sorting)
@@ -166,8 +197,14 @@ function UserManagement() {
       setSortDirection('desc');
     }
 
-    // Apply sorting to the current data
-    const sortedUsers = [...users].sort((a, b) => {
+    // Apply sorting to the current filtered data
+    const newDirection = sortField === field && sortDirection === 'asc' ? 'desc' : 'asc';
+    sortUsersList(field, newDirection);
+  };
+  
+  // Function to sort users list
+  const sortUsersList = (field, direction) => {
+    const sortedUsers = [...filteredUsers].sort((a, b) => {
       let valueA = a[field];
       let valueB = b[field];
 
@@ -175,16 +212,19 @@ function UserManagement() {
       if (field === 'createdAt') {
         valueA = new Date(valueA);
         valueB = new Date(valueB);
+      } else if (typeof valueA === 'string' && typeof valueB === 'string') {
+        valueA = valueA.toLowerCase();
+        valueB = valueB.toLowerCase();
       }
 
-      if (sortDirection === 'asc') {
+      if (direction === 'asc') {
         return valueA > valueB ? 1 : -1;
       } else {
         return valueA < valueB ? 1 : -1;
       }
     });
 
-    setUsers(sortedUsers);
+    setFilteredUsers(sortedUsers);
   };
 
   // Function to get sort icon
@@ -196,6 +236,13 @@ function UserManagement() {
   // Function to handle page change
   const handlePageChange = (page) => {
     setCurrentPage(page);
+  };
+  
+  // Get current page of users
+  const getCurrentPageUsers = () => {
+    const startIndex = (currentPage - 1) * PAGE_SIZE;
+    const endIndex = startIndex + PAGE_SIZE;
+    return filteredUsers.slice(startIndex, endIndex);
   };
 
   // Validate form before submission
@@ -370,8 +417,24 @@ function UserManagement() {
         throw new Error(response.message || 'Failed to update user');
       }
 
-      // Success - refresh user list and close modal
-      fetchUsers();
+      // Success - refresh the user list and close modal
+      const updatedUsers = users.map(u => 
+        u._id === userData._id ? { ...u, ...userData } : u
+      );
+      setUsers(updatedUsers);
+      
+      // Re-apply any filtering
+      if (searchTerm.trim()) {
+        const term = searchTerm.toLowerCase().trim();
+        const filtered = updatedUsers.filter(user => 
+          user.name?.toLowerCase().includes(term) || 
+          user.email?.toLowerCase().includes(term)
+        );
+        setFilteredUsers(filtered);
+      } else {
+        setFilteredUsers(updatedUsers);
+      }
+      
       resetForm();
       setShowEditModal(false);
 
@@ -396,7 +459,15 @@ function UserManagement() {
 
       // Success - refresh user list and close modal
       alert('User has been permanently deleted from the database.');
-      fetchUsers();
+      
+      // Remove user from both arrays
+      const updatedUsers = users.filter(u => u._id !== currentUser._id);
+      setUsers(updatedUsers);
+      setFilteredUsers(filteredUsers.filter(u => u._id !== currentUser._id));
+      
+      // Update pagination
+      updatePagination(filteredUsers.filter(u => u._id !== currentUser._id));
+      
       setShowDeleteModal(false);
 
     } catch (err) {
@@ -487,7 +558,7 @@ function UserManagement() {
         </button>
       </div>
 
-      {loading && users.length === 0 ? (
+      {loading && filteredUsers.length === 0 ? (
         <div className={cx('loading')}>
           <div className={cx('loader')}></div>
           <p>Loading users...</p>
@@ -499,7 +570,7 @@ function UserManagement() {
             Try Again
           </button>
         </div>
-      ) : users.length === 0 ? (
+      ) : filteredUsers.length === 0 ? (
         <div className={cx('empty-state')}>
           <FaUserAlt className={cx('empty-icon')} />
           <p>No users found</p>
@@ -540,7 +611,7 @@ function UserManagement() {
                 </tr>
               </thead>
               <tbody>
-                {users.map(user => (
+                {getCurrentPageUsers().map(user => (
                   <tr key={user._id}>
                     <td className={cx('avatar-column')}>
                       {user.avatar ? (

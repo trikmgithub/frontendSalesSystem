@@ -3,14 +3,16 @@ import React, { useState, useEffect } from 'react';
 import classNames from 'classnames/bind';
 import styles from './Staff.module.scss';
 import { logoutAxios } from '~/services/authAxios';
-import ProductManagement from '~/pages/ProductManagement/ProductManagement';
-import OrderManagement from '~/pages/OrderManagement/OrderManagement';
+import ProductManagement from '~/layouts/ManagementTabs/ProductManagement/ProductManagement';
+import OrderManagement from '~/layouts/ManagementTabs/OrderManagement/OrderManagement';
+import BrandManagement from '~/layouts/ManagementTabs/BrandManagement/BrandManagement'; // Add this import
+import { FaBox, FaShoppingCart, FaTag } from 'react-icons/fa'; // Add icons for better visual cues
 
 const cx = classNames.bind(styles);
 
 function StaffPage() {
   const [userData, setUserData] = useState(null);
-  const [activeTab, setActiveTab] = useState('orders'); // 'orders' or 'products'
+  const [activeTab, setActiveTab] = useState('orders'); // 'orders', 'products', or 'brands'
 
   // Simplified logout handler - Uses logoutAxios which handles everything
   const handleLogout = async () => {
@@ -52,13 +54,22 @@ function StaffPage() {
           className={cx('tabButton', { active: activeTab === 'orders' })}
           onClick={() => setActiveTab('orders')}
         >
+          <FaShoppingCart />
           <span>Order Management</span>
         </button>
         <button
           className={cx('tabButton', { active: activeTab === 'products' })}
           onClick={() => setActiveTab('products')}
         >
+          <FaBox />
           <span>Product Management</span>
+        </button>
+        <button
+          className={cx('tabButton', { active: activeTab === 'brands' })}
+          onClick={() => setActiveTab('brands')}
+        >
+          <FaTag />
+          <span>Brand Management</span>
         </button>
       </div>
 
@@ -68,6 +79,9 @@ function StaffPage() {
 
         {/* Products Tab Content */}
         {activeTab === 'products' && <ProductManagement />}
+        
+        {/* Brands Tab Content */}
+        {activeTab === 'brands' && <BrandManagement />}
       </div>
     </div>
   );

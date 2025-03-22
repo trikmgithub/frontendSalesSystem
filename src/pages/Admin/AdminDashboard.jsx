@@ -3,9 +3,10 @@ import React, { useState, useEffect } from 'react';
 import classNames from 'classnames/bind';
 import styles from './AdminDashboard.module.scss';
 import { logoutAxios } from '~/services/authAxios';
-import ProductManagement from '~/pages/ProductManagement/ProductManagement';
-import UserManagement from '~/pages/UserManagement/UserManagement';
-import { FaBox, FaUsers } from 'react-icons/fa';
+import ProductManagement from '~/layouts/ManagementTabs/ProductManagement/ProductManagement';
+import UserManagement from '~/layouts/ManagementTabs/UserManagement/UserManagement';
+import BrandManagement from '~/layouts/ManagementTabs/BrandManagement/BrandManagement'; // Add this import
+import { FaBox, FaUsers, FaTag } from 'react-icons/fa'; // Add FaTag
 
 const cx = classNames.bind(styles);
 
@@ -58,6 +59,14 @@ function AdminDashboard() {
         </button>
         
         <button
+          className={cx('tabButton', { active: activeTab === 'brands' })}
+          onClick={() => setActiveTab('brands')}
+        >
+          <FaTag />
+          <span>Brand Management</span>
+        </button>
+        
+        <button
           className={cx('tabButton', { active: activeTab === 'users' })}
           onClick={() => setActiveTab('users')}
         >
@@ -69,6 +78,9 @@ function AdminDashboard() {
       <div className={cx('adminContent')}>
         {/* Products Tab Content */}
         {activeTab === 'products' && <ProductManagement />}
+        
+        {/* Brands Tab Content */}
+        {activeTab === 'brands' && <BrandManagement />}
         
         {/* Users Tab Content */}
         {activeTab === 'users' && <UserManagement />}

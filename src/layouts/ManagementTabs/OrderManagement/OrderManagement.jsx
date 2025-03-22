@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import classNames from 'classnames/bind';
 import styles from './OrderManagement.module.scss';
+import useDisableBodyScroll from '~/hooks/useDisableBodyScroll';
 import {
   FaChevronDown, FaChevronUp, FaMoneyBill, FaCalendarAlt,
   FaSort, FaSortAmountDown, FaSortAmountUp, FaFilter, FaShoppingCart,
-  FaUndo, FaFileInvoice, FaEnvelope, FaSpinner
+  FaUndo, FaFileInvoice, FaEnvelope, FaSpinner, FaTimes, FaExclamationTriangle
 } from 'react-icons/fa';
 import {
   getAllCartsAxios,
@@ -35,6 +36,15 @@ function OrderManagement() {
 
   // Add email loading state to show loading indicator
   const [emailsLoading, setEmailsLoading] = useState({});
+  
+  // Status confirmation modal state
+  const [showStatusModal, setShowStatusModal] = useState(false);
+  const [selectedPayment, setSelectedPayment] = useState(null);
+  const [targetStatus, setTargetStatus] = useState('');
+  const [statusUpdateLoading, setStatusUpdateLoading] = useState(false);
+  
+  // Use hook to disable body scroll when modal is open
+  useDisableBodyScroll(showStatusModal);
 
   const fetchPayments = async () => {
     try {
@@ -229,13 +239,24 @@ function OrderManagement() {
     }
   };
 
-  // Update payment status using our cartAxios service
-  const updatePaymentStatus = async (paymentId, newStatus) => {
-    try {
-      // Convert 'cancelled' to 'cancel' for API request
-      const apiStatus = newStatus === 'cancelled' ? 'cancel' : newStatus;
+  // Open status confirmation modal
+  const openStatusConfirmation = (payment, newStatus) => {
+    setSelectedPayment(payment);
+    setTargetStatus(newStatus);
+    setShowStatusModal(true);
+  };
 
-      const response = await updateCartStatusAxios(paymentId, apiStatus);
+  // Update payment status using our cartAxios service
+  const updatePaymentStatus = async () => {
+    if (!selectedPayment || !targetStatus) return;
+    
+    try {
+      setStatusUpdateLoading(true);
+      
+      // Convert 'cancelled' to 'cancel' for API request
+      const apiStatus = targetStatus === 'cancelled' ? 'cancel' : targetStatus;
+
+      const response = await updateCartStatusAxios(selectedPayment._id, apiStatus);
 
       if (response.error) {
         throw new Error(response.message || 'Failed to update payment status');
@@ -244,13 +265,20 @@ function OrderManagement() {
       // Always use 'cancelled' in the UI when the API status is 'cancel'
       setPayments(prevPayments =>
         prevPayments.map(payment =>
-          payment._id === paymentId ? { ...payment, status: newStatus } : payment
+          payment._id === selectedPayment._id ? { ...payment, status: targetStatus } : payment
         )
       );
+      
+      // Close the modal
+      setShowStatusModal(false);
+      setSelectedPayment(null);
+      setTargetStatus('');
 
     } catch (error) {
       console.error('Error updating payment status:', error);
       alert('Failed to update payment status. Please try again.');
+    } finally {
+      setStatusUpdateLoading(false);
     }
   };
 
@@ -397,6 +425,21 @@ function OrderManagement() {
         )}
       </div>
     );
+  };
+
+  // Get status update confirmation message
+  const getStatusUpdateMessage = (status) => {
+    switch (status.toLowerCase()) {
+      case 'done':
+        return 'Are you sure you want to mark this order as completed?';
+      case 'pending':
+        return 'Are you sure you want to change this order status to pending?';
+      case 'cancelled':
+      case 'cancel':
+        return 'Are you sure you want to cancel this order?';
+      default:
+        return 'Are you sure you want to update this order status?';
+    }
   };
 
   return (
@@ -551,21 +594,21 @@ function OrderManagement() {
                       <span>Update Status:</span>
                       <button
                         className={cx('actionButton', 'pendingButton')}
-                        onClick={() => updatePaymentStatus(payment._id, 'pending')}
+                        onClick={() => openStatusConfirmation(payment, 'pending')}
                         disabled={payment.status === 'pending'}
                       >
                         Pending
                       </button>
                       <button
                         className={cx('actionButton', 'doneButton')}
-                        onClick={() => updatePaymentStatus(payment._id, 'done')}
+                        onClick={() => openStatusConfirmation(payment, 'done')}
                         disabled={payment.status === 'done'}
                       >
                         Complete
                       </button>
                       <button
                         className={cx('actionButton', 'cancelButton')}
-                        onClick={() => updatePaymentStatus(payment._id, 'cancelled')}
+                        onClick={() => openStatusConfirmation(payment, 'cancelled')}
                         disabled={payment.status === 'cancelled'}
                       >
                         Cancel
@@ -606,6 +649,81 @@ function OrderManagement() {
               )}
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Status Update Confirmation Modal */}
+      {showStatusModal && selectedPayment && (
+        <div className={cx('statusConfirmModal')}>
+          <div className={cx('statusConfirmContent')}>
+            <div className={cx('statusConfirmHeader')}>
+              <h3>Confirm Status Update</h3>
+              <button 
+                className={cx('closeButton')}
+                onClick={() => setShowStatusModal(false)}
+              >
+                <FaTimes />
+              </button>
+            </div>
+            
+            <div className={cx('statusConfirmBody')}>
+              <div className={cx('confirmMessage')}>
+                <FaExclamationTriangle className={cx('warningIcon')} />
+                <p>{getStatusUpdateMessage(targetStatus)}</p>
+              </div>
+              
+              <div className={cx('orderSummary')}>
+                <div className={cx('summaryRow')}>
+                  <span className={cx('summaryLabel')}>Order ID:</span>
+                  <span className={cx('summaryValue')}>{selectedPayment._id}</span>
+                </div>
+                
+                <div className={cx('summaryRow')}>
+                  <span className={cx('summaryLabel')}>Date:</span>
+                  <span className={cx('summaryValue')}>{formatDate(selectedPayment.purchaseDate)}</span>
+                </div>
+                
+                <div className={cx('summaryRow')}>
+                  <span className={cx('summaryLabel')}>Amount:</span>
+                  <span className={cx('summaryValue')}>{formatPrice(selectedPayment.totalAmount)}</span>
+                </div>
+                
+                <div className={cx('summaryRow')}>
+                  <span className={cx('summaryLabel')}>Current Status:</span>
+                  <span className={cx('summaryValue')}>
+                    <span className={cx('paymentStatus', getStatusBadgeClass(selectedPayment.status))}>
+                      {selectedPayment.status.toLowerCase() === 'cancel' ? 'CANCELLED' : selectedPayment.status.toUpperCase()}
+                    </span>
+                  </span>
+                </div>
+                
+                <div className={cx('summaryRow')}>
+                  <span className={cx('summaryLabel')}>New Status:</span>
+                  <span className={cx('summaryValue')}>
+                    <span className={cx('paymentStatus', getStatusBadgeClass(targetStatus))}>
+                      {targetStatus.toUpperCase()}
+                    </span>
+                  </span>
+                </div>
+              </div>
+            </div>
+            
+            <div className={cx('statusConfirmFooter')}>
+              <button 
+                className={cx('cancelButton')}
+                onClick={() => setShowStatusModal(false)}
+              >
+                Cancel
+              </button>
+              <button 
+                className={cx('confirmButton')}
+                onClick={updatePaymentStatus}
+                disabled={statusUpdateLoading}
+              >
+                {statusUpdateLoading ? 'Updating...' : 'Confirm'}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
