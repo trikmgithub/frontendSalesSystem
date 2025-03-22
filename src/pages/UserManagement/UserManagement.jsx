@@ -1,12 +1,11 @@
-// src/pages/UserManagement/UserManagement.jsx
+// src/pages/UserManagement/UserManagement.jsx - Updated version
 import React, { useState, useEffect } from 'react';
 import classNames from 'classnames/bind';
 import styles from './UserManagement.module.scss';
+import useDisableBodyScroll from '~/hooks/useDisableBodyScroll';
 import {
   FaEdit,
   FaTrashAlt,
-  FaLock,
-  FaUnlock,
   FaPlus,
   FaSearch,
   FaSort,
@@ -16,7 +15,6 @@ import {
   FaChevronLeft,
   FaChevronRight,
   FaTimes,
-  FaCheck,
   FaUserAlt,
   FaExclamationTriangle
 } from 'react-icons/fa';
@@ -25,8 +23,7 @@ import {
   getUserByIdAxios,
   createUserAxios,
   updateUserAxios,
-  softDeleteUserAxios,
-  permanentDeleteUserAxios
+  deleteUserAxios
 } from '~/services/userAxios';
 import { getRoleByIdAxios } from '~/services/roleAxios';
 
@@ -51,8 +48,7 @@ function UserManagement() {
   // State for modals
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
-  const [showSoftDeleteModal, setShowSoftDeleteModal] = useState(false);
-  const [showPermanentDeleteModal, setShowPermanentDeleteModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
 
   // State for new user form
@@ -72,6 +68,9 @@ function UserManagement() {
 
   // State for role names cache
   const [roleNames, setRoleNames] = useState({});
+  
+  // Disable body scroll when any modal is open
+  useDisableBodyScroll(showCreateModal || showEditModal || showDeleteModal);
 
   // Function to fetch role name by roleId
   const fetchRoleName = async (roleId) => {
@@ -295,51 +294,10 @@ function UserManagement() {
     }
   };
 
-  // Function to open soft delete modal
-  const openSoftDeleteModal = (user) => {
+  // Function to open delete modal
+  const openDeleteModal = (user) => {
     setCurrentUser(user);
-    setShowSoftDeleteModal(true);
-  };
-
-  // Function to open permanent delete modal
-  const openPermanentDeleteModal = (user) => {
-    setCurrentUser(user);
-    setShowPermanentDeleteModal(true);
-  };
-
-  // Function to toggle user active/inactive status
-  const toggleUserStatus = async (userId, isDeleted) => {
-    try {
-      setLoading(true);
-
-      // If already deleted, we would need an "undelete" endpoint
-      // For now, we only support deletion
-      if (!isDeleted) {
-        const response = await softDeleteUserAxios(userId);
-
-        if (response.error) {
-          throw new Error(response.message || 'Failed to update user status');
-        }
-
-        // Update UI optimistically
-        setUsers(prevUsers =>
-          prevUsers.map(user =>
-            user._id === userId ? { ...user, isDeleted: true } : user
-          )
-        );
-
-        // Refresh data to ensure UI is in sync with backend
-        fetchUsers();
-      } else {
-        // Future implementation: undelete user
-        alert('Restoring deleted users is not currently supported');
-      }
-    } catch (err) {
-      console.error('Error toggling user status:', err);
-      alert('Failed to update user status. Please try again.');
-    } finally {
-      setLoading(false);
-    }
+    setShowDeleteModal(true);
   };
 
   // Function to create a user
@@ -425,48 +383,25 @@ function UserManagement() {
     }
   };
 
-  // Function to soft delete a user (deactivate)
-  const softDeleteUser = async () => {
-    try {
-      setLoading(true);
-
-      const response = await softDeleteUserAxios(currentUser._id);
-
-      if (response.error) {
-        throw new Error(response.message || 'Failed to deactivate user');
-      }
-
-      // Success - refresh user list and close modal
-      fetchUsers();
-      setShowSoftDeleteModal(false);
-
-    } catch (err) {
-      console.error('Error deactivating user:', err);
-      alert(err.message || 'Failed to deactivate user. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
   // Function to permanently delete a user
-  const permanentDeleteUser = async () => {
+  const deleteUser = async () => {
     try {
       setLoading(true);
 
-      const response = await permanentDeleteUserAxios(currentUser._id);
+      const response = await deleteUserAxios(currentUser._id);
 
       if (response.error) {
-        throw new Error(response.message || 'Failed to permanently delete user');
+        throw new Error(response.message || 'Failed to delete user');
       }
 
       // Success - refresh user list and close modal
       alert('User has been permanently deleted from the database.');
       fetchUsers();
-      setShowPermanentDeleteModal(false);
+      setShowDeleteModal(false);
 
     } catch (err) {
-      console.error('Error permanently deleting user:', err);
-      alert(err.message || 'Failed to permanently delete user. Please try again.');
+      console.error('Error deleting user:', err);
+      alert(err.message || 'Failed to delete user. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -495,7 +430,7 @@ function UserManagement() {
 
     switch (role) {
       case 'admin':
-      case 'manager': // Added MANAGER to use the same style as ADMIN
+      case 'manager': 
         return 'roleBadgeAdmin';
       case 'staff':
         return 'roleBadgeStaff';
@@ -601,13 +536,12 @@ function UserManagement() {
                   >
                     Created At {getSortIcon('createdAt')}
                   </th>
-                  <th className={cx('status-column')}>Status</th>
                   <th className={cx('actions-column')}>Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {users.map(user => (
-                  <tr key={user._id} className={cx({ 'inactive-row': user.isDeleted })}>
+                  <tr key={user._id}>
                     <td className={cx('avatar-column')}>
                       {user.avatar ? (
                         <img
@@ -629,11 +563,6 @@ function UserManagement() {
                       </span>
                     </td>
                     <td className={cx('date-column')}>{formatDate(user.createdAt)}</td>
-                    <td className={cx('status-column')}>
-                      <span className={cx('status-badge', user.isDeleted ? 'inactive' : 'active')}>
-                        {user.isDeleted ? 'Inactive' : 'Active'}
-                      </span>
-                    </td>
                     <td className={cx('actions-column')}>
                       <button
                         className={cx('action-button', 'edit')}
@@ -643,16 +572,9 @@ function UserManagement() {
                         <FaEdit />
                       </button>
                       <button
-                        className={cx('action-button', 'soft-delete')}
-                        onClick={() => openSoftDeleteModal(user)}
-                        title="Deactivate user"
-                      >
-                        <FaLock />
-                      </button>
-                      <button
                         className={cx('action-button', 'delete')}
-                        onClick={() => openPermanentDeleteModal(user)}
-                        title="Permanently delete user"
+                        onClick={() => openDeleteModal(user)}
+                        title="Delete user"
                       >
                         <FaTrashAlt />
                       </button>
@@ -1018,50 +940,15 @@ function UserManagement() {
         </div>
       )}
 
-      {/* Soft Delete (Deactivate) Confirmation Modal */}
-      {showSoftDeleteModal && (
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && (
         <div className={cx('modal-overlay')}>
           <div className={cx('modal', 'delete-modal')}>
             <div className={cx('modal-header')}>
-              <h3>Confirm Deactivation</h3>
+              <h3>Confirm Deletion</h3>
               <button
                 className={cx('close-button')}
-                onClick={() => setShowSoftDeleteModal(false)}
-              >
-                <FaTimes />
-              </button>
-            </div>
-            <div className={cx('modal-body')}>
-              <p>Are you sure you want to deactivate the user <strong>{currentUser?.name}</strong>?</p>
-              <p>This user will be marked as inactive but their data will remain in the database.</p>
-            </div>
-            <div className={cx('modal-footer')}>
-              <button
-                className={cx('cancel-button')}
-                onClick={() => setShowSoftDeleteModal(false)}
-              >
-                Cancel
-              </button>
-              <button
-                className={cx('delete-button')}
-                onClick={softDeleteUser}
-              >
-                {loading ? 'Deactivating...' : 'Deactivate User'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Permanent Delete Confirmation Modal */}
-      {showPermanentDeleteModal && (
-        <div className={cx('modal-overlay')}>
-          <div className={cx('modal', 'delete-modal')}>
-            <div className={cx('modal-header')}>
-              <h3>Confirm Permanent Deletion</h3>
-              <button
-                className={cx('close-button')}
-                onClick={() => setShowPermanentDeleteModal(false)}
+                onClick={() => setShowDeleteModal(false)}
               >
                 <FaTimes />
               </button>
@@ -1075,15 +962,15 @@ function UserManagement() {
             <div className={cx('modal-footer')}>
               <button
                 className={cx('cancel-button')}
-                onClick={() => setShowPermanentDeleteModal(false)}
+                onClick={() => setShowDeleteModal(false)}
               >
                 Cancel
               </button>
               <button
-                className={cx('permanent-delete-button')}
-                onClick={permanentDeleteUser}
+                className={cx('delete-button')}
+                onClick={deleteUser}
               >
-                {loading ? 'Deleting...' : 'Permanently Delete'}
+                {loading ? 'Deleting...' : 'Delete User'}
               </button>
             </div>
           </div>

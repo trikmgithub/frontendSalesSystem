@@ -1,4 +1,4 @@
-// src/services/itemAxios.js - Extended with additional CRUD functions
+// src/services/itemAxios.js - Updated without hide functionality
 
 import * as axiosConfig from '~/utils/axiosConfig';
 
@@ -125,17 +125,6 @@ const deleteItemAxios = async (itemId) => {
     }
 };
 
-// Hide/Show item (soft delete)
-const hideItemAxios = async (itemId, hideStatus = true) => {
-    try {
-        const res = await axiosConfig.patch(`items/hide/${itemId}`, { hidden: hideStatus });
-        return res;
-    } catch (error) {
-        console.log('Error toggling item visibility:', error);
-        throw new Error(error);
-    }
-};
-
 export { 
     getItemsAxios, 
     getItemsPaginatedAxios, 
@@ -143,6 +132,5 @@ export {
     searchItemsAxios,
     createItemAxios,
     updateItemAxios,
-    deleteItemAxios,
-    hideItemAxios
+    deleteItemAxios
 };

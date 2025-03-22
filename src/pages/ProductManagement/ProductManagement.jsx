@@ -1,11 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import classNames from 'classnames/bind';
 import styles from './ProductManagement.module.scss';
+import useDisableBodyScroll from '~/hooks/useDisableBodyScroll';
 import {
   FaEdit,
   FaTrashAlt,
-  FaEye,
-  FaEyeSlash,
   FaPlus,
   FaSearch,
   FaSort,
@@ -61,10 +60,10 @@ function ProductManagement() {
   // State for brands (to populate dropdowns)
   const [brands, setBrands] = useState([]);
 
-  // Fetch products when component mounts or when page, sort, or search changes
+  // Fetch products when component mounts or when page changes
   useEffect(() => {
     fetchProducts();
-  }, [currentPage, sortField, sortDirection]);
+  }, [currentPage]);
 
   // Function to fetch products
   const fetchProducts = async () => {
@@ -76,16 +75,28 @@ function ProductManagement() {
         const response = await itemAxios.searchItemsAxios(searchTerm);
 
         if (response && response.data) {
-          setProducts(response.data);
-          setTotalItems(response.data.length);
-          setTotalPages(Math.ceil(response.data.length / PAGE_SIZE));
+          // Apply sorting to search results if sort field is set
+          const productsData = response.data;
+          if (sortField) {
+            sortProductsData(productsData, sortField, sortDirection);
+          }
+          
+          setProducts(productsData);
+          setTotalItems(productsData.length);
+          setTotalPages(Math.ceil(productsData.length / PAGE_SIZE));
         }
       } else {
         // Otherwise use the paginated endpoint
         const response = await itemAxios.getItemsPaginatedAxios(currentPage, PAGE_SIZE);
 
         if (response && response.data && response.data.paginateItem) {
-          setProducts(response.data.paginateItem.result);
+          // Apply sorting to paginated results if sort field is set
+          const productsData = response.data.paginateItem.result;
+          if (sortField) {
+            sortProductsData(productsData, sortField, sortDirection);
+          }
+          
+          setProducts(productsData);
           setTotalItems(response.data.paginateItem.meta.numberItems);
           setTotalPages(response.data.paginateItem.meta.totalPages);
         }
@@ -97,6 +108,32 @@ function ProductManagement() {
       setLoading(false);
     }
   };
+  
+  // Helper function to sort products data in place
+  const sortProductsData = (data, field, direction) => {
+    return data.sort((a, b) => {
+      let valueA = a[field];
+      let valueB = b[field];
+      
+      // Handle special cases
+      if (field === 'price' || field === 'quantity') {
+        valueA = parseFloat(valueA) || 0;
+        valueB = parseFloat(valueB) || 0;
+      } else if (field === 'name') {
+        valueA = valueA?.toString().toLowerCase() || '';
+        valueB = valueB?.toString().toLowerCase() || '';
+      } else if (field === 'brand') {
+        valueA = a.brand?.name?.toLowerCase() || '';
+        valueB = b.brand?.name?.toLowerCase() || '';
+      }
+      
+      if (direction === 'asc') {
+        return valueA > valueB ? 1 : -1;
+      } else {
+        return valueA < valueB ? 1 : -1;
+      }
+    });
+  };
 
   // State for form validation
   const [formErrors, setFormErrors] = useState({});
@@ -105,6 +142,9 @@ function ProductManagement() {
   useEffect(() => {
     fetchBrands();
   }, []);
+  
+  // Disable body scroll when any modal is open
+  useDisableBodyScroll(showCreateModal || showEditModal || showDeleteModal);
 
   // Function to fetch brands
   const fetchBrands = async () => {
@@ -134,6 +174,37 @@ function ProductManagement() {
       setSortField(field);
       setSortDirection('desc');
     }
+    
+    // Apply sorting to current data immediately
+    sortProductsList(field, sortField === field && sortDirection === 'asc' ? 'desc' : 'asc');
+  };
+  
+  // Function to sort products list
+  const sortProductsList = (field, direction) => {
+    const sortedProducts = [...products].sort((a, b) => {
+      let valueA = a[field];
+      let valueB = b[field];
+      
+      // Handle special cases
+      if (field === 'price' || field === 'quantity') {
+        valueA = parseFloat(valueA) || 0;
+        valueB = parseFloat(valueB) || 0;
+      } else if (field === 'name') {
+        valueA = valueA?.toString().toLowerCase() || '';
+        valueB = valueB?.toString().toLowerCase() || '';
+      } else if (field === 'brand') {
+        valueA = a.brand?.name?.toLowerCase() || '';
+        valueB = b.brand?.name?.toLowerCase() || '';
+      }
+      
+      if (direction === 'asc') {
+        return valueA > valueB ? 1 : -1;
+      } else {
+        return valueA < valueB ? 1 : -1;
+      }
+    });
+    
+    setProducts(sortedProducts);
   };
 
   // Function to get sort icon
@@ -315,24 +386,6 @@ function ProductManagement() {
     } catch (err) {
       console.error('Error deleting product:', err);
       setError('Failed to delete product. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Function to hide/show a product (soft delete)
-  const toggleProductVisibility = async (productId, isHidden) => {
-    try {
-      setLoading(true);
-
-      const response = await itemAxios.hideItemAxios(productId, !isHidden);
-
-      if (response) {
-        fetchProducts();
-      }
-    } catch (err) {
-      console.error('Error updating product visibility:', err);
-      setError('Failed to update product visibility. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -560,7 +613,7 @@ function ProductManagement() {
               </thead>
               <tbody>
                 {products.map(product => (
-                  <tr key={product._id} className={cx({ 'hidden-row': product.hidden })}>
+                  <tr key={product._id}>
                     <td className={cx('image-column')}>
                       <img
                         src={product.imageUrls?.[0] || '/placeholder-image.jpg'}
@@ -600,13 +653,6 @@ function ProductManagement() {
                         title="Delete product"
                       >
                         <FaTrashAlt />
-                      </button>
-                      <button
-                        className={cx('action-button', product.hidden ? 'show' : 'hide')}
-                        onClick={() => toggleProductVisibility(product._id, product.hidden)}
-                        title={product.hidden ? "Show product" : "Hide product"}
-                      >
-                        {product.hidden ? <FaEye /> : <FaEyeSlash />}
                       </button>
                     </td>
                   </tr>
