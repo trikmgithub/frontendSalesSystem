@@ -1,18 +1,26 @@
-// src/pages/Admin/AdminDashboard.jsx
+// src/pages/Admin/AdminDashboard.jsx (Updated with Dashboard tab)
 import React, { useState, useEffect } from 'react';
 import classNames from 'classnames/bind';
 import styles from './AdminDashboard.module.scss';
 import { logoutAxios } from '~/services/authAxios';
+import Dashboard from '~/layouts/ManagementTabs/Dashboard/Dashboard';
 import ProductManagement from '~/layouts/ManagementTabs/ProductManagement/ProductManagement';
 import UserManagement from '~/layouts/ManagementTabs/UserManagement/UserManagement';
-import BrandManagement from '~/layouts/ManagementTabs/BrandManagement/BrandManagement'; // Add this import
-import { FaBox, FaUsers, FaTag } from 'react-icons/fa'; // Add FaTag
+import BrandManagement from '~/layouts/ManagementTabs/BrandManagement/BrandManagement';
+import OrderManagement from '~/layouts/ManagementTabs/OrderManagement/OrderManagement';
+import { 
+  FaChartBar, 
+  FaBox, 
+  FaUsers, 
+  FaTag, 
+  FaShoppingCart 
+} from 'react-icons/fa';
 
 const cx = classNames.bind(styles);
 
 function AdminDashboard() {
   const [userData, setUserData] = useState(null);
-  const [activeTab, setActiveTab] = useState('products');
+  const [activeTab, setActiveTab] = useState('dashboard'); // Default to dashboard tab
 
   // Simplified logout handler - Uses logoutAxios which handles everything
   const handleLogout = async () => {
@@ -24,7 +32,7 @@ function AdminDashboard() {
     }
   };
 
-  // Load user data on component mount - NO REDIRECTION LOGIC
+  // Load user data on component mount
   useEffect(() => {
     // Get user info from localStorage
     const userInfo = JSON.parse(localStorage.getItem('user') || 'null');
@@ -51,6 +59,14 @@ function AdminDashboard() {
       {/* Tab Navigation */}
       <div className={cx('tabNavigation')}>
         <button
+          className={cx('tabButton', { active: activeTab === 'dashboard' })}
+          onClick={() => setActiveTab('dashboard')}
+        >
+          <FaChartBar />
+          <span>Dashboard</span>
+        </button>
+      
+        <button
           className={cx('tabButton', { active: activeTab === 'products' })}
           onClick={() => setActiveTab('products')}
         >
@@ -67,6 +83,14 @@ function AdminDashboard() {
         </button>
         
         <button
+          className={cx('tabButton', { active: activeTab === 'orders' })}
+          onClick={() => setActiveTab('orders')}
+        >
+          <FaShoppingCart />
+          <span>Order Management</span>
+        </button>
+        
+        <button
           className={cx('tabButton', { active: activeTab === 'users' })}
           onClick={() => setActiveTab('users')}
         >
@@ -76,11 +100,17 @@ function AdminDashboard() {
       </div>
 
       <div className={cx('adminContent')}>
+        {/* Dashboard Tab Content */}
+        {activeTab === 'dashboard' && <Dashboard />}
+        
         {/* Products Tab Content */}
         {activeTab === 'products' && <ProductManagement />}
         
         {/* Brands Tab Content */}
         {activeTab === 'brands' && <BrandManagement />}
+        
+        {/* Orders Tab Content */}
+        {activeTab === 'orders' && <OrderManagement />}
         
         {/* Users Tab Content */}
         {activeTab === 'users' && <UserManagement />}
