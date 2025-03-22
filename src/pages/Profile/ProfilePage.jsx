@@ -9,6 +9,12 @@ const ProfilePage = () => {
   const [selectedTab, setSelectedTab] = useState('profile');
   const [gender, setGender] = useState('unspecified');
   const [agreeToPolicy, setAgreeToPolicy] = useState(false);
+  const [fullName, setFullName] = useState('Nguyen The Son (K18 HCM)');
+  const [email, setEmail] = useState('sonntse184319@fpt.edu.vn');
+  const [day, setDay] = useState('');
+  const [month, setMonth] = useState('');
+  const [year, setYear] = useState('');
+  
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -30,6 +36,13 @@ const ProfilePage = () => {
         setSelectedTab('profile');
     }
   }, [location.pathname]);
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    // Here you would handle form submission
+    console.log('Form submitted:', { fullName, gender, day, month, year, agreeToPolicy });
+    // You could call an API to update the user's profile here
+  };
 
   return (
     <div className={cx(styles.profileContainer)}>
@@ -86,7 +99,7 @@ const ProfilePage = () => {
             <div className={cx(styles.contentSection)}>
               <h1 className={cx(styles.sectionTitle)}>Thông tin tài khoản</h1>
               
-              <div className={cx(styles.profileForm)}>
+              <form className={cx(styles.profileForm)} onSubmit={handleSubmit}>
                 {/* Avatar Section */}
                 <div className={cx(styles.avatarSection)}>
                   <div className={cx(styles.avatarUpload)}>
@@ -101,7 +114,8 @@ const ProfilePage = () => {
                     <input 
                       type="text" 
                       className={cx(styles.textInput)}
-                      value="sonntse184319@fpt.edu.vn"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
                       readOnly
                     />
                   </div>
@@ -110,7 +124,8 @@ const ProfilePage = () => {
                     <input 
                       type="text" 
                       className={cx(styles.textInput)}
-                      value="Nguyen The Son (K18 HCM)"
+                      value={fullName}
+                      onChange={(e) => setFullName(e.target.value)}
                     />
                   </div>
                   
@@ -161,22 +176,34 @@ const ProfilePage = () => {
                   <div className={cx(styles.birthdayField)}>
                     <p className={cx(styles.birthdayLabel)}>Ngày sinh (Không bắt buộc)</p>
                     <div className={cx(styles.dateSelects)}>
-                      <select className={cx(styles.dateSelect)}>
-                        <option>Ngày</option>
+                      <select 
+                        className={cx(styles.dateSelect)}
+                        value={day}
+                        onChange={(e) => setDay(e.target.value)}
+                      >
+                        <option value="">Ngày</option>
                         {[...Array(31)].map((_, i) => (
                           <option key={i+1} value={i+1}>{i+1}</option>
                         ))}
                       </select>
                       
-                      <select className={cx(styles.dateSelect)}>
-                        <option>Tháng</option>
+                      <select 
+                        className={cx(styles.dateSelect)}
+                        value={month}
+                        onChange={(e) => setMonth(e.target.value)}
+                      >
+                        <option value="">Tháng</option>
                         {[...Array(12)].map((_, i) => (
                           <option key={i+1} value={i+1}>{i+1}</option>
                         ))}
                       </select>
                       
-                      <select className={cx(styles.dateSelect)}>
-                        <option>Năm</option>
+                      <select 
+                        className={cx(styles.dateSelect)}
+                        value={year}
+                        onChange={(e) => setYear(e.target.value)}
+                      >
+                        <option value="">Năm</option>
                         {[...Array(100)].map((_, i) => (
                           <option key={2025-i} value={2025-i}>{2025-i}</option>
                         ))}
@@ -200,12 +227,12 @@ const ProfilePage = () => {
                   </label>
                   
                   <div className={cx(styles.formActions)}>
-                    <button className={cx(styles.updateButton)}>
+                    <button type="submit" className={cx(styles.updateButton)}>
                       Cập nhật
                     </button>
                   </div>
                 </div>
-              </div>
+              </form>
             </div>
             
             {/* Password Section */}
@@ -241,7 +268,8 @@ const ProfilePage = () => {
                   <input 
                     type="email" 
                     className={cx(styles.textInput, styles.disabledInput)}
-                    value="sonntse184319@fpt.edu.vn"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
                     readOnly
                   />
                 </div>

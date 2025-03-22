@@ -18,10 +18,6 @@ const AuthGuard = ({ children, requireStaff = false, requireAdmin = false, requi
     const isStaff = isLoggedIn && userInfo.role === 'STAFF';
     const isAdmin = isLoggedIn && ['ADMIN', 'MANAGER'].includes(userInfo.role);
     
-    console.log("AuthGuard checking path:", window.location.pathname);
-    console.log("User role:", userInfo?.role);
-    console.log("requireAdmin:", requireAdmin, "requireStaff:", requireStaff);
-    
     // STRICT ROUTE PROTECTION
     
     // 1. Admin route protection: only ADMIN/MANAGER can access
