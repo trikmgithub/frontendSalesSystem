@@ -3,6 +3,7 @@ import { User, Lock } from 'lucide-react';
 import cx from 'classnames';
 import styles from './ProfilePage.module.scss';
 import { useNavigate } from 'react-router-dom';
+import PopupMessage from './PopupMessage'; // Import component PopupMessage
 
 const PasswordChangePage = () => {
   const [selectedTab, setSelectedTab] = useState('profile');
@@ -10,7 +11,7 @@ const PasswordChangePage = () => {
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [email, setEmail] = useState('');
-  const [message, setMessage] = useState({ text: '', type: '' });
+  const [popup, setPopup] = useState({ show: false, message: '', type: '' });
   const [isLoading, setIsLoading] = useState(false);
   
   // Use navigate for redirecting to other pages
@@ -47,34 +48,32 @@ const PasswordChangePage = () => {
     }
   }, []);
 
-  const validateForm = () => {
-    // Reset previous message
-    setMessage({ text: '', type: '' });
+  // Đóng popup
+  const closePopup = () => {
+    setPopup({ show: false, message: '', type: '' });
+  };
 
+  // Hiển thị popup với thông báo
+  const showPopup = (message, type) => {
+    setPopup({ show: true, message, type });
+  };
+
+  const validateForm = () => {
     // Check if all fields are filled
     if (!currentPassword || !newPassword || !confirmPassword) {
-      setMessage({ 
-        text: 'Vui lòng điền đầy đủ thông tin', 
-        type: 'error' 
-      });
+      showPopup('Vui lòng điền đầy đủ thông tin', 'error');
       return false;
     }
 
     // Check if new password meets requirements (6-32 characters)
     if (newPassword.length < 6 || newPassword.length > 32) {
-      setMessage({ 
-        text: 'Mật khẩu mới phải từ 6 đến 32 ký tự', 
-        type: 'error' 
-      });
+      showPopup('Mật khẩu mới phải từ 6 đến 32 ký tự', 'error');
       return false;
     }
 
     // Check if new password and confirm password match
     if (newPassword !== confirmPassword) {
-      setMessage({ 
-        text: 'Mật khẩu nhập lại không khớp', 
-        type: 'error' 
-      });
+      showPopup('Mật khẩu nhập lại không khớp', 'error');
       return false;
     }
 
@@ -86,10 +85,7 @@ const PasswordChangePage = () => {
 
     // Check that we have an email before proceeding
     if (!email) {
-      setMessage({
-        text: 'Không thể xác định email người dùng',
-        type: 'error'
-      });
+      showPopup('Không thể xác định email người dùng', 'error');
       return;
     }
 
@@ -117,7 +113,7 @@ const PasswordChangePage = () => {
       console.log('Sending password update request:', JSON.stringify(requestData));
       
       const response = await fetch('http://localhost:8000/api/v1/users/password', {
-        method: 'PATCH', // Changed from PUT to PATCH
+        method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${accessToken}`
@@ -129,10 +125,7 @@ const PasswordChangePage = () => {
 
       if (response.ok) {
         // Password updated successfully
-        setMessage({ 
-          text: 'Cập nhật mật khẩu thành công', 
-          type: 'success' 
-        });
+        showPopup('Cập nhật mật khẩu thành công', 'success');
         
         // Clear form fields
         setCurrentPassword('');
@@ -140,17 +133,11 @@ const PasswordChangePage = () => {
         setConfirmPassword('');
       } else {
         // Server returned an error
-        setMessage({ 
-          text: data.message || 'Cập nhật mật khẩu thất bại', 
-          type: 'error' 
-        });
+        showPopup(data.message || 'Cập nhật mật khẩu thất bại', 'error');
       }
     } catch (error) {
       console.error('Error updating password:', error);
-      setMessage({ 
-        text: 'Đã có lỗi xảy ra, vui lòng thử lại sau', 
-        type: 'error' 
-      });
+      showPopup('Đã có lỗi xảy ra, vui lòng thử lại sau', 'error');
     } finally {
       setIsLoading(false);
     }
@@ -158,6 +145,15 @@ const PasswordChangePage = () => {
 
   return (
     <div className={cx(styles.profileContainer)}>
+      {/* Hiển thị popup nếu show=true */}
+      {popup.show && (
+        <PopupMessage
+          message={popup.message}
+          type={popup.type}
+          onClose={closePopup}
+        />
+      )}
+      
       {/* Sidebar - Giữ nguyên từ ProfilePage */}
       <div className={cx(styles.sidebar)}>
         <div className={cx(styles.sidebarHeader)}>
@@ -198,17 +194,6 @@ const PasswordChangePage = () => {
       <div className={cx(styles.mainContent)}>
         <div className={cx(styles.contentSection)}>
           <h1 className={cx(styles.sectionTitle)}>Thay đổi mật khẩu</h1>
-          
-          {message.text && (
-            <div className={cx(styles.messageBox, {
-              [styles.errorMessage]: message.type === 'error',
-              [styles.successMessage]: message.type === 'success'
-            })}>
-              {message.text}
-            </div>
-          )}
-          
-          {/* Removed email display */}
           
           <div className={cx(styles.passwordForm)}>
             <div className={cx(styles.passwordField)}>
