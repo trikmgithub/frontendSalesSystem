@@ -3,7 +3,7 @@ import { User, Lock } from 'lucide-react';
 import cx from 'classnames';
 import styles from './ProfilePage.module.scss';
 import { useNavigate } from 'react-router-dom';
-import PopupMessage from './PopupMessage'; // Import component PopupMessage
+import ToastNotification from './ToastNotification'; // Import component ToastNotification
 
 const PasswordChangePage = () => {
   const [selectedTab, setSelectedTab] = useState('profile');
@@ -11,7 +11,7 @@ const PasswordChangePage = () => {
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [email, setEmail] = useState('');
-  const [popup, setPopup] = useState({ show: false, message: '', type: '' });
+  const [toast, setToast] = useState({ show: false, message: '', type: '' });
   const [isLoading, setIsLoading] = useState(false);
   
   // Use navigate for redirecting to other pages
@@ -48,32 +48,32 @@ const PasswordChangePage = () => {
     }
   }, []);
 
-  // Đóng popup
-  const closePopup = () => {
-    setPopup({ show: false, message: '', type: '' });
+  // Đóng toast
+  const closeToast = () => {
+    setToast({ show: false, message: '', type: '' });
   };
 
-  // Hiển thị popup với thông báo
-  const showPopup = (message, type) => {
-    setPopup({ show: true, message, type });
+  // Hiển thị toast với thông báo
+  const showToast = (message, type) => {
+    setToast({ show: true, message, type });
   };
 
   const validateForm = () => {
     // Check if all fields are filled
     if (!currentPassword || !newPassword || !confirmPassword) {
-      showPopup('Vui lòng điền đầy đủ thông tin', 'error');
+      showToast('Vui lòng điền đầy đủ thông tin', 'error');
       return false;
     }
 
     // Check if new password meets requirements (6-32 characters)
     if (newPassword.length < 6 || newPassword.length > 32) {
-      showPopup('Mật khẩu mới phải từ 6 đến 32 ký tự', 'error');
+      showToast('Mật khẩu mới phải từ 6 đến 32 ký tự', 'error');
       return false;
     }
 
     // Check if new password and confirm password match
     if (newPassword !== confirmPassword) {
-      showPopup('Mật khẩu nhập lại không khớp', 'error');
+      showToast('Mật khẩu nhập lại không khớp', 'error');
       return false;
     }
 
@@ -85,7 +85,7 @@ const PasswordChangePage = () => {
 
     // Check that we have an email before proceeding
     if (!email) {
-      showPopup('Không thể xác định email người dùng', 'error');
+      showToast('Không thể xác định email người dùng', 'error');
       return;
     }
 
@@ -125,7 +125,7 @@ const PasswordChangePage = () => {
 
       if (response.ok) {
         // Password updated successfully
-        showPopup('Cập nhật mật khẩu thành công', 'success');
+        showToast('Cập nhật mật khẩu thành công', 'success');
         
         // Clear form fields
         setCurrentPassword('');
@@ -133,11 +133,11 @@ const PasswordChangePage = () => {
         setConfirmPassword('');
       } else {
         // Server returned an error
-        showPopup(data.message || 'Cập nhật mật khẩu thất bại', 'error');
+        showToast(data.message || 'Cập nhật mật khẩu thất bại', 'error');
       }
     } catch (error) {
       console.error('Error updating password:', error);
-      showPopup('Đã có lỗi xảy ra, vui lòng thử lại sau', 'error');
+      showToast('Đã có lỗi xảy ra, vui lòng thử lại sau', 'error');
     } finally {
       setIsLoading(false);
     }
@@ -145,12 +145,12 @@ const PasswordChangePage = () => {
 
   return (
     <div className={cx(styles.profileContainer)}>
-      {/* Hiển thị popup nếu show=true */}
-      {popup.show && (
-        <PopupMessage
-          message={popup.message}
-          type={popup.type}
-          onClose={closePopup}
+      {/* Hiển thị toast notification nếu show=true */}
+      {toast.show && (
+        <ToastNotification
+          message={toast.message}
+          type={toast.type}
+          onClose={closeToast}
         />
       )}
       
