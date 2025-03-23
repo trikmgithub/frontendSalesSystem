@@ -65,6 +65,22 @@ function AdminDashboard() {
           <FaChartBar />
           <span>Dashboard</span>
         </button>
+        
+        <button
+          className={cx('tabButton', { active: activeTab === 'users' })}
+          onClick={() => setActiveTab('users')}
+        >
+          <FaUsers />
+          <span>User Management</span>
+        </button>
+        
+        <button
+          className={cx('tabButton', { active: activeTab === 'orders' })}
+          onClick={() => setActiveTab('orders')}
+        >
+          <FaShoppingCart />
+          <span>Order Management</span>
+        </button>
       
         <button
           className={cx('tabButton', { active: activeTab === 'products' })}
@@ -81,39 +97,23 @@ function AdminDashboard() {
           <FaTag />
           <span>Brand Management</span>
         </button>
-        
-        <button
-          className={cx('tabButton', { active: activeTab === 'orders' })}
-          onClick={() => setActiveTab('orders')}
-        >
-          <FaShoppingCart />
-          <span>Order Management</span>
-        </button>
-        
-        <button
-          className={cx('tabButton', { active: activeTab === 'users' })}
-          onClick={() => setActiveTab('users')}
-        >
-          <FaUsers />
-          <span>User Management</span>
-        </button>
       </div>
 
       <div className={cx('adminContent')}>
         {/* Dashboard Tab Content */}
         {activeTab === 'dashboard' && <Dashboard />}
         
+        {/* Users Tab Content */}
+        {activeTab === 'users' && <UserManagement />}
+        
+        {/* Orders Tab Content */}
+        {activeTab === 'orders' && <OrderManagement />}
+        
         {/* Products Tab Content */}
         {activeTab === 'products' && <ProductManagement />}
         
         {/* Brands Tab Content */}
         {activeTab === 'brands' && <BrandManagement />}
-        
-        {/* Orders Tab Content */}
-        {activeTab === 'orders' && <OrderManagement />}
-        
-        {/* Users Tab Content */}
-        {activeTab === 'users' && <UserManagement />}
       </div>
     </div>
   );

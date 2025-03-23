@@ -1,8 +1,8 @@
-import React, { useState, useContext } from 'react';
+import React, { useState, useContext, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import classNames from 'classnames/bind';
 import styles from './Favorites.module.scss';
-import { User, ShoppingCart, X } from 'lucide-react';
+import { User, ShoppingCart, X, Check } from 'lucide-react';
 import { FavoritesContext } from '~/context/FavoritesContext';
 import { CartContext } from '~/context/CartContext';
 import routes from '~/config/routes';
@@ -14,14 +14,43 @@ const Favorites = () => {
     const { addToCart } = useContext(CartContext);
     const navigate = useNavigate();
     const [selectedTab, setSelectedTab] = useState('favorites');
+    const [cartAnimations, setCartAnimations] = useState({});
+    const [removeAnimations, setRemoveAnimations] = useState({});
 
     const formatPrice = (price) => {
         return new Intl.NumberFormat('vi-VN').format(price) + ' đ';
     };
 
     const handleAddToCart = (item) => {
+        // Set animation state
+        setCartAnimations(prev => ({
+            ...prev,
+            [item._id]: true
+        }));
+        
+        // Add item to cart
         addToCart(item);
-        // Optionally show a confirmation message or notification
+        
+        // Reset animation after it completes
+        setTimeout(() => {
+            setCartAnimations(prev => ({
+                ...prev,
+                [item._id]: false
+            }));
+        }, 1000);
+    };
+    
+    const handleRemoveFromFavorites = (itemId) => {
+        // Set animation state
+        setRemoveAnimations(prev => ({
+            ...prev,
+            [itemId]: true
+        }));
+        
+        // Remove after animation completes
+        setTimeout(() => {
+            removeFromFavorites(itemId);
+        }, 300);
     };
 
     return (
@@ -92,7 +121,12 @@ const Favorites = () => {
                         // Favorites with Items
                         <div className={cx('favorites-list')}>
                             {favoriteItems.map((item) => (
-                                <div key={item._id} className={cx('favorite-item')}>
+                                <div 
+                                    key={item._id} 
+                                    className={cx('favorite-item', {
+                                        'removing': removeAnimations[item._id]
+                                    })}
+                                >
                                     <div className={cx('product-image-container')}>
                                         <img 
                                             src={item.imageUrls && item.imageUrls[0] ? item.imageUrls[0] : 'placeholder.jpg'} 
@@ -118,16 +152,33 @@ const Favorites = () => {
                                     <div className={cx('product-actions')}>
                                         <button 
                                             onClick={() => handleAddToCart(item)}
-                                            className={cx('add-to-cart-button')}
-                                            disabled={!item.stock}
+                                            className={cx('add-to-cart-button', {
+                                                'animating': cartAnimations[item._id]
+                                            })}
+                                            disabled={!item.stock || cartAnimations[item._id]}
                                         >
-                                            <ShoppingCart size={16} />
-                                            <span>Thêm vào giỏ</span>
+                                            {cartAnimations[item._id] ? (
+                                                <>
+                                                    <Check size={16} className={cx('success-icon')} />
+                                                    <span>Đã thêm</span>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <ShoppingCart size={16} />
+                                                    <span>Thêm vào giỏ</span>
+                                                </>
+                                            )}
+                                            
+                                            {cartAnimations[item._id] && (
+                                                <span className={cx('animation-circle')}></span>
+                                            )}
                                         </button>
                                         
                                         <button 
-                                            onClick={() => removeFromFavorites(item._id)} 
-                                            className={cx('remove-button')}
+                                            onClick={() => handleRemoveFromFavorites(item._id)} 
+                                            className={cx('remove-button', {
+                                                'removing': removeAnimations[item._id]
+                                            })}
                                         >
                                             <X size={16} />
                                             <span>Xóa</span>

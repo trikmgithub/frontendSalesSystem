@@ -14,9 +14,11 @@ import {
   getCompletedOrdersAxios,
   getCancelledOrdersAxios,
   downloadInvoiceAxios,
-  sendInvoiceEmailAxios
+  sendInvoiceEmailAxios,
+  getCartDetailAxios
 } from '~/services/cartAxios';
 import { getUserByIdAxios } from '~/services/userAxios';
+import SendInvoiceEmailForm from './SendInvoiceEmailForm';
 
 const cx = classNames.bind(styles);
 
@@ -36,13 +38,20 @@ function OrderManagement() {
 
   // Add email loading state to show loading indicator
   const [emailsLoading, setEmailsLoading] = useState({});
-  
+
   // Status confirmation modal state
   const [showStatusModal, setShowStatusModal] = useState(false);
   const [selectedPayment, setSelectedPayment] = useState(null);
   const [targetStatus, setTargetStatus] = useState('');
   const [statusUpdateLoading, setStatusUpdateLoading] = useState(false);
-  
+  const [showEmailModal, setShowEmailModal] = useState(false);
+  const [selectedPaymentForEmail, setSelectedPaymentForEmail] = useState(null);
+
+  const handleOpenEmailForm = (payment) => {
+    setSelectedPaymentForEmail(payment);
+    setShowEmailModal(true);
+  };
+
   // Use hook to disable body scroll when modal is open
   useDisableBodyScroll(showStatusModal);
 
@@ -93,6 +102,39 @@ function OrderManagement() {
       setPayments([]);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Fetch detailed cart information when expanded
+  const fetchCartDetails = async (cartId) => {
+    // If we already have detailed info, don't fetch again
+    if (payments.find(p => p._id === cartId && p.items && p.items.some(item => item.itemName))) {
+      return;
+    }
+
+    try {
+      // Show loading state
+      setActionLoading(prev => ({ ...prev, [`details_${cartId}`]: true }));
+
+      // Use the imported service function
+      const response = await getCartDetailAxios(cartId);
+
+      // Check if we got valid data
+      if (response && response.data && !response.error) {
+        // Update the payments state with detailed information
+        setPayments(prevPayments => 
+          prevPayments.map(payment => 
+            payment._id === cartId ? { ...payment, ...response.data } : payment
+          )
+        );
+      } else if (response.error) {
+        console.error(`Error fetching cart details: ${response.message}`);
+      }
+    } catch (error) {
+      console.error(`Error in fetchCartDetails for cart ${cartId}:`, error);
+    } finally {
+      // Clear loading state
+      setActionLoading(prev => ({ ...prev, [`details_${cartId}`]: false }));
     }
   };
 
@@ -177,10 +219,18 @@ function OrderManagement() {
 
   // Toggle payment item expansion
   const togglePaymentExpansion = (paymentId) => {
+    // Toggle the expansion state
+    const newExpandedState = !expandedPayments[paymentId];
+    
     setExpandedPayments(prev => ({
       ...prev,
-      [paymentId]: !prev[paymentId]
+      [paymentId]: newExpandedState
     }));
+    
+    // If we're expanding this payment, fetch its detailed information
+    if (newExpandedState) {
+      fetchCartDetails(paymentId);
+    }
   };
 
   // Format date to readable format
@@ -249,10 +299,10 @@ function OrderManagement() {
   // Update payment status using our cartAxios service
   const updatePaymentStatus = async () => {
     if (!selectedPayment || !targetStatus) return;
-    
+
     try {
       setStatusUpdateLoading(true);
-      
+
       // Convert 'cancelled' to 'cancel' for API request
       const apiStatus = targetStatus === 'cancelled' ? 'cancel' : targetStatus;
 
@@ -268,7 +318,7 @@ function OrderManagement() {
           payment._id === selectedPayment._id ? { ...payment, status: targetStatus } : payment
         )
       );
-      
+
       // Close the modal
       setShowStatusModal(false);
       setSelectedPayment(null);
@@ -290,42 +340,30 @@ function OrderManagement() {
       const result = await downloadInvoiceAxios(paymentId);
 
       if (result.error) {
-        alert('Failed to download invoice. Please try again.');
+        console.error('Download failed with error:', result.message);
+      } else if (result.method === 'direct') {
+        // If we used the direct URL method, show a different message
+        console.log('Using direct URL download method');
       }
     } catch (error) {
       console.error('Error downloading invoice:', error);
-      alert('Failed to download invoice. Please try again.');
+      alert(`Download error: ${error.message || 'Unknown error'}`);
     } finally {
       setActionLoading(prev => ({ ...prev, [`download_${paymentId}`]: false }));
     }
   };
 
   // Send invoice by email
-  const handleSendInvoice = async (paymentId, userId) => {
-    setActionLoading(prev => ({ ...prev, [`email_${paymentId}`]: true }));
-
-    try {
-      // Get the email for this user
-      const email = userEmails[userId] || '';
-
-      if (!email || email === 'Unknown') {
-        alert('Customer email not available. Cannot send invoice.');
-        return;
-      }
-
-      const result = await sendInvoiceEmailAxios(paymentId, email);
-
-      if (result.error) {
-        alert(`Failed to send invoice: ${result.message || 'Unknown error'}`);
-      } else {
-        alert('Invoice sent successfully to customer email.');
-      }
-    } catch (error) {
-      console.error('Error sending invoice:', error);
-      alert('Failed to send invoice. Please try again.');
-    } finally {
-      setActionLoading(prev => ({ ...prev, [`email_${paymentId}`]: false }));
+  const handleSendInvoice = (paymentId, userId) => {
+    // Get the payment object by ID
+    const payment = payments.find(p => p._id === paymentId);
+    if (!payment) {
+      alert('Payment not found');
+      return;
     }
+
+    // Open the email form modal
+    handleOpenEmailForm(payment);
   };
 
   // Manually refresh customer email
@@ -402,30 +440,6 @@ function OrderManagement() {
   };
 
   const sortedAndFilteredPayments = getSortedAndFilteredPayments();
-
-  // Customer email display component with loading state
-  const CustomerEmail = ({ userId }) => {
-    if (emailsLoading[userId]) {
-      return <span>Loading email...</span>;
-    }
-
-    const email = userEmails[userId] || 'Unknown';
-
-    return (
-      <div className={cx('customerEmail')}>
-        <strong>Customer Email:</strong> {email}
-        {email === 'Unknown' && (
-          <button
-            className={cx('refreshEmailButton')}
-            onClick={() => refreshCustomerEmail(userId)}
-            title="Refresh email"
-          >
-            <FaUndo />
-          </button>
-        )}
-      </div>
-    );
-  };
 
   // Get status update confirmation message
   const getStatusUpdateMessage = (status) => {
@@ -562,31 +576,71 @@ function OrderManagement() {
               {expandedPayments[payment._id] && (
                 <div className={cx('paymentDetails')}>
                   <div className={cx('paymentUser')}>
-                    <CustomerEmail userId={payment.userId} />
+                    <div className={cx('customerInfo')}>
+                      <div className={cx('customerEmail')}>
+                        <strong>Customer Email:</strong> {emailsLoading[payment.userId] ? (
+                          <span className={cx('loadingText')}>Loading email...</span>
+                        ) : (
+                          <span>{userEmails[payment.userId] || payment.username || 'Unknown'}</span>
+                        )}
+                        {(!userEmails[payment.userId] || userEmails[payment.userId] === 'Unknown') && (
+                          <button
+                            className={cx('refreshEmailButton')}
+                            onClick={() => refreshCustomerEmail(payment.userId)}
+                            title="Refresh email"
+                          >
+                            <FaUndo />
+                          </button>
+                        )}
+                      </div>
+                      {payment.username && payment.username !== userEmails[payment.userId] && (
+                        <div className={cx('customerUsername')}>
+                          <strong>Username:</strong> {payment.username}
+                        </div>
+                      )}
+                      <div className={cx('orderDate')}>
+                        <strong>Order Date:</strong> {formatDate(payment.purchaseDate)}
+                      </div>
+                    </div>
                   </div>
 
                   <div className={cx('itemsList')}>
                     <h3>Order Items</h3>
-                    <table className={cx('itemsTable')}>
-                      <thead>
-                        <tr>
-                          <th>Item ID</th>
-                          <th>Quantity</th>
-                          <th>Price</th>
-                          <th>Total</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {payment.items.map(item => (
-                          <tr key={item._id || item.itemId}>
-                            <td>{item.itemId}</td>
-                            <td>{item.quantity}</td>
-                            <td>{formatPrice(item.price)}</td>
-                            <td>{formatPrice(item.price * item.quantity)}</td>
+                    {actionLoading[`details_${payment._id}`] ? (
+                      <div className={cx('loadingItems')}>
+                        <div className={cx('spinner-small')}></div>
+                        <p>Loading item details...</p>
+                      </div>
+                    ) : (
+                      <table className={cx('itemsTable')}>
+                        <thead>
+                          <tr>
+                            <th>Item ID</th>
+                            <th>Item Name</th>
+                            <th>Quantity</th>
+                            <th>Price</th>
+                            <th>Total</th>
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                        </thead>
+                        <tbody>
+                          {payment.items.map(item => (
+                            <tr key={item._id || item.itemId}>
+                              <td>{item.itemId}</td>
+                              <td>{item.itemName || 'Unknown Item'}</td>
+                              <td>{item.quantity}</td>
+                              <td>{formatPrice(item.price)}</td>
+                              <td>{formatPrice(item.price * item.quantity)}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                        <tfoot>
+                          <tr>
+                            <td colSpan="4" className={cx('totalRow')}>Total Amount:</td>
+                            <td className={cx('totalValue')}>{formatPrice(payment.totalAmount)}</td>
+                          </tr>
+                        </tfoot>
+                      </table>
+                    )}
                   </div>
 
                   <div className={cx('paymentActions')}>
@@ -652,42 +706,52 @@ function OrderManagement() {
         </div>
       )}
 
+      {/* Email Form Modal */}
+      {showEmailModal && selectedPaymentForEmail && (
+        <SendInvoiceEmailForm
+          isOpen={showEmailModal}
+          onClose={() => setShowEmailModal(false)}
+          cartId={selectedPaymentForEmail._id}
+          defaultEmail={userEmails[selectedPaymentForEmail.userId] || ''}
+        />
+      )}
+
       {/* Status Update Confirmation Modal */}
       {showStatusModal && selectedPayment && (
         <div className={cx('statusConfirmModal')}>
           <div className={cx('statusConfirmContent')}>
             <div className={cx('statusConfirmHeader')}>
               <h3>Confirm Status Update</h3>
-              <button 
+              <button
                 className={cx('closeButton')}
                 onClick={() => setShowStatusModal(false)}
               >
                 <FaTimes />
               </button>
             </div>
-            
+
             <div className={cx('statusConfirmBody')}>
               <div className={cx('confirmMessage')}>
                 <FaExclamationTriangle className={cx('warningIcon')} />
                 <p>{getStatusUpdateMessage(targetStatus)}</p>
               </div>
-              
+
               <div className={cx('orderSummary')}>
                 <div className={cx('summaryRow')}>
                   <span className={cx('summaryLabel')}>Order ID:</span>
                   <span className={cx('summaryValue')}>{selectedPayment._id}</span>
                 </div>
-                
+
                 <div className={cx('summaryRow')}>
                   <span className={cx('summaryLabel')}>Date:</span>
                   <span className={cx('summaryValue')}>{formatDate(selectedPayment.purchaseDate)}</span>
                 </div>
-                
+
                 <div className={cx('summaryRow')}>
                   <span className={cx('summaryLabel')}>Amount:</span>
                   <span className={cx('summaryValue')}>{formatPrice(selectedPayment.totalAmount)}</span>
                 </div>
-                
+
                 <div className={cx('summaryRow')}>
                   <span className={cx('summaryLabel')}>Current Status:</span>
                   <span className={cx('summaryValue')}>
@@ -696,7 +760,7 @@ function OrderManagement() {
                     </span>
                   </span>
                 </div>
-                
+
                 <div className={cx('summaryRow')}>
                   <span className={cx('summaryLabel')}>New Status:</span>
                   <span className={cx('summaryValue')}>
@@ -707,15 +771,15 @@ function OrderManagement() {
                 </div>
               </div>
             </div>
-            
+
             <div className={cx('statusConfirmFooter')}>
-              <button 
+              <button
                 className={cx('cancelButton')}
                 onClick={() => setShowStatusModal(false)}
               >
                 Cancel
               </button>
-              <button 
+              <button
                 className={cx('confirmButton')}
                 onClick={updatePaymentStatus}
                 disabled={statusUpdateLoading}

@@ -115,12 +115,13 @@ function OrdersPage() {
 
   // Get status badge class based on status
   const getStatusBadgeClass = (status) => {
-    switch (status) {
+    switch (status.toLowerCase()) { // Add toLowerCase() to handle case variations
       case 'done':
         return 'statusBadgeDone';
       case 'pending':
         return 'statusBadgePending';
       case 'cancelled':
+      case 'cancel':  // Handle both versions
         return 'statusBadgeCancelled';
       default:
         return 'statusBadgePending';
@@ -160,7 +161,12 @@ function OrdersPage() {
     const safeOrders = parseOrderData(orders);
     
     return safeOrders
-      .filter(order => filterStatus === 'all' || order.status === filterStatus)
+      .filter(order => {
+        if (filterStatus === 'all') return true;
+        if (filterStatus === 'cancelled') 
+          return order.status === 'cancelled' || order.status === 'cancel';
+        return order.status === filterStatus;
+      })
       .sort((a, b) => {
         if (sortField === 'purchaseDate') {
           return sortDirection === 'asc' 
@@ -305,9 +311,9 @@ function OrdersPage() {
                     
                     <div className={cx('orderColumn', 'statusColumn')}>
                       <span className={cx('orderStatus', getStatusBadgeClass(order.status))}>
-                        {order.status === 'pending' ? 'ĐANG XỬ LÝ' : 
-                         order.status === 'done' ? 'HOÀN THÀNH' : 
-                         order.status === 'cancelled' ? 'ĐÃ HỦY' : 
+                        {order.status.toLowerCase() === 'pending' ? 'ĐANG XỬ LÝ' : 
+                         order.status.toLowerCase() === 'done' ? 'HOÀN THÀNH' : 
+                         (order.status.toLowerCase() === 'cancelled' || order.status.toLowerCase() === 'cancel') ? 'ĐÃ HỦY' : 
                          order.status.toUpperCase()}
                       </span>
                     </div>

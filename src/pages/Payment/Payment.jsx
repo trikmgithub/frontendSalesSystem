@@ -182,12 +182,16 @@ const Payment = () => {
         price: item.price
       }));
       
+      // Set status based on payment method
+      // For bank transfer, set status to "done" immediately
+      const orderStatus = paymentMethod === "bank" ? "done" : "pending";
+      
       // Prepare request data
       const cartData = {
         userId: userId,
         items: formattedItems,
         totalAmount: calculateTotal(),
-        status: "pending",
+        status: orderStatus,
         paymentMethod: paymentMethod === "bank" ? "credit_card" : "cod"
       };
       
@@ -668,7 +672,7 @@ const Payment = () => {
                   />
                   <label htmlFor="pay-bank"></label>
                 </div>
-                <div className={cx('payment-icon')}>🏦</div>
+                <div className={cx('payment-icon')}>📱</div>
                 <div className={cx('payment-details')}>
                   <h4>Thanh toán chuyển khoản</h4>
                   <p>Quét mã QR để thanh toán qua ngân hàng</p>
