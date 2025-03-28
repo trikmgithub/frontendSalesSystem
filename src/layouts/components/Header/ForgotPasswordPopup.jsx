@@ -8,13 +8,13 @@ const cx = classNames.bind(styles);
 
 function ForgotPasswordPopup({ onClose }) {
     const [email, setEmail] = useState('');
-    const [captcha, setCaptcha] = useState('');
     const [error, setError] = useState('');
+    const [isSubmitting, setIsSubmitting] = useState(false);
     
     // Use the custom hook to disable body scroll
     useDisableBodyScroll(true);
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
 
         if (!email) {
@@ -31,12 +31,38 @@ function ForgotPasswordPopup({ onClose }) {
             return;
         }
 
-        if (!captcha) {
-            setError('Vui lòng nhập mã captcha');
-            return;
-        }
+        try {
+            setIsSubmitting(true);
+            
+            // Send OTP to the provided email/phone
+            // Make sure we're sending the correct payload format
+            const response = await fetch('http://localhost:8000/api/v1/email/send-otp', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({ email })
+            });
 
-        // Handle password reset logic here
+            const data = await response.json();
+            
+            // Check both response.ok and the success field in the response
+            if (!response.ok || (data.data && data.data.success === false)) {
+                const errorMessage = data.data?.message || data.message || 'Có lỗi xảy ra khi gửi mã OTP';
+                throw new Error(errorMessage);
+            }
+            
+            // Handle successful response
+            // You might want to redirect to an OTP verification screen or show a success message
+            alert('Mã OTP đã được gửi đến ' + email);
+            onClose(); // Close the popup after successful submission
+            
+        } catch (err) {
+            setError(err.message || 'Có lỗi xảy ra khi gửi mã OTP');
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     return (
@@ -67,21 +93,12 @@ function ForgotPasswordPopup({ onClose }) {
                         />
                     </div>
 
-                    <div className={cx('captchaGroup')}>
-                        <div className={cx('captchaImage')}>
-                            <img src="/path-to-captcha-image.jpg" alt="CAPTCHA" />
-                        </div>
-                        <input
-                            type="text"
-                            value={captcha}
-                            onChange={(e) => setCaptcha(e.target.value)}
-                            placeholder="Nhập captcha"
-                            className={cx({ error: error && !captcha })}
-                        />
-                    </div>
-
-                    <button type="submit" className={cx('submitBtn')}>
-                        Gửi
+                    <button 
+                        type="submit" 
+                        className={cx('submitBtn')}
+                        disabled={isSubmitting}
+                    >
+                        {isSubmitting ? 'Đang gửi...' : 'Gửi'}
                     </button>
                 </form>
             </div>
