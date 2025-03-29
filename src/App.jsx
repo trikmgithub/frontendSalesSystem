@@ -2,7 +2,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { publicRoutes } from '~/routes/routes';
 import { Fragment } from 'react';
 import { ToastContainer } from 'react-toastify';
-import { DefaultLayout } from './layouts/DefaultLayout';
+import { HeaderOnly } from './layouts/HeaderOnly';
 import AuthGuard from './components/AuthGuard';
 import routes from '~/config/routes';
 
@@ -13,7 +13,8 @@ function App() {
                 <Routes>
                     {publicRoutes.map((route, index) => {
                         const Page = route.component;
-                        let Layout = DefaultLayout;
+                        // Use HeaderOnly as the default layout instead of DefaultLayout
+                        let Layout = HeaderOnly;
                         if (route.layout) {
                             Layout = route.layout;
                         } else if (route.layout === null) {

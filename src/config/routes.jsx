@@ -15,7 +15,6 @@ const routes = {
     admin: '/admin',
     favorites: '/favorites',
     search: '/search',
-    searchQuery: '/search/:query',
 };
 
 export default routes;

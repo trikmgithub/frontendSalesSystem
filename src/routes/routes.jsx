@@ -35,7 +35,6 @@ const publicRoutes = [
     { path: config.routes.staff, component: StaffPage, layout: null },
     { path: config.routes.admin, component: AdminDashboard, layout: null },
     { path: config.routes.search, component: SearchResults, layout: HeaderOnly },
-    { path: config.routes.searchQuery, component: SearchResults, layout: HeaderOnly },
 ];
 
 const privateRoutes = [];
