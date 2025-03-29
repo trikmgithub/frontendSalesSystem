@@ -3,11 +3,11 @@ import React, { useState, useEffect } from 'react';
 import classNames from 'classnames/bind';
 import styles from './AdminDashboard.module.scss';
 import { logoutAxios } from '~/services/authAxios';
-import Dashboard from '~/layouts/ManagementTabs/Dashboard/Dashboard';
-import ProductManagement from '~/layouts/ManagementTabs/ProductManagement/ProductManagement';
-import UserManagement from '~/layouts/ManagementTabs/UserManagement/UserManagement';
-import BrandManagement from '~/layouts/ManagementTabs/BrandManagement/BrandManagement';
-import OrderManagement from '~/layouts/ManagementTabs/OrderManagement/OrderManagement';
+import Dashboard from '~/components/ManagementTabs/Dashboard/Dashboard';
+import ProductManagement from '~/components/ManagementTabs/ProductManagement/ProductManagement';
+import UserManagement from '~/components/ManagementTabs/UserManagement/UserManagement';
+import BrandManagement from '~/components/ManagementTabs/BrandManagement/BrandManagement';
+import OrderManagement from '~/components/ManagementTabs/OrderManagement/OrderManagement';
 import { 
   FaChartBar, 
   FaBox, 

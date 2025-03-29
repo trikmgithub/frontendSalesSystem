@@ -16,6 +16,7 @@ import BrandPage from '~/pages/Brand/BrandPage';
 import StaffPage from '~/pages/Staff/Staff';
 import Favorites from '~/pages/Profile/Favorites';
 import AdminDashboard from '~/pages/Admin/AdminDashboard';
+import SearchResults from '~/pages/SearchResults/SearchResults';
 
 const publicRoutes = [
     { path: config.routes.home, component: Home, layout: HeaderOnly },
@@ -33,6 +34,8 @@ const publicRoutes = [
     { path: config.routes.brand, component: BrandPage, layout: HeaderOnly },  
     { path: config.routes.staff, component: StaffPage, layout: null },
     { path: config.routes.admin, component: AdminDashboard, layout: null },
+    { path: config.routes.search, component: SearchResults, layout: HeaderOnly },
+    { path: config.routes.searchQuery, component: SearchResults, layout: HeaderOnly },
 ];
 
 const privateRoutes = [];

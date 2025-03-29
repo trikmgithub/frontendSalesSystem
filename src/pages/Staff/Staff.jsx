@@ -3,16 +3,16 @@ import React, { useState, useEffect } from 'react';
 import classNames from 'classnames/bind';
 import styles from './Staff.module.scss';
 import { logoutAxios } from '~/services/authAxios';
-import ProductManagement from '~/layouts/ManagementTabs/ProductManagement/ProductManagement';
-import OrderManagement from '~/layouts/ManagementTabs/OrderManagement/OrderManagement';
-import BrandManagement from '~/layouts/ManagementTabs/BrandManagement/BrandManagement'; // Add this import
-import { FaBox, FaShoppingCart, FaTag } from 'react-icons/fa'; // Add icons for better visual cues
+import ProductManagement from '~/components/ManagementTabs/ProductManagement/ProductManagement';
+import OrderManagement from '~/components/ManagementTabs/OrderManagement/OrderManagement';
+import BrandManagement from '~/components/ManagementTabs/BrandManagement/BrandManagement';
+import { FaBox, FaShoppingCart, FaTag } from 'react-icons/fa';
 
 const cx = classNames.bind(styles);
 
 function StaffPage() {
   const [userData, setUserData] = useState(null);
-  const [activeTab, setActiveTab] = useState('orders'); // 'orders', 'products', or 'brands'
+  const [activeTab, setActiveTab] = useState('orders');
 
   // Simplified logout handler - Uses logoutAxios which handles everything
   const handleLogout = async () => {
@@ -28,7 +28,7 @@ function StaffPage() {
   useEffect(() => {
     // Get user info from localStorage
     const userInfo = JSON.parse(localStorage.getItem('user') || 'null');
-    
+
     // Just set user data without any redirection
     if (userInfo && userInfo !== 'null') {
       setUserData(userInfo);
@@ -79,7 +79,7 @@ function StaffPage() {
 
         {/* Products Tab Content */}
         {activeTab === 'products' && <ProductManagement />}
-        
+
         {/* Brands Tab Content */}
         {activeTab === 'brands' && <BrandManagement />}
       </div>

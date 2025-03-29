@@ -1,5 +1,5 @@
 import React from 'react';
-import SkinQuiz from '~/layouts/components/Quiz/SkinQuiz';
+import SkinQuiz from '~/components/Quiz/SkinQuiz';
 import styles from './SkinQuizPage.module.scss';
 import classNames from 'classnames/bind';
 

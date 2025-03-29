@@ -175,7 +175,7 @@ $success-color: #43a047;
   transition: all 0.3s ease;
   
   &:hover {
-    background-color: #1b5e20;
+    background-color: color.adjust(#2e7d32, $lightness: -10%);
     transform: translateY(-2px);
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
   }
@@ -211,7 +211,7 @@ $success-color: #43a047;
   
   &:hover {
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-    border-color: darken(#e0e0e0, 5%);
+    border-color: color.adjust(#e0e0e0, $lightness: -5%);
   }
   
   @media (min-width: 768px) {
@@ -314,7 +314,7 @@ $success-color: #43a047;
   }
   
   &:hover {
-    background-color: darken($primary-color, 5%);
+    background-color: color.adjust($primary-color, $lightness: -5%);
     transform: translateY(-2px);
     box-shadow: 0 4px 8px rgba($primary-color, 0.3);
   }

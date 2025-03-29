@@ -1,5 +1,5 @@
 import React from 'react';
-import QuizResult from '~/layouts/components/Quiz/QuizResult';
+import QuizResult from '~/components/Quiz/QuizResult';
 import styles from './QuizResultPage.module.scss';
 import classNames from 'classnames/bind';
 

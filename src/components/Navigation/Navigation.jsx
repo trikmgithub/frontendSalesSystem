@@ -5,7 +5,7 @@ import { FaBars } from 'react-icons/fa';
 import { IoIosArrowForward } from 'react-icons/io';
 import { HiOutlineLocationMarker } from 'react-icons/hi';
 import { useState, useEffect, useRef } from 'react';
-import LoginForm from '~/layouts/components/Header/LoginPopup';
+import LoginForm from '~/components/Header/LoginPopup';
 import { updateAddressAxios } from '~/services/userAxios';
 
 const cx = classNames.bind(styles);

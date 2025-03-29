@@ -6,7 +6,7 @@ import { X, Heart, ChevronUp, ChevronDown } from 'lucide-react';
 import { CartContext } from '~/context/CartContext';
 import { FavoritesContext } from '~/context/FavoritesContext'; // Import FavoritesContext
 import routes from '~/config/routes';
-import LoginForm from '~/layouts/components/Header/LoginPopup';
+import LoginForm from '~/components/Header/LoginPopup';
 
 const cx = classNames.bind(styles);
 
