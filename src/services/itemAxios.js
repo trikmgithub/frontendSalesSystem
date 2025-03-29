@@ -38,11 +38,14 @@ const getItemsPaginatedAxios = async (page = 1, limit = 18) => {
 // Search items by name using fuzzy search
 const searchItemsAxios = async (searchTerm) => {
     try {
-        const res = await axiosConfig.get(`items/fuzzy/${searchTerm}`);
+        // Using path parameter as shown in the API documentation
+        // Ensure searchTerm is properly encoded to handle spaces and special characters
+        const encodedSearchTerm = encodeURIComponent(searchTerm);
+        const res = await axiosConfig.get(`items/fuzzy/${encodedSearchTerm}`);
         return res;
     } catch (error) {
         console.log('Error searching items:', error);
-        throw new Error(error);
+        throw error;
     }
 };
 

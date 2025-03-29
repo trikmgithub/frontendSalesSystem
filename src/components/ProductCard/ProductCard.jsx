@@ -14,9 +14,11 @@ const cx = classNames.bind(styles);
 
 function ProductCard({ product }) {
     const { addToCart } = useContext(CartContext);
-    const { favorites, addToFavorites, removeFromFavorites } = useContext(FavoritesContext);
+    const { favorites = [], addToFavorites, removeFromFavorites } = useContext(FavoritesContext);
     
-    const isFavorite = favorites.some(fav => fav._id === product._id);
+    // Check if favorites exists and is an array before using .some()
+    const isFavorite = Array.isArray(favorites) ? 
+        favorites.some(fav => fav._id === product._id) : false;
     
     const handleAddToCart = (e) => {
         e.preventDefault();

@@ -4,12 +4,10 @@ import { useParams, useLocation } from 'react-router-dom';
 import classNames from 'classnames/bind';
 import { toast } from 'react-toastify';
 import { FaFilter, FaSort } from 'react-icons/fa';
-import axios from 'axios';
-
 import styles from './SearchResults.module.scss';
 import ProductCard from '~/components/ProductCard';
 import LoadingSpinner from '~/components/LoadingSpinner';
-import { getItemsPaginatedAxios } from '~/services/itemAxios';
+import { getItemsPaginatedAxios, searchItemsAxios } from '~/services/itemAxios';
 
 const cx = classNames.bind(styles);
 
@@ -34,14 +32,17 @@ function SearchResults() {
                 setLoading(true);
                 setError(null);
                 
-                // Use the API endpoint for fuzzy search
-                const API_BASE_URL = import.meta.env.VITE_API_URI || 'http://localhost:8000/api/v1';
-                const response = await axios.get(`${API_BASE_URL}/items/fuzzy/${keyword}`);
+                // Use the searchItemsAxios service function instead of direct axios call
+                const response = await searchItemsAxios(keyword);
                 
                 // Check if data is in the expected format
-                if (response.data && response.data.data) {
-                    // Filter out items marked as deleted
-                    const filteredProducts = response.data.data.filter(item => !item.isDeleted);
+                if (response && response.data) {
+                    // Check if the response has a data property that's an array (the items)
+                    const itemsArray = Array.isArray(response.data) ? response.data : 
+                                      (response.data.data && Array.isArray(response.data.data)) ? response.data.data : [];
+                    
+                    // Filter out deleted items
+                    const filteredProducts = itemsArray.filter(item => !item.isDeleted);
                     setProducts(filteredProducts);
                 } else {
                     setProducts([]);
