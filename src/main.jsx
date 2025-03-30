@@ -6,16 +6,16 @@ import { AuthProvider } from './context/AuthContext';
 import { CartProvider } from './context/CartContext';
 import { FavoritesProvider } from './context/FavoritesContext';
 
-// Initialize localStorage defaults if they don't exist
-if (localStorage.getItem('user') === null) {
+// Initialize localStorage with better handling
+if (!localStorage.getItem('user')) {
   console.log("Initializing localStorage 'user' to null");
   localStorage.setItem('user', 'null');
 }
-if (localStorage.getItem('cartItems') === null) {
+if (!localStorage.getItem('cartItems')) {
   console.log("Initializing localStorage 'cartItems' to null");
   localStorage.setItem('cartItems', 'null');
 }
-if (localStorage.getItem('favoriteItems') === null) {
+if (!localStorage.getItem('favoriteItems')) {
   console.log("Initializing localStorage 'favoriteItems' to null");
   localStorage.setItem('favoriteItems', 'null');
 }

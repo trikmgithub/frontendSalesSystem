@@ -1,4 +1,4 @@
-// src/context/AuthContext.jsx
+// src/context/AuthContext.jsx - FIXED VERSION
 import { createContext, useState, useEffect, useContext } from 'react';
 
 // Create auth context
@@ -12,6 +12,7 @@ export const AuthProvider = ({ children }) => {
   const [verifiedEmail, setVerifiedEmail] = useState('');
   const [redirectAfterLogin, setRedirectAfterLogin] = useState(null);
   const [userInfo, setUserInfo] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
   
   // Create a separate function to check localStorage and get user data
   const getUserFromStorage = () => {
@@ -42,9 +43,11 @@ export const AuthProvider = ({ children }) => {
   // Load user info from localStorage on mount
   useEffect(() => {
     const loadUser = () => {
+      setIsLoading(true);
       const userData = getUserFromStorage();
       setUserInfo(userData);
       console.log("AuthContext initialized with user:", userData);
+      setIsLoading(false);
     };
 
     loadUser();
@@ -108,11 +111,37 @@ export const AuthProvider = ({ children }) => {
     setShowSignupModal(true);
   };
 
-  // Method to check if user is logged in - only returns true if we have userInfo with _id
+  // Method to check if user is logged in - IMPROVED to be more robust
   const isLoggedIn = () => {
-    const isLoggedInResult = !!(userInfo && userInfo._id);
-    console.log("isLoggedIn check:", isLoggedInResult, "userInfo:", userInfo);
-    return isLoggedInResult;
+    // If we're still loading, don't make a decision yet
+    if (isLoading) {
+      console.log("isLoggedIn check: still loading user data");
+      return false;
+    }
+    
+    try {
+      // First check the context state
+      if (userInfo && userInfo._id) {
+        console.log("isLoggedIn check: true (from context state)");
+        return true;
+      }
+      
+      // If not in context state, check localStorage directly as a fallback
+      const user = JSON.parse(localStorage.getItem('user') || 'null');
+      const isValid = !!(user && user._id);
+      console.log("isLoggedIn fallback check:", isValid, "user from localStorage:", user);
+      
+      // If we found a valid user in localStorage but not in context, update context
+      if (isValid && !userInfo) {
+        console.log("Found valid user in localStorage but not in context, updating context");
+        setUserInfo(user);
+      }
+      
+      return isValid;
+    } catch (err) {
+      console.error("Error in isLoggedIn check:", err);
+      return false;
+    }
   };
 
   // Logout method
@@ -137,6 +166,7 @@ export const AuthProvider = ({ children }) => {
       showOtpModal,
       verifiedEmail,
       userInfo,
+      isLoading,
       openLogin,
       openSignup,
       closeAllModals,

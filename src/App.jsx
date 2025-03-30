@@ -6,9 +6,18 @@ import { HeaderOnly } from './layouts/HeaderOnly';
 import AuthGuard from './components/Auth/AuthGuard';
 import AuthModals from './components/Auth/AuthModals';
 import ProtectedRoute from './components/Auth/ProtectedRoute';
+import LoadingScreen from './components/LoadingScreen/LoadingScreen';
 import routes from '~/config/routes';
+import { useAuth } from './context/AuthContext';
 
 function App() {
+    const { isLoading } = useAuth();
+
+    // Show loading screen while authentication state is loading
+    if (isLoading) {
+        return <LoadingScreen />;
+    }
+
     return (
         <BrowserRouter>
             <div className="App">
