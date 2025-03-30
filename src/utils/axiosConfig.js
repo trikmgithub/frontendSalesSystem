@@ -1,6 +1,10 @@
 import axios from 'axios';
 
-const API_BASE_URL = import.meta.env.VITE_API_URI;
+// Get API base URL from environment variable
+// Ensure the trailing slash is consistent with our environment variables
+const API_BASE_URL = import.meta.env.VITE_API_URI || 'http://localhost:8000/api/v1/';
+
+console.log('API Base URL being used:', API_BASE_URL);
 
 const axiosConfig = axios.create({
     baseURL: API_BASE_URL,
