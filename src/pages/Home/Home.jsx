@@ -5,6 +5,8 @@ import styles from './Home.module.scss';
 import { Link } from 'react-router-dom';
 import { CartContext } from '~/context/CartContext';
 import { FavoritesContext } from '~/context/FavoritesContext';
+import { useAuth } from '~/context/AuthContext';
+import { toast } from 'react-toastify';
 import { FaHeart } from 'react-icons/fa';
 
 const cx = classNames.bind(styles);
@@ -22,49 +24,119 @@ function Home() {
     const [animatingItems, setAnimatingItems] = useState({});
     const [favoriteAnimations, setFavoriteAnimations] = useState({});
     const cartIconRef = useRef(null);
+    
+    // Use our Auth context
+    const { isLoggedIn, openLogin } = useAuth();
 
     const handleAddToCart = (item) => {
-        // Show the animation
+        console.log("Add to cart clicked, isLoggedIn:", isLoggedIn());
+        
+        // STRICT CHECK: Only proceed if logged in
+        if (!isLoggedIn()) {
+            console.log("Not logged in, showing login popup");
+            // Show login popup and set callback to add item to cart after login
+            openLogin(() => {
+                console.log("Login successful, now adding to cart");
+                // Show animation and add to cart ONLY after successful login
+                setAnimatingItems(prev => ({
+                    ...prev,
+                    [item._id]: true
+                }));
+                
+                addToCart(item);
+                toast.success(`${item.name} đã được thêm vào giỏ hàng!`);
+                
+                // Reset animation after it completes
+                setTimeout(() => {
+                    setAnimatingItems(prev => ({
+                        ...prev,
+                        [item._id]: false
+                    }));
+                }, 1000);
+            });
+            // IMPORTANT: Return early to prevent any action
+            return;
+        }
+        
+        console.log("User is logged in, adding to cart");
+        // User is logged in, add to cart with animation
         setAnimatingItems(prev => ({
             ...prev,
             [item._id]: true
         }));
-
-        // Add item to cart
+        
         addToCart(item);
-
+        toast.success(`${item.name} đã được thêm vào giỏ hàng!`);
+        
         // Reset animation after it completes
         setTimeout(() => {
             setAnimatingItems(prev => ({
                 ...prev,
                 [item._id]: false
             }));
-        }, 1000); // Duration matches the animation length
+        }, 1000);
     };
 
     const handleToggleFavorite = (item) => {
+        console.log("Toggle favorite clicked, isLoggedIn:", isLoggedIn());
         const isFavorite = isInFavorites(item._id);
-
-        // Set animation state
+        
+        // STRICT CHECK: Only proceed if logged in
+        if (!isLoggedIn()) {
+            console.log("Not logged in, showing login popup");
+            // Show login popup and set callback to toggle favorite after login
+            openLogin(() => {
+                console.log("Login successful, now toggling favorite");
+                // Set animation state ONLY after successful login
+                setFavoriteAnimations(prev => ({
+                    ...prev,
+                    [item._id]: true
+                }));
+                
+                // Add/remove from favorites
+                if (isFavorite) {
+                    removeFromFavorites(item._id);
+                    toast.success(`${item.name} đã được xóa khỏi danh sách yêu thích!`);
+                } else {
+                    addToFavorites(item);
+                    toast.success(`${item.name} đã được thêm vào danh sách yêu thích!`);
+                }
+                
+                // Reset animation after it completes
+                setTimeout(() => {
+                    setFavoriteAnimations(prev => ({
+                        ...prev,
+                        [item._id]: false
+                    }));
+                }, 800);
+            });
+            // IMPORTANT: Return early to prevent any action
+            return;
+        }
+        
+        console.log("User is logged in, toggling favorite");
+        // User is logged in, toggle favorite with animation
         setFavoriteAnimations(prev => ({
             ...prev,
             [item._id]: true
         }));
-
+        
         // Add/remove from favorites
         if (isFavorite) {
             removeFromFavorites(item._id);
+            toast.success(`${item.name} đã được xóa khỏi danh sách yêu thích!`);
         } else {
             addToFavorites(item);
+            toast.success(`${item.name} đã được thêm vào danh sách yêu thích!`);
         }
-
+        
         // Reset animation after it completes
         setTimeout(() => {
             setFavoriteAnimations(prev => ({
                 ...prev,
                 [item._id]: false
             }));
-        }, 800); // Duration matches the animation length
+        }, 800);
     };
 
     useEffect(() => {
@@ -178,7 +250,11 @@ function Home() {
                                 </Link>
                                 <div className={cx('productActions')}>
                                     <button
-                                        onClick={() => handleAddToCart(item)}
+                                        onClick={(e) => {
+                                            e.preventDefault();
+                                            e.stopPropagation();
+                                            handleAddToCart(item);
+                                        }}
                                         className={cx('addToCartButton', {
                                             'animating': animatingItems[item._id]
                                         })}
@@ -192,7 +268,11 @@ function Home() {
                                         )}
                                     </button>
                                     <button
-                                        onClick={() => handleToggleFavorite(item)}
+                                        onClick={(e) => {
+                                            e.preventDefault();
+                                            e.stopPropagation();
+                                            handleToggleFavorite(item);
+                                        }}
                                         className={cx('favoriteButton', {
                                             'active': isInFavorites(item._id),
                                             'animating': favoriteAnimations[item._id]

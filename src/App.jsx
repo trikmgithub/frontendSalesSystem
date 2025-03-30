@@ -3,7 +3,9 @@ import { publicRoutes } from '~/routes/routes';
 import { Fragment } from 'react';
 import { ToastContainer } from 'react-toastify';
 import { HeaderOnly } from './layouts/HeaderOnly';
-import AuthGuard from './components/AuthGuard';
+import AuthGuard from './components/Auth/AuthGuard';
+import AuthModals from './components/Auth/AuthModals';
+import ProtectedRoute from './components/Auth/ProtectedRoute';
 import routes from '~/config/routes';
 
 function App() {
@@ -21,7 +23,8 @@ function App() {
                             Layout = Fragment;
                         }
                         
-                        // Set proper route guards based on path
+                        // Determine if route requires authentication
+                        const isAuthRequired = [routes.cart, routes.payment, routes.profile, routes.favorites, routes.ordersPage].includes(route.path);
                         const isAdminRoute = route.path === routes.admin;
                         const isStaffRoute = route.path === routes.staff;
                         
@@ -35,7 +38,13 @@ function App() {
                                         requireStaff={isStaffRoute}
                                     >
                                         <Layout>
-                                            <Page />
+                                            {isAuthRequired ? (
+                                                <ProtectedRoute>
+                                                    <Page />
+                                                </ProtectedRoute>
+                                            ) : (
+                                                <Page />
+                                            )}
                                         </Layout>
                                     </AuthGuard>
                                 }
@@ -43,6 +52,7 @@ function App() {
                         );
                     })}
                 </Routes>
+                <AuthModals />
                 <ToastContainer autoClose={1500} />
             </div>
         </BrowserRouter>

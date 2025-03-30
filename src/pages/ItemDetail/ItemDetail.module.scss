@@ -12,7 +12,7 @@
   display: flex;
   flex-wrap: wrap;
   gap: 30px;
-  
+
   @media (max-width: 768px) {
     flex-direction: column;
   }
@@ -23,7 +23,7 @@
   flex: 1;
   min-width: 300px;
   max-width: 500px;
-  
+
   @media (max-width: 768px) {
     max-width: 100%;
   }
@@ -39,7 +39,7 @@
   border-radius: 8px;
   margin-bottom: 10px;
   overflow: hidden;
-  
+
   img {
     max-width: 100%;
     max-height: 380px;
@@ -52,7 +52,7 @@
   gap: 8px;
   margin-top: 10px;
   flex-wrap: wrap;
-  
+
   .thumbnail {
     width: 80px;
     height: 80px;
@@ -64,17 +64,17 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    
+
     &.active {
       border-color: #f26522;
     }
-    
+
     img {
       max-width: 100%;
       max-height: 100%;
       object-fit: contain;
     }
-    
+
     &:hover {
       border-color: #f26522;
     }
@@ -106,12 +106,12 @@
   margin-bottom: 16px;
   display: flex;
   align-items: center;
-  
+
   .stars {
     display: flex;
     color: #f8ce0b;
     margin-right: 10px;
-    
+
     .star-icon {
       font-size: 18px;
       margin-right: 2px;
@@ -121,7 +121,7 @@
 
 .price-container {
   margin: 20px 0;
-  
+
   .price-row {
     display: flex;
     align-items: center;
@@ -129,19 +129,19 @@
     gap: 12px;
     margin-bottom: 8px;
   }
-  
+
   .current-price {
     font-size: 28px;
     font-weight: 700;
     color: #f26522;
   }
-  
+
   .original-price {
     font-size: 18px;
     color: #999;
     text-decoration: line-through;
   }
-  
+
   .discount-badge {
     background-color: #f26522;
     color: white;
@@ -154,13 +154,13 @@
 
 .add-to-cart-section {
   margin: 20px 0;
-  
+
   .product-buttons {
     display: flex;
     gap: 10px;
     flex-wrap: wrap;
   }
-  
+
   .add-to-cart-button {
     display: flex;
     align-items: center;
@@ -177,17 +177,17 @@
     transition: background-color 0.2s;
     flex: 1;
     min-width: 200px;
-    
+
     &:hover {
       background-color: color.adjust(#f26522, $lightness: -5%);
     }
-    
+
     &:disabled {
       background-color: #ccc;
       cursor: not-allowed;
     }
   }
-  
+
   .add-to-favorites-button {
     display: flex;
     align-items: center;
@@ -203,21 +203,65 @@
     cursor: pointer;
     transition: all 0.2s;
     min-width: 150px;
-    
+
     &:hover {
       background-color: #fff3e7;
     }
-    
+
     &.in-favorites {
       background-color: #fff3e7;
       color: #f26522;
-      
+
       svg {
         color: #f26522;
       }
     }
   }
-  
+
+  .add-to-cart-button,
+  .add-to-favorites-button {
+    &.disabled {
+      opacity: 0.7;
+      cursor: pointer;
+      position: relative;
+
+      &::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: rgba(255, 255, 255, 0.4);
+        z-index: 1;
+        border-radius: 4px;
+      }
+
+      &:hover {
+        box-shadow: none;
+        transform: none;
+      }
+    }
+  }
+
+  /* Hover tooltip for disabled buttons */
+  .add-to-cart-button.disabled:hover::before,
+  .add-to-favorites-button.disabled:hover::before {
+    content: 'Vui lòng đăng nhập';
+    position: absolute;
+    bottom: -40px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 8px 12px;
+    border-radius: 4px;
+    font-size: 12px;
+    white-space: nowrap;
+    z-index: 10;
+    pointer-events: none;
+  }
+
   .stock-info {
     margin-top: 12px;
     color: #2B7B60;
@@ -228,7 +272,7 @@
 .product-description,
 .brand-description {
   margin: 30px 0;
-  
+
   h2 {
     font-size: 18px;
     font-weight: 500;
@@ -237,7 +281,7 @@
     padding-bottom: 8px;
     border-bottom: 1px solid #eee;
   }
-  
+
   p {
     font-size: 14px;
     line-height: 1.6;
@@ -255,7 +299,7 @@
   padding: 40px;
   min-height: 400px;
   text-align: center;
-  
+
   p {
     margin-top: 16px;
     color: #666;

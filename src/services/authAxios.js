@@ -193,9 +193,11 @@ const logoutAxios = async () => {
             console.log('No access token found, proceeding with local logout');
             // Still perform local logout even without a token
             localStorage.removeItem('access_token');
-            localStorage.removeItem('confirmedAddress');
-            localStorage.setItem('user', 'null');
-            window.location.reload();
+            localStorage.setItem('user', 'null');  // Set to 'null' string instead of removing
+            localStorage.setItem('cartItems', 'null');
+            localStorage.setItem('favoriteItems', 'null');
+            // Redirect to homepage
+            window.location.href = '/';
             return;
         }
 
@@ -220,17 +222,21 @@ const logoutAxios = async () => {
         } finally {
             // Always perform local logout regardless of server response
             localStorage.removeItem('access_token');
-            localStorage.removeItem('confirmedAddress');
-            localStorage.setItem('user', 'null');
-            window.location.reload();
+            localStorage.setItem('user', 'null');  // Set to 'null' string instead of removing
+            localStorage.setItem('cartItems', 'null');
+            localStorage.setItem('favoriteItems', 'null');
+            // Redirect to homepage
+            window.location.href = '/';
         }
     } catch (error) {
         console.error('Logout process error:', error);
         // Ensure we still do the local logout even if there's an error
         localStorage.removeItem('access_token');
-        localStorage.removeItem('confirmedAddress');
-        localStorage.setItem('user', 'null');
-        window.location.reload();
+        localStorage.setItem('user', 'null');  // Set to 'null' string instead of removing
+        localStorage.setItem('cartItems', 'null');
+        localStorage.setItem('favoriteItems', 'null');
+        // Redirect to homepage
+        window.location.href = '/';
     }
 };
 

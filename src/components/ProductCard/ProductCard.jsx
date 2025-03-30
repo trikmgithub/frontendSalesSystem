@@ -1,184 +1,201 @@
-// src/components/ProductCard/ProductCard.jsx
+// src/components/ProductCard.jsx
+import React, { useState, useContext } from 'react';
 import { Link } from 'react-router-dom';
-import { useContext, useState, useRef, useEffect } from 'react';
-import classNames from 'classnames/bind';
-import { FaRegHeart, FaHeart, FaImage, FaShoppingCart } from 'react-icons/fa';
-import { toast } from 'react-toastify';
-
-import styles from './ProductCard.module.scss';
 import { CartContext } from '~/context/CartContext';
 import { FavoritesContext } from '~/context/FavoritesContext';
+import { useAuth } from '~/context/AuthContext';
+import { toast } from 'react-toastify';
+import { FaHeart, FaShoppingCart } from 'react-icons/fa';
+import classNames from 'classnames/bind';
+import styles from '~/pages/Home/Home.module.scss';
 
 const cx = classNames.bind(styles);
 
 function ProductCard({ product }) {
-    const { addToCart } = useContext(CartContext);
-    const { favoriteItems, addToFavorites, removeFromFavorites } = useContext(FavoritesContext);
-    const [imageError, setImageError] = useState(false);
-    const [favoriteClicked, setFavoriteClicked] = useState(false);
-    const [cartClicked, setCartClicked] = useState(false);
-    const cartBtnRef = useRef(null);
-    
-    // Check if this product is in favorites
-    const isFavorite = Array.isArray(favoriteItems) ? 
-        favoriteItems.some(fav => fav._id === product._id) : false;
-    
-    // Effect to reset the button animations
-    useEffect(() => {
-        if (favoriteClicked) {
-            const timer = setTimeout(() => {
-                setFavoriteClicked(false);
-            }, 700); // Animation duration
-            return () => clearTimeout(timer);
-        }
-    }, [favoriteClicked]);
+  const { addToCart } = useContext(CartContext);
+  const { addToFavorites, removeFromFavorites, isInFavorites } = useContext(FavoritesContext);
+  const { isLoggedIn, openLogin } = useAuth();
+  const [animatingCart, setAnimatingCart] = useState(false);
+  const [animatingFavorite, setAnimatingFavorite] = useState(false);
 
-    useEffect(() => {
-        if (cartClicked) {
-            const timer = setTimeout(() => {
-                setCartClicked(false);
-            }, 700); // Animation duration
-            return () => clearTimeout(timer);
-        }
-    }, [cartClicked]);
+  // Calculate original price based on flash sale
+  const calculateOriginalPrice = (price, isFlashSale) => {
+    if (isFlashSale) {
+      return Math.round(price / 0.7); // 30% discount
+    }
+    return null;
+  };
+
+  const originalPrice = calculateOriginalPrice(product.price, product.flashSale);
+  const discount = originalPrice ? Math.round(((originalPrice - product.price) / originalPrice) * 100) : null;
+
+  const handleAddToCart = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
     
-    const handleAddToCart = (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        
-        // Create ripple effect
-        if (cartBtnRef.current) {
-            const button = cartBtnRef.current;
-            const circle = document.createElement('span');
-            const diameter = Math.max(button.clientWidth, button.clientHeight);
-            const radius = diameter / 2;
-            
-            circle.style.width = circle.style.height = `${diameter}px`;
-            circle.style.left = `${e.clientX - button.getBoundingClientRect().left - radius}px`;
-            circle.style.top = `${e.clientY - button.getBoundingClientRect().top - radius}px`;
-            circle.classList.add(cx('ripple'));
-            
-            const ripple = button.getElementsByClassName(cx('ripple'))[0];
-            if (ripple) {
-                ripple.remove();
-            }
-            
-            button.appendChild(circle);
-        }
-        
-        // Set cart clicked state for animation
-        setCartClicked(true);
-        
-        // Add to cart and show toast
+    // Check if user is logged in
+    if (!isLoggedIn()) {
+      // Show login popup and set callback to add item to cart after login
+      openLogin(() => {
+        // Only show animation and add to cart after successful login
+        setAnimatingCart(true);
         addToCart(product);
-        toast.success(`Đã thêm ${product.name} vào giỏ hàng`);
-    };
-    
-    const handleToggleFavorite = (e) => {
-        e.preventDefault();
-        e.stopPropagation();
+        toast.success(`${product.name} đã được thêm vào giỏ hàng!`);
         
-        // Set favorite clicked state for animation
-        setFavoriteClicked(true);
+        // Reset animation after it completes
+        setTimeout(() => {
+          setAnimatingCart(false);
+        }, 1000);
+      });
+      return;
+    }
+    
+    // User is logged in, add to cart with animation
+    setAnimatingCart(true);
+    addToCart(product);
+    toast.success(`${product.name} đã được thêm vào giỏ hàng!`);
+    
+    // Reset animation after it completes
+    setTimeout(() => {
+      setAnimatingCart(false);
+    }, 1000);
+  };
+  
+  const handleToggleFavorite = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    const isFavorite = isInFavorites(product._id);
+    
+    // Check if user is logged in
+    if (!isLoggedIn()) {
+      // Show login popup and set callback to toggle favorite after login
+      openLogin(() => {
+        // Only toggle favorite, show animation, and display toast after successful login
+        setAnimatingFavorite(true);
         
         if (isFavorite) {
-            removeFromFavorites(product._id);
-            toast.info(`Đã xóa ${product.name} khỏi danh sách yêu thích`);
+          removeFromFavorites(product._id);
+          toast.success(`${product.name} đã được xóa khỏi danh sách yêu thích!`);
         } else {
-            addToFavorites(product);
-            toast.success(`Đã thêm ${product.name} vào danh sách yêu thích`);
+          addToFavorites(product);
+          toast.success(`${product.name} đã được thêm vào danh sách yêu thích!`);
         }
-    };
-    
-    // Calculate original price (assuming a 30% discount for flashSale items)
-    const discountPercent = product.flashSale ? 30 : 0;
-    const originalPrice = product.flashSale ? 
-        Math.round(product.price / (1 - discountPercent / 100)) : null;
-    
-    // Get the first image from the product
-    const imageUrl = product.imageUrls && product.imageUrls.length > 0
-        ? product.imageUrls[0]
-        : null;
         
-    // Handle image error
-    const handleImageError = () => {
-        setImageError(true);
-    };
+        // Reset animation after it completes
+        setTimeout(() => {
+          setAnimatingFavorite(false);
+        }, 800);
+      });
+      return;
+    }
     
-    // Format currency
-    const formatPrice = (price) => {
-        return price.toLocaleString('vi-VN') + ' đ';
-    };
+    // User is logged in, toggle favorite with animation
+    setAnimatingFavorite(true);
+    
+    if (isFavorite) {
+      removeFromFavorites(product._id);
+      toast.success(`${product.name} đã được xóa khỏi danh sách yêu thích!`);
+    } else {
+      addToFavorites(product);
+      toast.success(`${product.name} đã được thêm vào danh sách yêu thích!`);
+    }
+    
+    // Reset animation after it completes
+    setTimeout(() => {
+      setAnimatingFavorite(false);
+    }, 800);
+  };
 
-    return (
-        <Link to={`/product/${product._id}`} className={cx('cardLink')}>
-            <div className={cx('card')}>
-                <div className={cx('imageContainer')}>
-                    {!imageError && imageUrl ? (
-                        <img 
-                            src={imageUrl} 
-                            alt={product.name} 
-                            className={cx('image')}
-                            onError={handleImageError}
-                        />
-                    ) : (
-                        <div className={cx('imagePlaceholder')}>
-                            <FaImage />
-                        </div>
-                    )}
-                    
-                    {product.flashSale && (
-                        <div className={cx('discountBadge')}>{discountPercent}%</div>
-                    )}
-                    
-                    <button 
-                        className={cx('favoriteButton', { 
-                            'isFavorite': isFavorite,
-                            'favoriteClicked': favoriteClicked
-                        })}
-                        onClick={handleToggleFavorite}
-                        aria-label={isFavorite ? "Remove from favorites" : "Add to favorites"}
-                    >
-                        {isFavorite ? <FaHeart /> : <FaRegHeart />}
-                    </button>
-                </div>
-                
-                <div className={cx('content')}>
-                    <div className={cx('priceContainer')}>
-                        <span className={cx('price')}>{formatPrice(product.price)}</span>
-                        {originalPrice && (
-                            <span className={cx('originalPrice')}>{formatPrice(originalPrice)}</span>
-                        )}
-                    </div>
-                    
-                    {product.brand && (
-                        <div className={cx('brand')}>{product.brand.name}</div>
-                    )}
-                    
-                    <h3 className={cx('name')}>{product.name}</h3>
-                    
-                    <div className={cx('stockStatus')}>
-                        {product.stock ? 
-                            <span className={cx('inStock')}>Còn hàng</span> : 
-                            <span className={cx('outOfStock')}>Hết hàng</span>
-                        }
-                    </div>
-                    
-                    <button 
-                        ref={cartBtnRef}
-                        className={cx('addToCartButton', {
-                            'cartClicked': cartClicked
-                        })}
-                        onClick={handleAddToCart}
-                        disabled={!product.stock}
-                    >
-                        <FaShoppingCart className={cx('cartIcon')} />
-                        <span>THÊM VÀO GIỎ</span>
-                    </button>
-                </div>
+  return (
+    <div className={cx('productCard')}>
+      <Link to={`/product/${product._id}`} className={cx('productLink')}>
+        <div className={cx('imageContainer')}>
+          {product.imageUrls && product.imageUrls.length > 0 ? (
+            <img
+              src={product.imageUrls[0]}
+              alt={product.name}
+              className={cx('productImage')}
+              onError={(e) => {
+                e.target.onerror = null;
+                e.target.src = 'https://via.placeholder.com/300x300?text=No+Image';
+              }}
+            />
+          ) : (
+            <img
+              src="https://via.placeholder.com/300x300?text=No+Image"
+              alt={product.name}
+              className={cx('productImage')}
+            />
+          )}
+          {discount && (
+            <div className={cx('discountBadge')}>
+              {discount}%
             </div>
-        </Link>
-    );
+          )}
+        </div>
+
+        <div className={cx('productInfo')}>
+          <div className={cx('priceSection')}>
+            <div className={cx('currentPrice')}>
+              {product.price?.toLocaleString()} đ
+            </div>
+            {originalPrice && (
+              <div className={cx('originalPrice')}>
+                {originalPrice.toLocaleString()} đ
+              </div>
+            )}
+          </div>
+
+          <div className={cx('brandName')}>{product.brand?.name || ''}</div>
+          <h3 className={cx('productName')}>{product.name}</h3>
+
+          <div className={cx('stockStatus')}>
+            {product.stock ? 'Còn hàng' : 'Hết hàng'}
+          </div>
+        </div>
+      </Link>
+      
+      <div className={cx('productActions')}>
+        <button
+          onClick={handleAddToCart}
+          className={cx('addToCartButton', {
+            'animating': animatingCart,
+            'disabled': !isLoggedIn()
+          })}
+          disabled={!product.stock || animatingCart}
+          aria-label="Add to cart"
+          title={isLoggedIn() ? "Add to cart" : "Login required"}
+        >
+          <FaShoppingCart />
+          {animatingCart && (
+            <span className={cx('successIndicator')}>✓</span>
+          )}
+        </button>
+        
+        <button
+          onClick={handleToggleFavorite}
+          className={cx('favoriteButton', {
+            'active': isInFavorites(product._id),
+            'animating': animatingFavorite,
+            'disabled': !isLoggedIn()
+          })}
+          disabled={animatingFavorite}
+          aria-label="Toggle favorite"
+          title={isLoggedIn() ? "Add to favorites" : "Login required"}
+        >
+          <FaHeart className={cx({
+            'heartBeat': animatingFavorite && !isInFavorites(product._id),
+            'heartBreak': animatingFavorite && isInFavorites(product._id)
+          })} />
+        </button>
+
+        {animatingCart && (
+          <div className={cx('flyToCartAnimation')}></div>
+        )}
+      </div>
+    </div>
+  );
 }
 
 export default ProductCard;

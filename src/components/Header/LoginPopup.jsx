@@ -8,16 +8,18 @@ import { FaSpinner } from 'react-icons/fa';
 import ForgotPasswordPopup from './ForgotPasswordPopup';
 import { googleLoginAxios, googleRedirectAxios, loginAxios } from '~/services/authAxios';
 import useDisableBodyScroll from '~/hooks/useDisableBodyScroll';
+import { useAuth } from '~/context/AuthContext';
 
 const cx = classNames.bind(styles);
 
-function LoginForm({ onClose, onShowSignup }) {
+function LoginForm({ onClose, onShowSignup, onLoginSuccess }) {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [showForgotPassword, setShowForgotPassword] = useState(false);
     const location = useLocation();
+    const { handleLoginSuccess } = useAuth();
 
     // Use the custom hook to disable body scroll
     useDisableBodyScroll(true);
@@ -32,6 +34,12 @@ function LoginForm({ onClose, onShowSignup }) {
             if (location.pathname.includes("auth/google/redirect") || code) {
                 try {
                     await googleRedirectAxios();
+                    if (onLoginSuccess) {
+                        onLoginSuccess();
+                    }
+                    if (handleLoginSuccess) {
+                        handleLoginSuccess();
+                    }
                 } catch (error) {
                     console.error("Google Redirect Error:", error);
                 }
@@ -39,7 +47,7 @@ function LoginForm({ onClose, onShowSignup }) {
         };
         
         handleGoogleRedirect();
-    }, [location]);
+    }, [location, onLoginSuccess, handleLoginSuccess]);
 
     const handleGoogleLogin = async () => {
         try {
@@ -86,6 +94,12 @@ function LoginForm({ onClose, onShowSignup }) {
             if (response.message === 'Login success') {
                 console.log('Login success');
                 onClose();
+                if (onLoginSuccess) {
+                    onLoginSuccess();
+                }
+                if (handleLoginSuccess) {
+                    handleLoginSuccess();
+                }
             }
         } catch (error) {
             setIsLoading(false); // Stop loading on error
@@ -100,11 +114,6 @@ function LoginForm({ onClose, onShowSignup }) {
                 setError('Đăng nhập thất bại. Vui lòng thử lại sau.');
             }
         }
-    };
-
-    const handleShowSignup = () => {
-        onClose();
-        onShowSignup();
     };
 
     return (
@@ -181,7 +190,7 @@ function LoginForm({ onClose, onShowSignup }) {
                     </form>
                     <div className={cx('registerLink')}>
                         <span>Bạn chưa có tài khoản? </span>
-                        <button className={cx('signupBtn')} onClick={handleShowSignup}>
+                        <button className={cx('signupBtn')} onClick={onShowSignup}>
                             ĐĂNG KÝ NGAY
                         </button>
                     </div>

@@ -6,25 +6,19 @@ import classNames from 'classnames/bind';
 import styles from './Header.module.scss';
 import logo from '~/assets/beautySkin.png';
 import { useState, useEffect, useRef, useContext } from 'react';
-import LoginForm from './LoginPopup';
-import SignupForm from './SignupPopup';
-import OtpForm from './OtpForm';
 import Navigation from '../Navigation/Navigation';
 import { getItemsAxios } from '~/services/itemAxios';
-import { googleLoginAxios, googleRedirectAxios, logoutAxios } from '~/services/authAxios';
+import { googleLoginAxios, logoutAxios } from '~/services/authAxios';
 import { CartContext } from '~/context/CartContext';
+import { useAuth } from '~/context/AuthContext';
 import routes from '~/config/routes';
 
 const cx = classNames.bind(styles);
 
 function Header() {
     const [showAccountPopup, setShowAccountPopup] = useState(false);
-    const [showLoginForm, setShowLoginForm] = useState(false);
-    const [showSignupForm, setShowSignupForm] = useState(false);
-    const [showOtpForm, setShowOtpForm] = useState(false);
     const popupRef = useRef(null);
     const searchRef = useRef(null);
-    const [userInfo, setUserInfo] = useState(JSON.parse(localStorage.getItem('user')) || {});
     const { cartItems } = useContext(CartContext);
     const [query, setQuery] = useState('');
     const [items, setItems] = useState([]);
@@ -32,34 +26,20 @@ function Header() {
     const [showSuggestions, setShowSuggestions] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const location = useLocation();
-    const [verifiedEmail, setVerifiedEmail] = useState('');
     const navigate = useNavigate();
     const cartCount = cartItems.reduce((count, item) => count + item.quantity, 0);
     const [recentSearches, setRecentSearches] = useState(
         JSON.parse(localStorage.getItem('recentSearches')) || []
     );
-
-    useEffect(() => {
-        const updateUserInfo = () => {
-            try {
-                const userData = JSON.parse(localStorage.getItem('user') || 'null');
-                if (userData && userData._id) {
-                    setUserInfo(userData);
-                }
-            } catch (err) {
-                console.error("Error parsing user data:", err);
-            }
-        };
-
-        updateUserInfo();
-
-        // Listen for storage changes (e.g. from other tabs)
-        window.addEventListener('storage', updateUserInfo);
-
-        return () => {
-            window.removeEventListener('storage', updateUserInfo);
-        };
-    }, []);
+    
+    // Use our Auth context
+    const { 
+        userInfo, 
+        openLogin, 
+        openSignup, 
+        logout,
+        isLoggedIn
+    } = useAuth();
 
     useEffect(() => {
         const fetchItems = async () => {
@@ -82,37 +62,7 @@ function Header() {
         fetchItems();
     }, []);
 
-    useEffect(() => {
-        // Handle Google OAuth Redirection
-        const handleGoogleRedirect = async () => {
-            const urlParams = new URLSearchParams(window.location.search);
-            const code = urlParams.get('code');
-
-            // Check if we're on the Google redirect path or have a code parameter
-            if (location.pathname.includes("auth/google/redirect") || code) {
-                try {
-                    const response = await googleRedirectAxios();
-
-                    // If successful, update user state
-                    if (response?.data) {
-                        setUserInfo({
-                            _id: response.data._id,
-                            name: response.data.name,
-                            email: response.data.email,
-                            role: response.data.role,
-                            avatar: response.data.avatar
-                        });
-                    }
-                } catch (error) {
-                    console.error("Google Redirect Error:", error);
-                }
-            }
-        };
-
-        handleGoogleRedirect();
-    }, [location]);
-
-    // Click outside handler for search suggestions
+    // Click outside handler for search suggestions and account popup
     useEffect(() => {
         const handleClickOutside = (event) => {
             if (searchRef.current && !searchRef.current.contains(event.target)) {
@@ -261,22 +211,12 @@ function Header() {
         setShowAccountPopup(!showAccountPopup);
     };
 
-    const handleLoginClick = () => {
-        setShowLoginForm(true);
+    const handleSignOutClick = () => {
+        // Close the account popup first
         setShowAccountPopup(false);
-    };
-
-    const handleSignOutClick = async () => {
-        try {
-            const response = await logoutAxios();
-        } catch (error) {
-            throw new Error(error);
-        }
-    };
-
-    const handleSignupClick = () => {
-        setShowOtpForm(true);
-        setShowAccountPopup(false);
+        
+        // Use our auth context's logout method, which includes redirect to homepage
+        logout();
     };
 
     // Group suggestions by type for display
@@ -442,9 +382,9 @@ function Header() {
                         <div ref={popupRef} className={cx('actionItem', 'accountItem')} onClick={handleAccountClick}>
                             <FaUser className={cx('icon')} />
                             <div className={cx('actionContent')}>
-                                {userInfo.name ? (
+                                {isLoggedIn() && userInfo ? (
                                     <div>
-                                        <div><span>Chào {userInfo.name}</span></div>
+                                        <div><span>Chào {userInfo?.name || 'Khách hàng'}</span></div>
                                         <div><span>Tài khoản</span></div>
                                     </div>
                                 ) : (
@@ -456,7 +396,7 @@ function Header() {
                             </div>
 
                             {showAccountPopup &&
-                                (userInfo?.name ? (
+                                (isLoggedIn() && userInfo ? (
                                     <div className={cx('accountPopupAfter')}>
                                         <ul>
                                             <li onClick={() => {
@@ -486,12 +426,12 @@ function Header() {
                                         <div className={cx('divider')}>
                                             <span>Hoặc đăng nhập với BeautySkin</span>
                                         </div>
-                                        <button className={cx('loginBtn')} onClick={handleLoginClick}>
+                                        <button className={cx('loginBtn')} onClick={openLogin}>
                                             Đăng nhập
                                         </button>
                                         <div className={cx('registerLink')}>
                                             <span>Bạn chưa có tài khoản?</span>
-                                            <button className={cx('signupBtn')} onClick={handleSignupClick}>
+                                            <button className={cx('signupBtn')} onClick={openSignup}>
                                                 ĐĂNG KÝ NGAY
                                             </button>
                                         </div>
@@ -515,48 +455,30 @@ function Header() {
                             </div>
                         </Link>
 
-                        <Link to={routes.cart} className={cx('actionItem', 'cart')}>
-                            <FaShoppingCart className={cx('icon')} />
-                            <span className={cx('cartCount')}>{cartCount}</span>
-                        </Link>
+                        {/* Conditional cart link based on login status */}
+                        {isLoggedIn() ? (
+                            <Link to={routes.cart} className={cx('actionItem', 'cart')}>
+                                <FaShoppingCart className={cx('icon')} />
+                                <span className={cx('cartCount')}>{cartCount}</span>
+                            </Link>
+                        ) : (
+                            <div 
+                                className={cx('actionItem', 'cart')} 
+                                onClick={() => {
+                                    console.log("Cart icon clicked, showing login popup");
+                                    openLogin(() => {
+                                        // After login, navigate to cart
+                                        navigate(routes.cart);
+                                    });
+                                }}
+                                style={{ cursor: 'pointer' }}
+                            >
+                                <FaShoppingCart className={cx('icon')} />
+                                <span className={cx('cartCount')}>{cartCount}</span>
+                            </div>
+                        )}
                     </div>
                 </div>
-
-                {showLoginForm && (
-                    <LoginForm
-                        onClose={() => setShowLoginForm(false)}
-                        onShowSignup={() => {
-                            setShowLoginForm(false);
-                            setShowSignupForm(true);
-                        }}
-                    />
-                )}
-
-                {showOtpForm && (
-                    <OtpForm
-                        onClose={() => setShowOtpForm(false)}
-                        onShowLogin={() => {
-                            setShowSignupForm(false);
-                            setShowLoginForm(true);
-                        }}
-                        onVerificationSuccess={(email) => {
-                            setVerifiedEmail(email);
-                            setShowOtpForm(false);
-                            setShowSignupForm(true);
-                        }}
-                    />
-                )}
-
-                {showSignupForm && (
-                    <SignupForm
-                        onClose={() => setShowSignupForm(false)}
-                        onShowLogin={() => {
-                            setShowSignupForm(false);
-                            setShowLoginForm(true);
-                        }}
-                        verifiedEmail={verifiedEmail}
-                    />
-                )}
             </header>
             <Navigation />
         </>

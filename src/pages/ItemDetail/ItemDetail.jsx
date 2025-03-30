@@ -5,6 +5,8 @@ import styles from './ItemDetail.module.scss';
 import { getItemDetail } from '~/services/itemAxios';
 import { CartContext } from '~/context/CartContext';
 import { FavoritesContext } from '~/context/FavoritesContext';
+import { useAuth } from '~/context/AuthContext';
+import { toast } from 'react-toastify';
 import { FaStar, FaShoppingCart, FaHeart } from 'react-icons/fa';
 
 const cx = classNames.bind(styles);
@@ -17,6 +19,7 @@ function ItemDetail() {
     const [selectedImage, setSelectedImage] = useState(0);
     const { addToCart } = useContext(CartContext);
     const { addToFavorites, removeFromFavorites, isInFavorites } = useContext(FavoritesContext);
+    const { isLoggedIn, openLogin } = useAuth();
     
     useEffect(() => {
         if (!id) return;
@@ -33,20 +36,95 @@ function ItemDetail() {
             });
     }, [id]);
 
+    // Adding state to manage button styles for animation feedback
+    const [isAddingToCart, setIsAddingToCart] = useState(false);
+    const [isTogglingFavorite, setIsTogglingFavorite] = useState(false);
+    
     const handleAddToCart = () => {
-        if (item) {
-            addToCart(item);
+        if (!item) return;
+        
+        console.log("ItemDetail: Add to cart clicked, isLoggedIn:", isLoggedIn());
+        
+        // STRICT CHECK: Only proceed if logged in
+        if (!isLoggedIn()) {
+            console.log("ItemDetail: Not logged in, showing login popup");
+            // Show login popup and set callback to add item to cart after login
+            openLogin(() => {
+                console.log("ItemDetail: Login successful, now adding to cart");
+                // Add to cart and show toast ONLY after successful login
+                setIsAddingToCart(true);
+                addToCart(item);
+                toast.success(`${item.name} đã được thêm vào giỏ hàng!`);
+                
+                // Reset animation state
+                setTimeout(() => {
+                    setIsAddingToCart(false);
+                }, 1000);
+            });
+            // IMPORTANT: Return early to prevent any action
+            return;
         }
+        
+        console.log("ItemDetail: User is logged in, adding to cart");
+        // User is logged in, add to cart with animation
+        setIsAddingToCart(true);
+        addToCart(item);
+        toast.success(`${item.name} đã được thêm vào giỏ hàng!`);
+        
+        // Reset animation state
+        setTimeout(() => {
+            setIsAddingToCart(false);
+        }, 1000);
     };
     
     const handleToggleFavorite = () => {
-        if (item) {
-            if (isInFavorites(item._id)) {
-                removeFromFavorites(item._id);
-            } else {
-                addToFavorites(item);
-            }
+        if (!item) return;
+        
+        console.log("ItemDetail: Toggle favorite clicked, isLoggedIn:", isLoggedIn());
+        const isFav = isInFavorites(item._id);
+        
+        // STRICT CHECK: Only proceed if logged in
+        if (!isLoggedIn()) {
+            console.log("ItemDetail: Not logged in, showing login popup");
+            // Show login popup and set callback to toggle favorite after login
+            openLogin(() => {
+                console.log("ItemDetail: Login successful, now toggling favorite");
+                // Toggle favorite and show toast ONLY after successful login
+                setIsTogglingFavorite(true);
+                
+                if (isFav) {
+                    removeFromFavorites(item._id);
+                    toast.success(`${item.name} đã được xóa khỏi danh sách yêu thích!`);
+                } else {
+                    addToFavorites(item);
+                    toast.success(`${item.name} đã được thêm vào danh sách yêu thích!`);
+                }
+                
+                // Reset animation state
+                setTimeout(() => {
+                    setIsTogglingFavorite(false);
+                }, 800);
+            });
+            // IMPORTANT: Return early to prevent any action
+            return;
         }
+        
+        console.log("ItemDetail: User is logged in, toggling favorite");
+        // User is logged in, toggle favorite with animation
+        setIsTogglingFavorite(true);
+        
+        if (isFav) {
+            removeFromFavorites(item._id);
+            toast.success(`${item.name} đã được xóa khỏi danh sách yêu thích!`);
+        } else {
+            addToFavorites(item);
+            toast.success(`${item.name} đã được thêm vào danh sách yêu thích!`);
+        }
+        
+        // Reset animation state
+        setTimeout(() => {
+            setIsTogglingFavorite(false);
+        }, 800);
     };
 
     // Calculate original price (for flash sale items, the price from API is already discounted)
@@ -148,9 +226,13 @@ function ItemDetail() {
                     <div className={cx('add-to-cart-section')}>
                         <div className={cx('product-buttons')}>
                             <button 
-                                className={cx('add-to-cart-button')}
+                                className={cx('add-to-cart-button', {
+                                    'animating': isAddingToCart,
+                                    'disabled': !isLoggedIn()
+                                })}
                                 onClick={handleAddToCart}
-                                disabled={!item.stock}
+                                disabled={!item.stock || isAddingToCart}
+                                title={isLoggedIn() ? "Thêm vào giỏ hàng" : "Vui lòng đăng nhập"}
                             >
                                 <FaShoppingCart />
                                 <span>Thêm vào giỏ hàng</span>
@@ -158,9 +240,13 @@ function ItemDetail() {
                             
                             <button 
                                 className={cx('add-to-favorites-button', {
-                                    'in-favorites': isInFavorites(item._id)
+                                    'in-favorites': isInFavorites(item._id),
+                                    'animating': isTogglingFavorite,
+                                    'disabled': !isLoggedIn()
                                 })}
                                 onClick={handleToggleFavorite}
+                                disabled={isTogglingFavorite}
+                                title={isLoggedIn() ? (isInFavorites(item._id) ? "Đã yêu thích" : "Yêu thích") : "Vui lòng đăng nhập"}
                             >
                                 <FaHeart />
                                 <span>{isInFavorites(item._id) ? 'Đã yêu thích' : 'Yêu thích'}</span>
