@@ -7,7 +7,7 @@ import styles from './Header.module.scss';
 import logo from '~/assets/beautySkin.png';
 import { useState, useEffect, useRef, useContext } from 'react';
 import Navigation from '../Navigation/Navigation';
-import { getItemsAxios } from '~/services/itemAxios';
+import { getItemsAxios, checkUserSkinTypeAxios } from '~/services/itemAxios';
 import { googleLoginAxios, logoutAxios } from '~/services/authAxios';
 import { CartContext } from '~/context/CartContext';
 import { useAuth } from '~/context/AuthContext';
@@ -32,11 +32,10 @@ function Header() {
     );
 
     // Use our Auth context
-    const { 
-        userInfo, 
-        openLogin, 
-        openSignup, 
-        logout,
+    const {
+        userInfo,
+        openLogin,
+        openSignup,
         isLoggedIn
     } = useAuth();
 
@@ -83,6 +82,50 @@ function Header() {
             await googleLoginAxios();
         } catch (error) {
             console.error("Google Login Error:", error);
+        }
+    };
+
+    const handleSkinQuizClick = async () => {
+        // Only proceed if user is logged in
+        if (!isLoggedIn()) {
+            // If not logged in, show login popup
+            openLogin(() => {
+                // After login, check if user has taken the quiz and navigate accordingly
+                checkQuizStatusAndNavigate();
+            });
+            return;
+        }
+
+        // If logged in, check quiz status and navigate
+        checkQuizStatusAndNavigate();
+    };
+
+    const checkQuizStatusAndNavigate = async () => {
+        try {
+            // Show loading state (optional)
+            // You could add a loading state here if desired
+
+            // Check if user has taken the quiz
+            const response = await checkUserSkinTypeAxios();
+
+            if (response.hasTakenQuiz) {
+                // User has taken the quiz before, navigate directly to results
+                console.log('User has taken quiz before, navigating to results');
+                navigate(`/skin-quiz/results/${response.skinType}`, {
+                    state: {
+                        fromDirectNavigation: true,
+                        skinType: response.skinType
+                    }
+                });
+            } else {
+                // User hasn't taken the quiz, navigate to quiz page
+                console.log('User has not taken quiz, navigating to quiz page');
+                navigate('/skin-quiz');
+            }
+        } catch (error) {
+            console.error('Error checking quiz status:', error);
+            // If any error occurs, default to navigating to the quiz page
+            navigate('/skin-quiz');
         }
     };
 
@@ -213,17 +256,17 @@ function Header() {
     const handleSignOutClick = async () => {
         // Close the account popup first
         setShowAccountPopup(false);
-        
+
         try {
             // Call the logout API directly
             await logoutAxios();
-            
+
             // Manually perform local logout (clear local storage) after API call
             localStorage.removeItem('access_token');
             localStorage.setItem('user', 'null');
             localStorage.setItem('cartItems', 'null');
             localStorage.setItem('favoriteItems', 'null');
-            
+
             // Redirect to homepage after logout
             window.location.href = '/';
         } catch (error) {
@@ -458,20 +501,9 @@ function Header() {
                                 ))}
                         </div>
 
-                        <div 
-                            className={cx('actionItem')} 
-                            onClick={() => {
-                                if (isLoggedIn()) {
-                                    // If logged in, navigate to skin quiz
-                                    navigate('/skin-quiz');
-                                } else {
-                                    // If not logged in, show login popup
-                                    openLogin(() => {
-                                        // After login, navigate to skin quiz
-                                        navigate('/skin-quiz');
-                                    });
-                                }
-                            }}
+                        <div
+                            className={cx('actionItem')}
+                            onClick={handleSkinQuizClick}
                             style={{ cursor: 'pointer' }}
                         >
                             <FaCheckSquare className={cx('icon')} />

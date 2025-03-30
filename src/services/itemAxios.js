@@ -143,6 +143,80 @@ const getSkinProductsAxios = async (skinType) => {
     }
 };
 
+const checkUserSkinTypeAxios = async () => {
+    try {
+        // Call the API to get products based on user's skin type
+        const res = await axiosConfig.get('items/skin');
+        
+        // If successful, extract the skin type from the data
+        // We can infer the skin type from the product recommendations
+        // This assumes that products are organized by skin type
+        if (res.data && res.data.length > 0) {
+            // Determine skin type from the response (based on product descriptions)
+            const skinTypeMap = {
+                'Da Dầu': 'oily',
+                'Da Hỗn Hợp': 'combination',
+                'Da Thường': 'normal',
+                'Da Khô': 'dry'
+            };
+            
+            // Look for skin type mentions in product descriptions
+            let detectedSkinType = null;
+            
+            // Check each product description for skin type mentions
+            for (const product of res.data) {
+                if (!product.description) continue;
+                
+                const description = product.description.toLowerCase();
+                
+                if (description.includes('da dầu')) {
+                    detectedSkinType = 'oily';
+                    break;
+                } else if (description.includes('da hỗn hợp')) {
+                    detectedSkinType = 'combination';
+                    break;
+                } else if (description.includes('da thường')) {
+                    detectedSkinType = 'normal';
+                    break;
+                } else if (description.includes('da khô')) {
+                    detectedSkinType = 'dry';
+                    break;
+                }
+            }
+            
+            // Default to 'normal' if we couldn't detect it
+            return {
+                hasTakenQuiz: true,
+                skinType: detectedSkinType || 'normal',
+                data: res.data
+            };
+        }
+        
+        return {
+            hasTakenQuiz: true,
+            skinType: 'normal', // Default to normal if we can't determine
+            data: res.data
+        };
+    } catch (error) {
+        // If we get a 500 error, user hasn't taken the quiz
+        if (error.response && error.response.status === 500) {
+            return {
+                hasTakenQuiz: false,
+                error: true,
+                message: 'User has not taken skin quiz'
+            };
+        }
+        
+        // For other errors
+        console.error('Error checking user skin type:', error);
+        return {
+            hasTakenQuiz: false,
+            error: true,
+            message: error.response?.data?.message || error.message || 'Failed to check skin type'
+        };
+    }
+};
+
 export { 
     getItemsAxios, 
     getItemsPaginatedAxios, 
@@ -151,5 +225,6 @@ export {
     createItemAxios,
     updateItemAxios,
     deleteItemAxios,
-    getSkinProductsAxios
+    getSkinProductsAxios,
+    checkUserSkinTypeAxios
 };

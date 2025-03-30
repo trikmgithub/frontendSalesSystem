@@ -127,7 +127,8 @@ const QuizResult = () => {
   const { isLoggedIn, openLogin } = useAuth();
   const [animatingItems, setAnimatingItems] = useState({});
   const [favoriteAnimations, setFavoriteAnimations] = useState({});
-  
+  const [showScoreSection, setShowScoreSection] = useState(true);
+
   const skinData = skinTypeData[skinType] || skinTypeData.normal;
 
   useEffect(() => {
@@ -136,7 +137,7 @@ const QuizResult = () => {
       try {
         // Use the Vietnamese skin type name for the API call
         const response = await getSkinProductsAxios(skinData.title);
-        
+
         if (response.error) {
           setError(response.message || 'Failed to fetch products');
           setSkinProducts([]);
@@ -155,9 +156,20 @@ const QuizResult = () => {
         setLoading(false);
       }
     };
-  
+
     fetchSkinProducts();
   }, [skinType, skinData.title]);
+
+  useEffect(() => {
+    // Check if user came from direct navigation (from header)
+    if (location.state?.fromDirectNavigation) {
+      // We don't have quiz points and answers from direct navigation
+      // So we'll set a default value or hide the score section
+      setShowScoreSection(false);
+    } else {
+      setShowScoreSection(true);
+    }
+  }, [location.state]);
 
   const handleAddToCart = (item) => {
     // Check if user is logged in
@@ -169,10 +181,10 @@ const QuizResult = () => {
           ...prev,
           [item._id]: true
         }));
-        
+
         addToCart(item);
         toast.success(`${item.name} đã được thêm vào giỏ hàng!`);
-        
+
         // Reset animation after it completes
         setTimeout(() => {
           setAnimatingItems(prev => ({
@@ -183,16 +195,16 @@ const QuizResult = () => {
       });
       return;
     }
-    
+
     // User is logged in, add to cart with animation
     setAnimatingItems(prev => ({
       ...prev,
       [item._id]: true
     }));
-    
+
     addToCart(item);
     toast.success(`${item.name} đã được thêm vào giỏ hàng!`);
-    
+
     // Reset animation after it completes
     setTimeout(() => {
       setAnimatingItems(prev => ({
@@ -201,10 +213,10 @@ const QuizResult = () => {
       }));
     }, 1000);
   };
-  
+
   const handleToggleFavorite = (item) => {
     const isFavorite = isInFavorites(item._id);
-    
+
     // Check if user is logged in
     if (!isLoggedIn()) {
       // Show login popup and set callback to toggle favorite after login
@@ -214,7 +226,7 @@ const QuizResult = () => {
           ...prev,
           [item._id]: true
         }));
-        
+
         if (isFavorite) {
           removeFromFavorites(item._id);
           toast.success(`${item.name} đã được xóa khỏi danh sách yêu thích!`);
@@ -222,7 +234,7 @@ const QuizResult = () => {
           addToFavorites(item);
           toast.success(`${item.name} đã được thêm vào danh sách yêu thích!`);
         }
-        
+
         // Reset animation after it completes
         setTimeout(() => {
           setFavoriteAnimations(prev => ({
@@ -233,13 +245,13 @@ const QuizResult = () => {
       });
       return;
     }
-    
+
     // User is logged in, toggle favorite with animation
     setFavoriteAnimations(prev => ({
       ...prev,
       [item._id]: true
     }));
-    
+
     if (isFavorite) {
       removeFromFavorites(item._id);
       toast.success(`${item.name} đã được xóa khỏi danh sách yêu thích!`);
@@ -247,7 +259,7 @@ const QuizResult = () => {
       addToFavorites(item);
       toast.success(`${item.name} đã được thêm vào danh sách yêu thích!`);
     }
-    
+
     // Reset animation after it completes
     setTimeout(() => {
       setFavoriteAnimations(prev => ({
@@ -268,10 +280,17 @@ const QuizResult = () => {
   return (
     <div className={cx('result-container')}>
       <div className={cx('result-header')}>
-        <h1>Kết Quả Kiểm Tra Da Của Bạn</h1>
-        <div className={cx('score-container')}>
-          <span className={cx('score')}>Tổng điểm: {points}</span>
+        <div className={cx('header-content')}>
+          <h1>Kết Quả Kiểm Tra Da Của Bạn</h1>
+          {showScoreSection && (
+            <div className={cx('score-container')}>
+              <span className={cx('score')}>Tổng điểm: {points}</span>
+            </div>
+          )}
         </div>
+        <Link to={config.routes.skinQuiz} className={cx('retry-button')}>
+          Làm lại bài kiểm tra
+        </Link>
       </div>
 
       <div className={cx('skin-type-section')}>
@@ -287,30 +306,30 @@ const QuizResult = () => {
           ))}
         </ul>
       </div>
-      
+
       {/* Product recommendations from API */}
       <div className={cx('recommended-products-section')}>
         <h3>Sản phẩm được đề xuất cho bạn:</h3>
-        
+
         {loading && (
           <div className={cx('loading-container')}>
             <div className={cx('loading-spinner')}></div>
             <p>Đang tải sản phẩm...</p>
           </div>
         )}
-        
+
         {error && !loading && (
           <div className={cx('error-notification')}>
             <p>{error}</p>
           </div>
         )}
-        
+
         {!loading && !error && skinProducts.length === 0 && (
           <div className={cx('no-products')}>
             <p>Không tìm thấy sản phẩm phù hợp với loại da của bạn.</p>
           </div>
         )}
-        
+
         {!loading && !error && skinProducts.length > 0 && (
           <div className={cx('product-grid')}>
             {skinProducts.map((item) => {
@@ -365,7 +384,7 @@ const QuizResult = () => {
                       </div>
                     </div>
                   </Link>
-                  
+
                   <div className={cx('product-actions')}>
                     <button
                       onClick={(e) => {
@@ -385,7 +404,7 @@ const QuizResult = () => {
                         <span className={cx('success-indicator')}>✓</span>
                       )}
                     </button>
-                    
+
                     <button
                       onClick={(e) => {
                         e.preventDefault();
@@ -415,12 +434,6 @@ const QuizResult = () => {
             })}
           </div>
         )}
-      </div>
-
-      <div className={cx('actions')}>
-        <Link to={config.routes.skinQuiz} className={cx('retry-button')}>
-          Làm lại bài kiểm tra
-        </Link>
       </div>
     </div>
   );
