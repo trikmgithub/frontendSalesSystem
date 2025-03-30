@@ -5,9 +5,10 @@ import styles from './Home.module.scss';
 import { Link } from 'react-router-dom';
 import { CartContext } from '~/context/CartContext';
 import { FavoritesContext } from '~/context/FavoritesContext';
+import { useCompare } from '~/context/CompareContext';
 import { useAuth } from '~/context/AuthContext';
 import { toast } from 'react-toastify';
-import { FaHeart } from 'react-icons/fa';
+import { FaHeart, FaBalanceScale } from 'react-icons/fa';
 
 const cx = classNames.bind(styles);
 
@@ -21,16 +22,18 @@ function Home() {
     const [itemsPerPage] = useState(12); // 4 products per row, 3 rows or 6 products per row, 2 rows
     const { addToCart } = useContext(CartContext);
     const { addToFavorites, removeFromFavorites, isInFavorites } = useContext(FavoritesContext);
+    const { addToCompare, isInCompare } = useCompare();
     const [animatingItems, setAnimatingItems] = useState({});
     const [favoriteAnimations, setFavoriteAnimations] = useState({});
+    const [compareAnimations, setCompareAnimations] = useState({});
     const cartIconRef = useRef(null);
-    
+
     // Use our Auth context
     const { isLoggedIn, openLogin } = useAuth();
 
     const handleAddToCart = (item) => {
         console.log("Add to cart clicked, isLoggedIn:", isLoggedIn());
-        
+
         // STRICT CHECK: Only proceed if logged in
         if (!isLoggedIn()) {
             console.log("Not logged in, showing login popup");
@@ -42,10 +45,10 @@ function Home() {
                     ...prev,
                     [item._id]: true
                 }));
-                
+
                 addToCart(item);
                 toast.success(`${item.name} đã được thêm vào giỏ hàng!`);
-                
+
                 // Reset animation after it completes
                 setTimeout(() => {
                     setAnimatingItems(prev => ({
@@ -57,17 +60,17 @@ function Home() {
             // IMPORTANT: Return early to prevent any action
             return;
         }
-        
+
         console.log("User is logged in, adding to cart");
         // User is logged in, add to cart with animation
         setAnimatingItems(prev => ({
             ...prev,
             [item._id]: true
         }));
-        
+
         addToCart(item);
         toast.success(`${item.name} đã được thêm vào giỏ hàng!`);
-        
+
         // Reset animation after it completes
         setTimeout(() => {
             setAnimatingItems(prev => ({
@@ -80,7 +83,7 @@ function Home() {
     const handleToggleFavorite = (item) => {
         console.log("Toggle favorite clicked, isLoggedIn:", isLoggedIn());
         const isFavorite = isInFavorites(item._id);
-        
+
         // STRICT CHECK: Only proceed if logged in
         if (!isLoggedIn()) {
             console.log("Not logged in, showing login popup");
@@ -92,7 +95,7 @@ function Home() {
                     ...prev,
                     [item._id]: true
                 }));
-                
+
                 // Add/remove from favorites
                 if (isFavorite) {
                     removeFromFavorites(item._id);
@@ -101,7 +104,7 @@ function Home() {
                     addToFavorites(item);
                     toast.success(`${item.name} đã được thêm vào danh sách yêu thích!`);
                 }
-                
+
                 // Reset animation after it completes
                 setTimeout(() => {
                     setFavoriteAnimations(prev => ({
@@ -113,14 +116,14 @@ function Home() {
             // IMPORTANT: Return early to prevent any action
             return;
         }
-        
+
         console.log("User is logged in, toggling favorite");
         // User is logged in, toggle favorite with animation
         setFavoriteAnimations(prev => ({
             ...prev,
             [item._id]: true
         }));
-        
+
         // Add/remove from favorites
         if (isFavorite) {
             removeFromFavorites(item._id);
@@ -129,10 +132,39 @@ function Home() {
             addToFavorites(item);
             toast.success(`${item.name} đã được thêm vào danh sách yêu thích!`);
         }
-        
+
         // Reset animation after it completes
         setTimeout(() => {
             setFavoriteAnimations(prev => ({
+                ...prev,
+                [item._id]: false
+            }));
+        }, 800);
+    };
+
+    // New function to handle adding to compare
+    const handleAddToCompare = (item, e) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        // If already in compare list, show a notification
+        if (isInCompare(item._id)) {
+            toast.info(`${item.name} đã có trong danh sách so sánh!`);
+            return;
+        }
+
+        // Add animation
+        setCompareAnimations(prev => ({
+            ...prev,
+            [item._id]: true
+        }));
+
+        // Add to compare
+        addToCompare(item);
+
+        // Reset animation after it completes
+        setTimeout(() => {
+            setCompareAnimations(prev => ({
                 ...prev,
                 [item._id]: false
             }));
@@ -249,6 +281,25 @@ function Home() {
                                     </div>
                                 </Link>
                                 <div className={cx('productActions')}>
+                                    {/* Compare button */}
+                                    <button
+                                        onClick={(e) => handleAddToCompare(item, e)}
+                                        className={cx('compareButton', {
+                                            'isComparing': isInCompare(item._id),
+                                            'animating': compareAnimations[item._id]
+                                        })}
+                                        aria-label="So sánh"
+                                        title={isInCompare(item._id) ? "Đã thêm vào so sánh" : "Thêm vào so sánh"}
+                                    >
+                                        <FaBalanceScale
+                                            size={16}
+                                            className={cx({
+                                                'compareScale': true,
+                                                'scaleAnimating': compareAnimations[item._id]
+                                            })}
+                                        />
+                                    </button>
+
                                     <button
                                         onClick={(e) => {
                                             e.preventDefault();
@@ -311,45 +362,45 @@ function Home() {
                         {(() => {
                             // Create array to hold page numbers we want to display
                             const pagesToShow = [];
-                            
+
                             // Always show current page
                             pagesToShow.push(currentPage);
-                            
+
                             // Add pages before current page (up to 2)
                             for (let i = 1; i <= 2; i++) {
                                 if (currentPage - i > 0) {
                                     pagesToShow.unshift(currentPage - i);
                                 }
                             }
-                            
+
                             // Add pages after current page (up to 2)
                             for (let i = 1; i <= 2; i++) {
                                 if (currentPage + i <= totalPages) {
                                     pagesToShow.push(currentPage + i);
                                 }
                             }
-                            
+
                             // Always add first page if not already included
                             if (!pagesToShow.includes(1)) {
                                 pagesToShow.unshift(1);
-                                
+
                                 // Add ellipsis after first page if there's a gap
                                 if (pagesToShow[1] > 2) {
                                     pagesToShow.splice(1, 0, 'ellipsis-start');
                                 }
                             }
-                            
+
                             // Always add last page if not already included and if it's not the only page
                             if (!pagesToShow.includes(totalPages) && totalPages > 1) {
-                                
+
                                 // Add ellipsis before last page if there's a gap
                                 if (pagesToShow[pagesToShow.length - 1] < totalPages - 1) {
                                     pagesToShow.push('ellipsis-end');
                                 }
-                                
+
                                 pagesToShow.push(totalPages);
                             }
-                            
+
                             // Render the page buttons and ellipses
                             return pagesToShow.map((page, index) => {
                                 // Render ellipsis
@@ -358,7 +409,7 @@ function Home() {
                                         <span key={`ellipsis-${index}`} className={cx('paginationEllipsis')}>...</span>
                                     );
                                 }
-                                
+
                                 // Render page button
                                 return (
                                     <button

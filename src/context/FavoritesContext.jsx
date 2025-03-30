@@ -20,14 +20,11 @@ export const FavoritesProvider = ({ children }) => {
                     // Check if we have valid favorites (not null string)
                     if (savedItems && savedItems !== 'null') {
                         const parsedItems = JSON.parse(savedItems);
-                        console.log("FavoritesContext: Loading favorites:", parsedItems.length);
                         setFavoriteItems(parsedItems);
                     } else {
-                        console.log("FavoritesContext: No valid favorites, setting empty array");
                         setFavoriteItems([]);
                     }
                 } else {
-                    console.log("FavoritesContext: User not logged in, favorites empty");
                     setFavoriteItems([]);
                 }
             } catch (err) {
@@ -43,22 +40,17 @@ export const FavoritesProvider = ({ children }) => {
     useEffect(() => {
         // Check if the user is logged in before saving to localStorage
         if (isLoggedIn()) {
-            console.log("FavoritesContext: Saving favorites:", favoriteItems.length);
             localStorage.setItem('favoriteItems', JSON.stringify(favoriteItems));
         } else {
-            console.log("FavoritesContext: User not logged in, not saving favorites");
         }
     }, [favoriteItems, isLoggedIn]);
 
     const addToFavorites = (item) => {
-        console.log("FavoritesContext: Add to favorites called, isLoggedIn:", isLoggedIn());
         
         // STRICT CHECK: Only proceed if logged in
         if (!isLoggedIn()) {
-            console.log("FavoritesContext: Not logged in, showing login popup");
             // Show login popup
             openLogin(() => {
-                console.log("FavoritesContext: Login successful, now adding to favorites");
                 // After login, add to favorites
                 addToFavoritesInternal(item);
             });
@@ -66,7 +58,6 @@ export const FavoritesProvider = ({ children }) => {
         }
         
         // User is logged in, add to favorites
-        console.log("FavoritesContext: User is logged in, adding to favorites");
         addToFavoritesInternal(item);
     };
     
@@ -84,14 +75,11 @@ export const FavoritesProvider = ({ children }) => {
     };
 
     const removeFromFavorites = (itemId) => {
-        console.log("FavoritesContext: Remove from favorites called, isLoggedIn:", isLoggedIn());
         
         // STRICT CHECK: Only proceed if logged in
         if (!isLoggedIn()) {
-            console.log("FavoritesContext: Not logged in, showing login popup");
             // Show login popup
             openLogin(() => {
-                console.log("FavoritesContext: Login successful, now removing from favorites");
                 // After login, remove from favorites
                 removeFromFavoritesInternal(itemId);
             });
@@ -99,7 +87,6 @@ export const FavoritesProvider = ({ children }) => {
         }
         
         // User is logged in, remove from favorites
-        console.log("FavoritesContext: User is logged in, removing from favorites");
         removeFromFavoritesInternal(itemId);
     };
     
@@ -109,14 +96,11 @@ export const FavoritesProvider = ({ children }) => {
     };
 
     const clearFavorites = () => {
-        console.log("FavoritesContext: Clear favorites called, isLoggedIn:", isLoggedIn());
         
         // STRICT CHECK: Only proceed if logged in
         if (!isLoggedIn()) {
-            console.log("FavoritesContext: Not logged in, showing login popup");
             // Show login popup
             openLogin(() => {
-                console.log("FavoritesContext: Login successful, now clearing favorites");
                 // After login, clear favorites
                 clearFavoritesInternal();
             });
@@ -124,7 +108,6 @@ export const FavoritesProvider = ({ children }) => {
         }
         
         // User is logged in, clear favorites
-        console.log("FavoritesContext: User is logged in, clearing favorites");
         clearFavoritesInternal();
     };
     
@@ -139,13 +122,11 @@ export const FavoritesProvider = ({ children }) => {
         
         // Only check favorites if the user is logged in
         if (!isLoggedIn()) {
-            console.log("FavoritesContext: isInFavorites - user not logged in, returning false");
             return false;
         }
         
         // User is logged in, check if item is in favorites
         const result = favoriteItems.some(item => item._id === itemId);
-        console.log(`FavoritesContext: isInFavorites - item ${itemId} is ${result ? '' : 'not'} in favorites`);
         return result;
     };
 

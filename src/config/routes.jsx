@@ -16,6 +16,7 @@ const routes = {
     admin: '/admin',
     favorites: '/favorites',
     search: '/search',
+    compare: '/compare',
 };
 
 export default routes;

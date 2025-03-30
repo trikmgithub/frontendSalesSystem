@@ -18,18 +18,14 @@ export const AuthProvider = ({ children }) => {
   const getUserFromStorage = () => {
     try {
       const storedUser = localStorage.getItem('user');
-      console.log("Raw user from storage:", storedUser);
       
       if (!storedUser || storedUser === 'null') {
-        console.log("No valid user in storage");
         return null;
       }
       
       const parsed = JSON.parse(storedUser);
-      console.log("Parsed user:", parsed);
       
       if (!parsed || !parsed._id) {
-        console.log("Invalid user data", parsed);
         return null;
       }
       
@@ -46,7 +42,6 @@ export const AuthProvider = ({ children }) => {
       setIsLoading(true);
       const userData = getUserFromStorage();
       setUserInfo(userData);
-      console.log("AuthContext initialized with user:", userData);
       setIsLoading(false);
     };
 
@@ -55,7 +50,6 @@ export const AuthProvider = ({ children }) => {
     // Listen for storage changes (e.g. from other tabs)
     const handleStorageChange = (e) => {
       if (e.key === 'user') {
-        console.log("Storage 'user' changed to:", e.newValue);
         loadUser();
       }
     };
@@ -93,12 +87,10 @@ export const AuthProvider = ({ children }) => {
     
     // Get fresh user data from localStorage
     const userData = getUserFromStorage();
-    console.log("Login successful, updating user to:", userData);
     setUserInfo(userData);
     
     // Execute callback if exists
     if (redirectAfterLogin) {
-      console.log("Executing post-login callback");
       redirectAfterLogin();
       setRedirectAfterLogin(null);
     }
@@ -115,25 +107,21 @@ export const AuthProvider = ({ children }) => {
   const isLoggedIn = () => {
     // If we're still loading, don't make a decision yet
     if (isLoading) {
-      console.log("isLoggedIn check: still loading user data");
       return false;
     }
     
     try {
       // First check the context state
       if (userInfo && userInfo._id) {
-        console.log("isLoggedIn check: true (from context state)");
         return true;
       }
       
       // If not in context state, check localStorage directly as a fallback
       const user = JSON.parse(localStorage.getItem('user') || 'null');
       const isValid = !!(user && user._id);
-      console.log("isLoggedIn fallback check:", isValid, "user from localStorage:", user);
       
       // If we found a valid user in localStorage but not in context, update context
       if (isValid && !userInfo) {
-        console.log("Found valid user in localStorage but not in context, updating context");
         setUserInfo(user);
       }
       
@@ -146,7 +134,6 @@ export const AuthProvider = ({ children }) => {
 
   // Logout method
   const logout = () => {
-    console.log("Logging out");
     localStorage.removeItem('access_token');
     localStorage.setItem('user', 'null');
     setUserInfo(null);

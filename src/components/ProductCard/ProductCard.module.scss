@@ -15,13 +15,17 @@
     display: flex;
     flex-direction: column;
     position: relative;
-    
+
     &:hover {
         transform: translateY(-3px);
         box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
-        
+
         .addToCartButton {
             background-color: #236d54;
+        }
+
+        .actionButtons {
+            opacity: 1;
         }
     }
 }
@@ -41,7 +45,7 @@
     height: 100%;
     object-fit: contain;
     transition: transform 0.3s;
-    
+
     &:hover {
         transform: scale(1.05);
     }
@@ -57,7 +61,7 @@
     align-items: center;
     justify-content: center;
     background-color: #f0f0f0;
-    
+
     svg {
         font-size: 40px;
         color: #ccc;
@@ -75,51 +79,6 @@
     padding: 4px 8px;
     border-radius: 4px;
     z-index: 1;
-}
-
-.favoriteButton {
-    position: absolute;
-    top: 10px;
-    left: 10px;
-    background: white;
-    border: none;
-    width: 30px;
-    height: 30px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    z-index: 2;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    transition: transform 0.2s, box-shadow 0.2s;
-    
-    svg {
-        color: #f26522;
-        font-size: 16px;
-        transition: color 0.2s, transform 0.2s;
-    }
-    
-    &:hover {
-        transform: scale(1.1);
-        box-shadow: 0 3px 6px rgba(0, 0, 0, 0.15);
-    }
-    
-    &.favoriteClicked {
-        animation: heartPulse 0.7s ease-in-out;
-    }
-    
-    &.isFavorite {
-        svg {
-            color: #f26522;
-        }
-        
-        &.favoriteClicked {
-            svg {
-                animation: heartBeat 0.7s ease-in-out;
-            }
-        }
-    }
 }
 
 .content {
@@ -163,7 +122,7 @@
     color: #333;
     margin: 0 0 8px 0;
     line-height: 1.4;
-    
+
     // Limit to 2 lines with ellipsis
     display: -webkit-box;
     -webkit-line-clamp: 2;
@@ -185,83 +144,136 @@
     color: #dc3545;
 }
 
-.addToCartButton {
-    position: relative;
-    width: 100%;
-    padding: 8px 10px;
-    background-color: #2B7B60;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    font-size: 13px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: background-color 0.2s;
-    text-align: center;
-    margin-top: auto; // Push button to bottom
+.actionButtons {
+    position: absolute;
+    bottom: 10px;
+    right: 10px;
+    display: flex;
+    gap: 8px;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.actionButton {
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 6px;
-    overflow: hidden; // Important for ripple effect
-    
+    cursor: pointer;
+    background-color: white;
+    border: 1px solid #eee;
+    color: #555;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+
     &:hover {
-        background-color: #236d54;
+        transform: translateY(-2px);
+        box-shadow: 0 3px 6px rgba(0, 0, 0, 0.15);
     }
-    
+
     &:disabled {
-        background-color: #999;
+        opacity: 0.5;
         cursor: not-allowed;
-    }
-    
-    &.cartClicked {
-        animation: buttonPulse 0.4s ease;
-    }
-    
-    .cartIcon {
-        font-size: 14px;
-        transition: transform 0.3s;
+
+        &:hover {
+            transform: none;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
     }
 }
 
-.ripple {
-    position: absolute;
-    border-radius: 50%;
-    background-color: rgba(255, 255, 255, 0.5);
-    transform: scale(0);
-    animation: ripple 0.6s linear;
-    pointer-events: none;
+.addToCartButton {
+    color: #2B7B60;
+
+    &:hover {
+        background-color: #2B7B60;
+        color: white;
+        border-color: #2B7B60;
+    }
+
+    &.cartClicked {
+        animation: buttonPulse 0.4s ease;
+        background-color: #2B7B60;
+        color: white;
+        border-color: #2B7B60;
+    }
+}
+
+.favoriteButton {
+    color: #999;
+
+    &:hover {
+        color: #ff6b6b;
+        background-color: #fff0f0;
+        border-color: #ffcaca;
+    }
+
+    &.isFavorite {
+        color: #ff6b6b;
+        background-color: #fff0f0;
+        border-color: #ffcaca;
+    }
+
+    &.favoriteClicked {
+        animation: heartPulse 0.7s ease-in-out;
+    }
+}
+
+.compareButton {
+    color: #666;
+    font-size: 16px;
+
+    &:hover {
+        color: #2B7B60;
+        background-color: #f0f8f5;
+        border-color: #c0e0d6;
+    }
+
+    &.isComparing {
+        color: #2B7B60;
+        background-color: #f0f8f5;
+        border-color: #c0e0d6;
+    }
+
+    &.animating {
+        animation: compareButtonPulse 0.6s ease;
+    }
+
+    .compareScale {
+        font-size: 16px;
+        transition: transform 0.3s;
+
+        &.scaleAnimating {
+            animation: scaleAnimation 0.8s ease;
+            color: #2B7B60;
+        }
+    }
 }
 
 /* Animations */
-@keyframes heartBeat {
-    0% {
-        transform: scale(1);
-    }
-    15% {
-        transform: scale(1.3);
-    }
-    30% {
-        transform: scale(0.95);
-    }
-    45% {
-        transform: scale(1.2);
-    }
-    60% {
-        transform: scale(0.95);
-    }
-    100% {
-        transform: scale(1);
-    }
-}
-
 @keyframes heartPulse {
     0% {
         transform: scale(1);
     }
-    50% {
-        transform: scale(1.15);
+
+    15% {
+        transform: scale(1.3);
     }
+
+    30% {
+        transform: scale(0.95);
+    }
+
+    45% {
+        transform: scale(1.2);
+    }
+
+    60% {
+        transform: scale(0.95);
+    }
+
     100% {
         transform: scale(1);
     }
@@ -271,9 +283,11 @@
     0% {
         transform: scale(1);
     }
+
     50% {
         transform: scale(0.97);
     }
+
     100% {
         transform: scale(1);
     }
@@ -283,5 +297,49 @@
     to {
         transform: scale(4);
         opacity: 0;
+    }
+}
+
+@keyframes compareButtonPulse {
+    0% {
+        transform: scale(1);
+    }
+
+    30% {
+        transform: scale(1.2);
+    }
+
+    50% {
+        transform: scale(0.9);
+    }
+
+    70% {
+        transform: scale(1.1);
+    }
+
+    100% {
+        transform: scale(1);
+    }
+}
+
+@keyframes scaleAnimation {
+    0% {
+        transform: scale(1);
+    }
+
+    25% {
+        transform: scale(1.3) rotate(15deg);
+    }
+
+    50% {
+        transform: scale(1) rotate(-10deg);
+    }
+
+    75% {
+        transform: scale(1.2) rotate(5deg);
+    }
+
+    100% {
+        transform: scale(1) rotate(0deg);
     }
 }

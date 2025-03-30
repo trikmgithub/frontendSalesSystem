@@ -18,6 +18,7 @@ import Favorites from '~/pages/Profile/Favorites';
 import AdminDashboard from '~/pages/Admin/AdminDashboard';
 import SearchResults from '~/pages/SearchResults/SearchResults';
 import BrandMenu from '~/pages/BrandMenu/BrandMenu';
+import ComparePage from '~/pages/Compare/ComparePage';
 
 const publicRoutes = [
     { path: config.routes.home, component: Home, layout: HeaderOnly },
@@ -37,6 +38,7 @@ const publicRoutes = [
     { path: config.routes.staff, component: StaffPage, layout: null },
     { path: config.routes.admin, component: AdminDashboard, layout: null },
     { path: config.routes.search, component: SearchResults, layout: HeaderOnly },
+    { path: config.routes.compare, component: ComparePage, layout: HeaderOnly },
 ];
 
 const privateRoutes = [];

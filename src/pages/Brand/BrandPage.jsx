@@ -6,9 +6,10 @@ import styles from './BrandPage.module.scss';
 import { Link } from 'react-router-dom';
 import { CartContext } from '~/context/CartContext';
 import { FavoritesContext } from '~/context/FavoritesContext';
+import { useCompare } from '~/context/CompareContext';
 import { useAuth } from '~/context/AuthContext';
 import { toast } from 'react-toastify';
-import { FaHeart } from 'react-icons/fa';
+import { FaHeart, FaBalanceScale } from 'react-icons/fa';
 
 const cx = classNames.bind(styles);
 
@@ -20,9 +21,11 @@ function BrandPage() {
     const [error, setError] = useState(null);
     const { addToCart } = useContext(CartContext);
     const { addToFavorites, removeFromFavorites, isInFavorites } = useContext(FavoritesContext);
+    const { addToCompare, isInCompare } = useCompare();
     const { isLoggedIn, openLogin } = useAuth();
     const [animatingItems, setAnimatingItems] = useState({});
     const [favoriteAnimations, setFavoriteAnimations] = useState({});
+    const [compareAnimations, setCompareAnimations] = useState({});
 
     useEffect(() => {
         fetchBrandProducts();
@@ -32,16 +35,16 @@ function BrandPage() {
         setLoading(true);
         try {
             const response = await getItemsAxios();
-            
+
             if (response && response.data) {
                 // Filter products by brand ID
                 const filteredProducts = response.data.filter(item => item.brand && item.brand._id === id);
-                
+
                 // Extract brand info from first product (all products should have the same brand)
                 if (filteredProducts.length > 0 && filteredProducts[0].brand) {
                     setBrandInfo(filteredProducts[0].brand);
                 }
-                
+
                 setBrandProducts(filteredProducts);
             } else {
                 setError('Failed to fetch brand products');
@@ -57,7 +60,7 @@ function BrandPage() {
     // Handle adding to cart
     const handleAddToCart = (item) => {
         console.log("BrandPage: Add to cart clicked, isLoggedIn:", isLoggedIn());
-        
+
         // STRICT CHECK: Only proceed if logged in
         if (!isLoggedIn()) {
             console.log("BrandPage: Not logged in, showing login popup");
@@ -69,10 +72,10 @@ function BrandPage() {
                     ...prev,
                     [item._id]: true
                 }));
-                
+
                 addToCart(item);
                 toast.success(`${item.name} đã được thêm vào giỏ hàng!`);
-                
+
                 // Reset animation after it completes
                 setTimeout(() => {
                     setAnimatingItems(prev => ({
@@ -84,17 +87,17 @@ function BrandPage() {
             // IMPORTANT: Return early to prevent any action
             return;
         }
-        
+
         console.log("BrandPage: User is logged in, adding to cart");
         // User is logged in, add to cart with animation
         setAnimatingItems(prev => ({
             ...prev,
             [item._id]: true
         }));
-        
+
         addToCart(item);
         toast.success(`${item.name} đã được thêm vào giỏ hàng!`);
-        
+
         // Reset animation after it completes
         setTimeout(() => {
             setAnimatingItems(prev => ({
@@ -108,7 +111,7 @@ function BrandPage() {
     const handleToggleFavorite = (item) => {
         console.log("BrandPage: Toggle favorite clicked, isLoggedIn:", isLoggedIn());
         const isFavorite = isInFavorites(item._id);
-        
+
         // STRICT CHECK: Only proceed if logged in
         if (!isLoggedIn()) {
             console.log("BrandPage: Not logged in, showing login popup");
@@ -120,7 +123,7 @@ function BrandPage() {
                     ...prev,
                     [item._id]: true
                 }));
-                
+
                 // Add/remove from favorites
                 if (isFavorite) {
                     removeFromFavorites(item._id);
@@ -129,7 +132,7 @@ function BrandPage() {
                     addToFavorites(item);
                     toast.success(`${item.name} đã được thêm vào danh sách yêu thích!`);
                 }
-                
+
                 // Reset animation after it completes
                 setTimeout(() => {
                     setFavoriteAnimations(prev => ({
@@ -141,14 +144,14 @@ function BrandPage() {
             // IMPORTANT: Return early to prevent any action
             return;
         }
-        
+
         console.log("BrandPage: User is logged in, toggling favorite");
         // User is logged in, toggle favorite with animation
         setFavoriteAnimations(prev => ({
             ...prev,
             [item._id]: true
         }));
-        
+
         // Add/remove from favorites
         if (isFavorite) {
             removeFromFavorites(item._id);
@@ -157,10 +160,39 @@ function BrandPage() {
             addToFavorites(item);
             toast.success(`${item.name} đã được thêm vào danh sách yêu thích!`);
         }
-        
+
         // Reset animation after it completes
         setTimeout(() => {
             setFavoriteAnimations(prev => ({
+                ...prev,
+                [item._id]: false
+            }));
+        }, 800);
+    };
+
+    // New function to handle adding to compare
+    const handleAddToCompare = (item, e) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        // If already in compare list, show a notification
+        if (isInCompare(item._id)) {
+            toast.info(`${item.name} đã có trong danh sách so sánh!`);
+            return;
+        }
+
+        // Add animation
+        setCompareAnimations(prev => ({
+            ...prev,
+            [item._id]: true
+        }));
+
+        // Add to compare
+        addToCompare(item);
+
+        // Reset animation after it completes
+        setTimeout(() => {
+            setCompareAnimations(prev => ({
                 ...prev,
                 [item._id]: false
             }));
@@ -220,26 +252,26 @@ function BrandPage() {
                     {brandProducts.map((item) => {
                         const originalPrice = calculateOriginalPrice(item.price, item.flashSale);
                         const discount = originalPrice ? Math.round(((originalPrice - item.price) / originalPrice) * 100) : null;
-                        
+
                         return (
                             <div key={item._id} className={cx('productCard')}>
                                 <Link to={`/product/${item._id}`} className={cx('productLink')}>
                                     <div className={cx('imageContainer')}>
                                         {item.imageUrls && item.imageUrls.length > 0 ? (
-                                            <img 
-                                                src={item.imageUrls[0]} 
-                                                alt={item.name} 
-                                                className={cx('productImage')} 
+                                            <img
+                                                src={item.imageUrls[0]}
+                                                alt={item.name}
+                                                className={cx('productImage')}
                                                 onError={(e) => {
                                                     e.target.onerror = null;
                                                     e.target.src = 'https://via.placeholder.com/300x300?text=No+Image';
                                                 }}
                                             />
                                         ) : (
-                                            <img 
-                                                src="https://via.placeholder.com/300x300?text=No+Image" 
-                                                alt={item.name} 
-                                                className={cx('productImage')} 
+                                            <img
+                                                src="https://via.placeholder.com/300x300?text=No+Image"
+                                                alt={item.name}
+                                                className={cx('productImage')}
                                             />
                                         )}
                                         {discount && (
@@ -248,7 +280,7 @@ function BrandPage() {
                                             </div>
                                         )}
                                     </div>
-                                    
+
                                     <div className={cx('productInfo')}>
                                         <div className={cx('priceSection')}>
                                             <div className={cx('currentPrice')}>
@@ -260,18 +292,41 @@ function BrandPage() {
                                                 </div>
                                             )}
                                         </div>
-                                        
+
                                         <div className={cx('brandName')}>{item.brand?.name || ''}</div>
                                         <h3 className={cx('productName')}>{item.name}</h3>
-                                        
+
                                         <div className={cx('stockStatus')}>
                                             {item.stock ? 'Còn hàng' : 'Hết hàng'}
                                         </div>
                                     </div>
                                 </Link>
                                 <div className={cx('productActions')}>
-                                    <button 
-                                        onClick={() => handleAddToCart(item)} 
+                                    {/* Compare button */}
+                                    <button
+                                        onClick={(e) => handleAddToCompare(item, e)}
+                                        className={cx('compareButton', {
+                                            'isComparing': isInCompare(item._id),
+                                            'animating': compareAnimations[item._id]
+                                        })}
+                                        aria-label="So sánh"
+                                        title={isInCompare(item._id) ? "Đã thêm vào so sánh" : "Thêm vào so sánh"}
+                                    >
+                                        <FaBalanceScale
+                                            size={16}
+                                            className={cx({
+                                                'compareScale': true,
+                                                'scaleAnimating': compareAnimations[item._id]
+                                            })}
+                                        />
+                                    </button>
+
+                                    <button
+                                        onClick={(e) => {
+                                            e.preventDefault();
+                                            e.stopPropagation();
+                                            handleAddToCart(item);
+                                        }}
                                         className={cx('addToCartButton', {
                                             'animating': animatingItems[item._id],
                                             'disabled': !isLoggedIn()
@@ -287,7 +342,11 @@ function BrandPage() {
                                     </button>
 
                                     <button
-                                        onClick={() => handleToggleFavorite(item)}
+                                        onClick={(e) => {
+                                            e.preventDefault();
+                                            e.stopPropagation();
+                                            handleToggleFavorite(item);
+                                        }}
                                         className={cx('favoriteButton', {
                                             'active': isInFavorites(item._id),
                                             'animating': favoriteAnimations[item._id],

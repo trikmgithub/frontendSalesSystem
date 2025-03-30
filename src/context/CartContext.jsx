@@ -20,14 +20,11 @@ export const CartProvider = ({ children }) => {
                     // Check if we have valid cart items (not null string)
                     if (savedItems && savedItems !== 'null') {
                         const parsedItems = JSON.parse(savedItems);
-                        console.log("CartContext: Loading cart items:", parsedItems.length);
                         setCartItems(parsedItems);
                     } else {
-                        console.log("CartContext: No valid cart items, setting empty array");
                         setCartItems([]);
                     }
                 } else {
-                    console.log("CartContext: User not logged in, cart empty");
                     setCartItems([]);
                 }
             } catch (err) {
@@ -43,22 +40,17 @@ export const CartProvider = ({ children }) => {
     useEffect(() => {
         // Check if the user is logged in before saving to localStorage
         if (isLoggedIn()) {
-            console.log("CartContext: Saving cart items:", cartItems.length);
             localStorage.setItem('cartItems', JSON.stringify(cartItems));
         } else {
-            console.log("CartContext: User not logged in, not saving cart");
         }
     }, [cartItems, isLoggedIn]);
 
     const addToCart = (item) => {
-        console.log("CartContext: Add to cart called, isLoggedIn:", isLoggedIn());
         
         // STRICT CHECK: Only proceed if logged in
         if (!isLoggedIn()) {
-            console.log("CartContext: Not logged in, showing login popup");
             // Show login popup
             openLogin(() => {
-                console.log("CartContext: Login successful, now adding to cart");
                 // After login, add item to cart
                 addItemToCartInternal(item);
             });
@@ -66,7 +58,6 @@ export const CartProvider = ({ children }) => {
         }
         
         // User is logged in, add to cart
-        console.log("CartContext: User is logged in, adding to cart");
         addItemToCartInternal(item);
     };
     
@@ -85,14 +76,11 @@ export const CartProvider = ({ children }) => {
     };
 
     const updateCartItemQuantity = (itemId, quantity) => {
-        console.log("CartContext: Update quantity called, isLoggedIn:", isLoggedIn());
         
         // STRICT CHECK: Only proceed if logged in
         if (!isLoggedIn()) {
-            console.log("CartContext: Not logged in, showing login popup");
             // Show login popup
             openLogin(() => {
-                console.log("CartContext: Login successful, now updating quantity");
                 // After login, update quantity
                 updateCartItemQuantityInternal(itemId, quantity);
             });
@@ -100,7 +88,6 @@ export const CartProvider = ({ children }) => {
         }
         
         // User is logged in, update quantity
-        console.log("CartContext: User is logged in, updating quantity");
         updateCartItemQuantityInternal(itemId, quantity);
     };
     
@@ -114,14 +101,11 @@ export const CartProvider = ({ children }) => {
     };
 
     const removeFromCart = (itemId) => {
-        console.log("CartContext: Remove from cart called, isLoggedIn:", isLoggedIn());
         
         // STRICT CHECK: Only proceed if logged in
         if (!isLoggedIn()) {
-            console.log("CartContext: Not logged in, showing login popup");
             // Show login popup
             openLogin(() => {
-                console.log("CartContext: Login successful, now removing from cart");
                 // After login, remove from cart
                 removeFromCartInternal(itemId);
             });
@@ -129,7 +113,6 @@ export const CartProvider = ({ children }) => {
         }
         
         // User is logged in, remove from cart
-        console.log("CartContext: User is logged in, removing from cart");
         removeFromCartInternal(itemId);
     };
     
@@ -140,14 +123,11 @@ export const CartProvider = ({ children }) => {
 
     // Clear the entire cart
     const clearCart = () => {
-        console.log("CartContext: Clear cart called, isLoggedIn:", isLoggedIn());
         
         // STRICT CHECK: Only proceed if logged in
         if (!isLoggedIn()) {
-            console.log("CartContext: Not logged in, showing login popup");
             // Show login popup
             openLogin(() => {
-                console.log("CartContext: Login successful, now clearing cart");
                 // After login, clear cart
                 clearCartInternal();
             });
@@ -155,7 +135,6 @@ export const CartProvider = ({ children }) => {
         }
         
         // User is logged in, clear cart
-        console.log("CartContext: User is logged in, clearing cart");
         clearCartInternal();
     };
     

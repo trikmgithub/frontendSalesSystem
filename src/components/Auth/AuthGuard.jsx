@@ -14,19 +14,8 @@ function AuthGuard({ children, requireAdmin = false, requireStaff = false }) {
   useEffect(() => {
     // Wait until auth state is loaded
     if (isLoading) {
-      console.log("AuthGuard: Still loading auth state...");
       return;
     }
-    
-    // For debugging
-    console.log("AuthGuard check:", {
-      requireAdmin,
-      requireStaff,
-      isLoggedIn: isLoggedIn(),
-      userInfo,
-      userRole: userInfo?.role,
-      rawLocalStorage: localStorage.getItem('user')
-    });
     
     let isAuthorized = true;
     

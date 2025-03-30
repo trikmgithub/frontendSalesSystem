@@ -528,3 +528,91 @@
         font-size: 20px;
     }
 }
+
+.productActions {
+    position: absolute;
+    bottom: 8px;
+    right: 8px;
+    display: flex;
+    gap: 8px;
+    z-index: 5;
+  }
+  
+  .compareButton {
+    background-color: white;
+    color: #555;
+    border: 1px solid #eee;
+    border-radius: 50%;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.2s, transform 0.3s, background-color 0.3s;
+    position: relative;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    
+    /* Ensure the icon is visible and properly sized */
+    font-size: 16px;
+    
+    &:hover {
+      background-color: #f0f8f5;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+      color: #2B7B60;
+    }
+    
+    &:active {
+      transform: scale(0.95);
+    }
+    
+    &.isComparing {
+      color: #2B7B60;
+      opacity: 1 !important; /* Force visibility when item is being compared */
+      background-color: #f0f8f5;
+    }
+    
+    &.animating {
+      background-color: #f0f8f5;
+      color: #2B7B60;
+      opacity: 1;
+      transform: scale(1.1);
+      animation: compareButtonPulse 0.8s ease;
+    }
+    
+    .compareScale {
+      font-size: 16px; /* Increase icon size */
+      transition: transform 0.3s;
+      
+      &.scaleAnimating {
+        animation: scaleAnimation 0.8s ease;
+        color: #2B7B60;
+      }
+    }
+  }
+  
+  /* Show all action buttons when hovering over the product card */
+  .productCard:hover {
+    .addToCartButton,
+    .favoriteButton,
+    .compareButton {
+      opacity: 1;
+    }
+  }
+  
+  /* Fix for Cart and Favorite buttons to match */
+  .addToCartButton, .favoriteButton {
+    width: 36px;
+    height: 36px;
+  }
+  
+  /* Ensure all buttons in product actions have consistent size */
+  .productActions button {
+    min-width: 36px;
+    min-height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }

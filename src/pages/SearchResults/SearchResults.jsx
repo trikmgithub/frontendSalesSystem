@@ -8,6 +8,7 @@ import ProductCard from '~/components/ProductCard';
 import LoadingSpinner from '~/components/LoadingSpinner';
 import { FilterBar } from '~/components/FilterBar';
 import { getItemsPaginatedAxios, searchItemsAxios } from '~/services/itemAxios';
+import { useCompare } from '~/context/CompareContext';
 
 const cx = classNames.bind(styles);
 
@@ -21,6 +22,9 @@ function SearchResults() {
     const [error, setError] = useState(null);
     const [sortOrder, setSortOrder] = useState('default');
     const [priceRange, setPriceRange] = useState([0, 1000000]);
+    
+    // Get the compare context
+    const { addToCompare } = useCompare();
 
     useEffect(() => {
         const fetchProducts = async () => {
@@ -144,7 +148,11 @@ function SearchResults() {
             ) : (
                 <div className={cx('productsGrid')}>
                     {filteredProducts.map(product => (
-                        <ProductCard key={product._id} product={product} />
+                        <ProductCard 
+                            key={product._id} 
+                            product={product} 
+                            onAddToCompare={() => addToCompare(product)}
+                        />
                     ))}
                 </div>
             )}
