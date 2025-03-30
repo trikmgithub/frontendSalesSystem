@@ -11,6 +11,7 @@ const routes = {
     googleAuthCallback: '/auth/google/callback',
     itemDetail: '/product/:id',
     brand: '/brand/:id',
+    brandMenu: '/thuong-hieu',
     staff: '/staff',
     admin: '/admin',
     favorites: '/favorites',

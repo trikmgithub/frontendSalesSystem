@@ -458,7 +458,7 @@ function Navigation() {
                 <div className={cx('separator')}>|</div>
                 <nav className={cx('mainNav')}>
                     <ul>
-                        <li><NavSearchLink to="/thuong-hieu">THƯƠNG HIỆU</NavSearchLink></li>
+                        <li><Link to="/thuong-hieu" className={cx('navLink')}>THƯƠNG HIỆU</Link></li>
                     </ul>
                 </nav>
                 <div ref={locationSelectorRef} className={cx('locationSelector')} onClick={() => setIsLocationOpen(!isLocationOpen)}>
