@@ -12,6 +12,7 @@ import { googleLoginAxios, logoutAxios } from '~/services/authAxios';
 import { CartContext } from '~/context/CartContext';
 import { useAuth } from '~/context/AuthContext';
 import routes from '~/config/routes';
+import SearchLink from '../SearchLink/SearchLink';
 
 const cx = classNames.bind(styles);
 
@@ -297,22 +298,40 @@ function Header() {
                         <nav className={cx('headerNav')}>
                             <ul className={cx('navMenu')}>
                                 <li>
-                                    <Link to="/kem-chong-nang">Kem Chống Nắng</Link>
+                                    <SearchLink
+                                        text="Kem Chống Nắng"
+                                        className={cx('navLink')}
+                                    />
                                 </li>
                                 <li>
-                                    <Link to="/tay-trang">Tẩy Trang</Link>
+                                    <SearchLink
+                                        text="Tẩy Trang"
+                                        className={cx('navLink')}
+                                    />
                                 </li>
                                 <li>
-                                    <Link to="/toner">Toner</Link>
+                                    <SearchLink
+                                        text="Toner"
+                                        className={cx('navLink')}
+                                    />
                                 </li>
                                 <li>
-                                    <Link to="/sua-rua-mat">Sữa Rửa Mặt</Link>
+                                    <SearchLink
+                                        text="Sữa Rửa Mặt"
+                                        className={cx('navLink')}
+                                    />
                                 </li>
                                 <li>
-                                    <Link to="/tay-te-bao-chet">Tẩy tế bào chết</Link>
+                                    <SearchLink
+                                        text="Tẩy tế bào chết"
+                                        className={cx('navLink')}
+                                    />
                                 </li>
                                 <li>
-                                    <Link to="/retinol">Retinol</Link>
+                                    <SearchLink
+                                        text="Retinol"
+                                        className={cx('navLink')}
+                                    />
                                 </li>
                             </ul>
                         </nav>

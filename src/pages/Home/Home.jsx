@@ -307,49 +307,70 @@ function Home() {
                             &laquo;
                         </button>
 
-                        {/* First page */}
-                        {currentPage > 3 && (
-                            <button
-                                onClick={() => handlePageChange(1)}
-                                className={cx('paginationButton')}
-                            >
-                                1
-                            </button>
-                        )}
-
-                        {/* Ellipsis if needed */}
-                        {currentPage > 4 && (
-                            <span className={cx('paginationEllipsis')}>...</span>
-                        )}
-
-                        {/* Page number buttons (show max 5 pages around current) */}
-                        {Array.from({ length: totalPages }, (_, i) => i + 1)
-                            .filter(page => page === 1 || page === totalPages ||
-                                (page >= currentPage - 2 && page <= currentPage + 2))
-                            .map((page) => (
-                                <button
-                                    key={page}
-                                    onClick={() => handlePageChange(page)}
-                                    className={cx('paginationButton', { active: currentPage === page })}
-                                >
-                                    {page}
-                                </button>
-                            ))}
-
-                        {/* Ellipsis if needed */}
-                        {currentPage < totalPages - 3 && (
-                            <span className={cx('paginationEllipsis')}>...</span>
-                        )}
-
-                        {/* Last page */}
-                        {currentPage < totalPages - 2 && totalPages > 1 && (
-                            <button
-                                onClick={() => handlePageChange(totalPages)}
-                                className={cx('paginationButton')}
-                            >
-                                {totalPages}
-                            </button>
-                        )}
+                        {/* Improved pagination logic */}
+                        {(() => {
+                            // Create array to hold page numbers we want to display
+                            const pagesToShow = [];
+                            
+                            // Always show current page
+                            pagesToShow.push(currentPage);
+                            
+                            // Add pages before current page (up to 2)
+                            for (let i = 1; i <= 2; i++) {
+                                if (currentPage - i > 0) {
+                                    pagesToShow.unshift(currentPage - i);
+                                }
+                            }
+                            
+                            // Add pages after current page (up to 2)
+                            for (let i = 1; i <= 2; i++) {
+                                if (currentPage + i <= totalPages) {
+                                    pagesToShow.push(currentPage + i);
+                                }
+                            }
+                            
+                            // Always add first page if not already included
+                            if (!pagesToShow.includes(1)) {
+                                pagesToShow.unshift(1);
+                                
+                                // Add ellipsis after first page if there's a gap
+                                if (pagesToShow[1] > 2) {
+                                    pagesToShow.splice(1, 0, 'ellipsis-start');
+                                }
+                            }
+                            
+                            // Always add last page if not already included and if it's not the only page
+                            if (!pagesToShow.includes(totalPages) && totalPages > 1) {
+                                
+                                // Add ellipsis before last page if there's a gap
+                                if (pagesToShow[pagesToShow.length - 1] < totalPages - 1) {
+                                    pagesToShow.push('ellipsis-end');
+                                }
+                                
+                                pagesToShow.push(totalPages);
+                            }
+                            
+                            // Render the page buttons and ellipses
+                            return pagesToShow.map((page, index) => {
+                                // Render ellipsis
+                                if (page === 'ellipsis-start' || page === 'ellipsis-end') {
+                                    return (
+                                        <span key={`ellipsis-${index}`} className={cx('paginationEllipsis')}>...</span>
+                                    );
+                                }
+                                
+                                // Render page button
+                                return (
+                                    <button
+                                        key={`page-${page}`}
+                                        onClick={() => handlePageChange(page)}
+                                        className={cx('paginationButton', { active: currentPage === page })}
+                                    >
+                                        {page}
+                                    </button>
+                                );
+                            });
+                        })()}
 
                         {/* Next page button */}
                         <button
