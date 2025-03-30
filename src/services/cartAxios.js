@@ -232,7 +232,6 @@ const downloadInvoiceAxios = async (cartId) => {
 
     // Get base URL from environment variables with fallback
     const baseURL = import.meta.env.VITE_API_URL ||
-      import.meta.env.VITE_APP_API_URL ||
       'http://localhost:8000/api/v1';
 
     // Log token for debugging (hide most of it)

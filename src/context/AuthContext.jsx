@@ -1,4 +1,4 @@
-// src/context/AuthContext.jsx - FIXED VERSION
+// src/context/AuthContext.jsx
 import { createContext, useState, useEffect, useContext } from 'react';
 
 // Create auth context
@@ -79,6 +79,8 @@ export const AuthProvider = ({ children }) => {
     setShowLoginModal(false);
     setShowSignupModal(false);
     setShowOtpModal(false);
+    // Reset verified email when closing all modals to avoid stale data
+    setVerifiedEmail('');
   };
 
   // Method to handle successful login
@@ -98,12 +100,21 @@ export const AuthProvider = ({ children }) => {
 
   // Method to handle OTP verification success
   const handleOtpSuccess = (email) => {
+    // First set the verified email
     setVerifiedEmail(email);
+    
+    // Then close OTP modal
     setShowOtpModal(false);
-    setShowSignupModal(true);
+    
+    // Important: add a small delay before opening signup modal to ensure proper UI transition
+    setTimeout(() => {
+      // Finally show signup modal
+      setShowSignupModal(true);
+      console.log('Opening signup modal with verified email:', email);
+    }, 100);
   };
 
-  // Method to check if user is logged in - IMPROVED to be more robust
+  // Method to check if user is logged in
   const isLoggedIn = () => {
     // If we're still loading, don't make a decision yet
     if (isLoading) {

@@ -1,21 +1,30 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import classNames from 'classnames/bind';
 import styles from './ForgotPasswordPopup.module.scss';
-import { IoWarning } from "react-icons/io5";
+import { IoWarning } from 'react-icons/io5';
 import useDisableBodyScroll from '~/hooks/useDisableBodyScroll';
 
 const cx = classNames.bind(styles);
 
 function ForgotPasswordPopup({ onClose }) {
     const [email, setEmail] = useState('');
+    const [otp, setOtp] = useState('');
     const [error, setError] = useState('');
-    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [countdown, setCountdown] = useState(0);
+    const [isVerifyMode, setIsVerifyMode] = useState(false);
     
     // Use the custom hook to disable body scroll
     useDisableBodyScroll(true);
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
+    useEffect(() => {
+        if (countdown > 0) {
+            const timer = setTimeout(() => setCountdown(countdown - 1), 1000);
+            return () => clearTimeout(timer);
+        }
+    }, [countdown]);
+
+    const handleSendOtp = async () => {
+        setError('');
 
         if (!email) {
             setError('Vui lòng nhập email hoặc số điện thoại');
@@ -32,11 +41,8 @@ function ForgotPasswordPopup({ onClose }) {
         }
 
         try {
-            setIsSubmitting(true);
-            
-            // Send OTP to the provided email/phone
-            // Make sure we're sending the correct payload format
-            const response = await fetch('http://localhost:8000/api/v1/email/send-otp', {
+            // Send OTP to the provided email/phone with the correct API endpoint
+            const response = await fetch('https://mybeautyskinapp.azurewebsites.net/api/v1/email/send-otp-forget-password', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -47,21 +53,55 @@ function ForgotPasswordPopup({ onClose }) {
 
             const data = await response.json();
             
-            // Check both response.ok and the success field in the response
+            // Check response status
             if (!response.ok || (data.data && data.data.success === false)) {
                 const errorMessage = data.data?.message || data.message || 'Có lỗi xảy ra khi gửi mã OTP';
                 throw new Error(errorMessage);
             }
             
-            // Handle successful response
-            // You might want to redirect to an OTP verification screen or show a success message
-            alert('Mã OTP đã được gửi đến ' + email);
-            onClose(); // Close the popup after successful submission
+            // Success case
+            setCountdown(60);
+            setIsVerifyMode(true);
             
         } catch (err) {
             setError(err.message || 'Có lỗi xảy ra khi gửi mã OTP');
-        } finally {
-            setIsSubmitting(false);
+        }
+    };
+
+    const handleVerifyOtp = async () => {
+        setError('');
+
+        if (!otp) {
+            setError('Vui lòng nhập mã OTP');
+            return;
+        }
+
+        try {
+            // Verify OTP with the correct API endpoint
+            const response = await fetch('https://mybeautyskinapp.azurewebsites.net/api/v1/email/verify-otp', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({ email, otp })
+            });
+
+            const data = await response.json();
+            console.log("123", data);
+            
+            // Check response status
+            if (!response.ok || !data.data.success) {
+                const errorMessage = data.message || 'OTP không hợp lệ.';
+                throw new Error(errorMessage);
+            }
+            
+            // Success case - here you would typically redirect to a password reset page
+            onClose();
+            // window.location.href = '/reset-password?token=' + data.token;
+            
+        } catch (err) {
+            setError(err.message || 'OTP không hợp lệ.');
         }
     };
 
@@ -69,38 +109,64 @@ function ForgotPasswordPopup({ onClose }) {
         <div className={cx('modalOverlay')} onClick={onClose}>
             <div className={cx('modalContent')} onClick={(e) => e.stopPropagation()}>
                 <button className={cx('closeButton')} onClick={onClose}>×</button>
-                <h3>Quên mật khẩu tài khoản</h3>
-                
-                <p className={cx('description')}>
+                <h2 className={cx('modalTitle')}>Quên mật khẩu tài khoản</h2>
+                <p className={cx('modalDescription')}>
                     Nhập địa chỉ email hoặc số điện thoại của bạn dưới đây và hệ thống sẽ gửi cho bạn một liên kết để đặt lại mật khẩu của bạn
                 </p>
 
-                <form onSubmit={handleSubmit}>
-                    {error && (
-                        <div className={cx('errorMessage')}>
-                            <IoWarning size={16} />
-                            {error}
-                        </div>
-                    )}
-
-                    <div className={cx('formGroup')}>
-                        <input
-                            type="text"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                            placeholder="Nhập email hoặc số điện thoại"
-                            className={cx({ error: error && !email })}
-                        />
+                {error && (
+                    <div className={cx('errorMessage')}>
+                        <IoWarning />
+                        {error}
                     </div>
+                )}
 
-                    <button 
-                        type="submit" 
-                        className={cx('submitBtn')}
-                        disabled={isSubmitting}
-                    >
-                        {isSubmitting ? 'Đang gửi...' : 'Gửi'}
-                    </button>
-                </form>
+                {isVerifyMode ? (
+                    <>
+                        <div className={cx('inputField')}>
+                            <input
+                                type="text"
+                                value={email}
+                                readOnly
+                            />
+                        </div>
+                        <div className={cx('otpInputs')}>
+                            <button className={cx('countdownButton')} disabled>
+                                {countdown}s
+                            </button>
+                            <input
+                                type="text"
+                                placeholder="Nhập mã OTP"
+                                value={otp}
+                                onChange={(e) => setOtp(e.target.value)}
+                                className={cx('otpInput')}
+                            />
+                        </div>
+                        <button
+                            className={cx('verifyButton')}
+                            onClick={handleVerifyOtp}
+                        >
+                            Xác minh
+                        </button>
+                    </>
+                ) : (
+                    <>
+                        <div className={cx('inputField')}>
+                            <input
+                                type="text"
+                                placeholder="Nhập email hoặc số điện thoại"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                            />
+                        </div>
+                        <button
+                            className={cx('submitButton')}
+                            onClick={handleSendOtp}
+                        >
+                            Gửi
+                        </button>
+                    </>
+                )}
             </div>
         </div>
     );

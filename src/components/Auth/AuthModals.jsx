@@ -1,5 +1,5 @@
 // src/components/Auth/AuthModals.jsx
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useAuth } from '~/context/AuthContext';
 import LoginForm from '~/components/Header/LoginPopup';
 import SignupForm from '~/components/Header/SignupPopup';
@@ -17,6 +17,16 @@ function AuthModals() {
     handleLoginSuccess,
     handleOtpSuccess
   } = useAuth();
+
+  // Debug logging - remove in production
+  useEffect(() => {
+    console.log('Auth Modal States:', { 
+      showLoginModal, 
+      showSignupModal, 
+      showOtpModal,
+      verifiedEmail 
+    });
+  }, [showLoginModal, showSignupModal, showOtpModal, verifiedEmail]);
 
   return (
     <>
