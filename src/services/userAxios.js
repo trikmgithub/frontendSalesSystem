@@ -126,11 +126,33 @@ const updateAddressAxios = async (addressData) => {
     }
 };
 
+const updateUserSkinTypeAxios = async (skinType) => {
+    try {
+        const token = localStorage.getItem('access_token');
+        const config = {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        };
+        
+        const res = await axiosConfig.patch(`users/skin/${skinType}`, {}, config);
+        return res;
+    } catch (error) {
+        console.error('Error updating skin type:', error);
+        return {
+            error: true,
+            message: error.response?.data?.message || error.message || 'Failed to update skin type',
+            status: error.response?.status
+        };
+    }
+};
+
 export { 
     getUsersAxios, 
     getUserByIdAxios, 
     createUserAxios,
     updateUserAxios,
     deleteUserAxios,
-    updateAddressAxios 
+    updateAddressAxios,
+    updateUserSkinTypeAxios
 };

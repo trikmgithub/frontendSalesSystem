@@ -128,6 +128,21 @@ const deleteItemAxios = async (itemId) => {
     }
 };
 
+const getSkinProductsAxios = async (skinType) => {
+    try {
+        const res = await axiosConfig.get(`items/skin?type=${encodeURIComponent(skinType)}`);
+        return res;
+    } catch (error) {
+        console.error('Error fetching skin products:', error);
+        return {
+            error: true,
+            message: error.response?.data?.message || error.message || 'Failed to fetch skin products',
+            status: error.response?.status,
+            data: [] // Return empty array in case of error
+        };
+    }
+};
+
 export { 
     getItemsAxios, 
     getItemsPaginatedAxios, 
@@ -135,5 +150,6 @@ export {
     searchItemsAxios,
     createItemAxios,
     updateItemAxios,
-    deleteItemAxios
+    deleteItemAxios,
+    getSkinProductsAxios
 };

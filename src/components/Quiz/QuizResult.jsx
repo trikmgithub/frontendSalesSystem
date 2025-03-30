@@ -1,8 +1,14 @@
-import React from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { useParams, useLocation, Link } from 'react-router-dom';
 import styles from './QuizResult.module.scss';
 import classNames from 'classnames/bind';
 import config from '~/config';
+import { getSkinProductsAxios } from '~/services/itemAxios';
+import { CartContext } from '~/context/CartContext';
+import { FavoritesContext } from '~/context/FavoritesContext';
+import { useAuth } from '~/context/AuthContext';
+import { toast } from 'react-toastify';
+import { FaHeart, FaShoppingCart } from 'react-icons/fa';
 
 const cx = classNames.bind(styles);
 
@@ -113,8 +119,151 @@ const QuizResult = () => {
   const { skinType } = useParams();
   const location = useLocation();
   const { points, answers } = location.state || { points: 0, answers: {} };
+  const [skinProducts, setSkinProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const { addToCart } = useContext(CartContext);
+  const { addToFavorites, removeFromFavorites, isInFavorites } = useContext(FavoritesContext);
+  const { isLoggedIn, openLogin } = useAuth();
+  const [animatingItems, setAnimatingItems] = useState({});
+  const [favoriteAnimations, setFavoriteAnimations] = useState({});
   
   const skinData = skinTypeData[skinType] || skinTypeData.normal;
+
+  useEffect(() => {
+    const fetchSkinProducts = async () => {
+      setLoading(true);
+      try {
+        // Use the Vietnamese skin type name for the API call
+        const response = await getSkinProductsAxios(skinData.title);
+        
+        if (response.error) {
+          setError(response.message || 'Failed to fetch products');
+          setSkinProducts([]);
+        } else {
+          // Extract products from the response
+          // The API returns products directly in the data array, not in a nested result property
+          const products = response.data || [];
+          setSkinProducts(products);
+          setError(null);
+        }
+      } catch (err) {
+        console.error('Error fetching skin products:', err);
+        setError('Could not load products for your skin type');
+        setSkinProducts([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+  
+    fetchSkinProducts();
+  }, [skinType, skinData.title]);
+
+  const handleAddToCart = (item) => {
+    // Check if user is logged in
+    if (!isLoggedIn()) {
+      // Show login popup and set callback to add item to cart after login
+      openLogin(() => {
+        // Only show animation and add to cart after successful login
+        setAnimatingItems(prev => ({
+          ...prev,
+          [item._id]: true
+        }));
+        
+        addToCart(item);
+        toast.success(`${item.name} đã được thêm vào giỏ hàng!`);
+        
+        // Reset animation after it completes
+        setTimeout(() => {
+          setAnimatingItems(prev => ({
+            ...prev,
+            [item._id]: false
+          }));
+        }, 1000);
+      });
+      return;
+    }
+    
+    // User is logged in, add to cart with animation
+    setAnimatingItems(prev => ({
+      ...prev,
+      [item._id]: true
+    }));
+    
+    addToCart(item);
+    toast.success(`${item.name} đã được thêm vào giỏ hàng!`);
+    
+    // Reset animation after it completes
+    setTimeout(() => {
+      setAnimatingItems(prev => ({
+        ...prev,
+        [item._id]: false
+      }));
+    }, 1000);
+  };
+  
+  const handleToggleFavorite = (item) => {
+    const isFavorite = isInFavorites(item._id);
+    
+    // Check if user is logged in
+    if (!isLoggedIn()) {
+      // Show login popup and set callback to toggle favorite after login
+      openLogin(() => {
+        // Only toggle favorite after successful login
+        setFavoriteAnimations(prev => ({
+          ...prev,
+          [item._id]: true
+        }));
+        
+        if (isFavorite) {
+          removeFromFavorites(item._id);
+          toast.success(`${item.name} đã được xóa khỏi danh sách yêu thích!`);
+        } else {
+          addToFavorites(item);
+          toast.success(`${item.name} đã được thêm vào danh sách yêu thích!`);
+        }
+        
+        // Reset animation after it completes
+        setTimeout(() => {
+          setFavoriteAnimations(prev => ({
+            ...prev,
+            [item._id]: false
+          }));
+        }, 800);
+      });
+      return;
+    }
+    
+    // User is logged in, toggle favorite with animation
+    setFavoriteAnimations(prev => ({
+      ...prev,
+      [item._id]: true
+    }));
+    
+    if (isFavorite) {
+      removeFromFavorites(item._id);
+      toast.success(`${item.name} đã được xóa khỏi danh sách yêu thích!`);
+    } else {
+      addToFavorites(item);
+      toast.success(`${item.name} đã được thêm vào danh sách yêu thích!`);
+    }
+    
+    // Reset animation after it completes
+    setTimeout(() => {
+      setFavoriteAnimations(prev => ({
+        ...prev,
+        [item._id]: false
+      }));
+    }, 800);
+  };
+
+  // Calculate original price based on flash sale (if true, add 30% to the price)
+  const calculateOriginalPrice = (price, isFlashSale) => {
+    if (isFlashSale) {
+      return Math.round(price / 0.7); // 30% discount
+    }
+    return null;
+  };
 
   return (
     <div className={cx('result-container')}>
@@ -138,17 +287,134 @@ const QuizResult = () => {
           ))}
         </ul>
       </div>
+      
+      {/* Product recommendations from API */}
+      <div className={cx('recommended-products-section')}>
+        <h3>Sản phẩm được đề xuất cho bạn:</h3>
+        
+        {loading && (
+          <div className={cx('loading-container')}>
+            <div className={cx('loading-spinner')}></div>
+            <p>Đang tải sản phẩm...</p>
+          </div>
+        )}
+        
+        {error && !loading && (
+          <div className={cx('error-notification')}>
+            <p>{error}</p>
+          </div>
+        )}
+        
+        {!loading && !error && skinProducts.length === 0 && (
+          <div className={cx('no-products')}>
+            <p>Không tìm thấy sản phẩm phù hợp với loại da của bạn.</p>
+          </div>
+        )}
+        
+        {!loading && !error && skinProducts.length > 0 && (
+          <div className={cx('product-grid')}>
+            {skinProducts.map((item) => {
+              const originalPrice = calculateOriginalPrice(item.price, item.flashSale);
+              const discount = originalPrice ? Math.round(((originalPrice - item.price) / originalPrice) * 100) : null;
 
-      <div className={cx('products-section')}>
-        <h3>Các sản phẩm phù hợp:</h3>
-        <div className={cx('products-list')}>
-          {skinData.products.map((product, index) => (
-            <div key={index} className={cx('product-card')}>
-              <h4>{product.name}</h4>
-              <p>{product.description}</p>
-            </div>
-          ))}
-        </div>
+              return (
+                <div key={item._id} className={cx('product-item')}>
+                  <Link to={`/product/${item._id}`} className={cx('product-link')}>
+                    <div className={cx('image-container')}>
+                      {item.imageUrls && item.imageUrls.length > 0 ? (
+                        <img
+                          src={item.imageUrls[0]}
+                          alt={item.name}
+                          className={cx('product-image')}
+                          onError={(e) => {
+                            e.target.onerror = null;
+                            e.target.src = 'https://via.placeholder.com/300x300?text=No+Image';
+                          }}
+                        />
+                      ) : (
+                        <img
+                          src="https://via.placeholder.com/300x300?text=No+Image"
+                          alt={item.name}
+                          className={cx('product-image')}
+                        />
+                      )}
+                      {discount && (
+                        <div className={cx('discount-badge')}>
+                          {discount}%
+                        </div>
+                      )}
+                    </div>
+
+                    <div className={cx('product-info')}>
+                      <div className={cx('price-section')}>
+                        <div className={cx('current-price')}>
+                          {item.price?.toLocaleString()} đ
+                        </div>
+                        {originalPrice && (
+                          <div className={cx('original-price')}>
+                            {originalPrice.toLocaleString()} đ
+                          </div>
+                        )}
+                      </div>
+
+                      <div className={cx('brand-name')}>{item.brand?.name || ''}</div>
+                      <h4 className={cx('product-name')}>{item.name}</h4>
+
+                      <div className={cx('stock-status')}>
+                        {item.stock ? 'Còn hàng' : 'Hết hàng'}
+                      </div>
+                    </div>
+                  </Link>
+                  
+                  <div className={cx('product-actions')}>
+                    <button
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handleAddToCart(item);
+                      }}
+                      className={cx('add-to-cart-button', {
+                        'animating': animatingItems[item._id]
+                      })}
+                      disabled={!item.stock || animatingItems[item._id]}
+                      aria-label="Add to cart"
+                      title="Add to cart"
+                    >
+                      <FaShoppingCart />
+                      {animatingItems[item._id] && (
+                        <span className={cx('success-indicator')}>✓</span>
+                      )}
+                    </button>
+                    
+                    <button
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handleToggleFavorite(item);
+                      }}
+                      className={cx('favorite-button', {
+                        'active': isInFavorites(item._id),
+                        'animating': favoriteAnimations[item._id]
+                      })}
+                      disabled={favoriteAnimations[item._id]}
+                      aria-label="Toggle favorite"
+                      title="Add to favorites"
+                    >
+                      <FaHeart className={cx({
+                        'heart-beat': favoriteAnimations[item._id] && !isInFavorites(item._id),
+                        'heart-break': favoriteAnimations[item._id] && isInFavorites(item._id)
+                      })} />
+                    </button>
+
+                    {animatingItems[item._id] && (
+                      <div className={cx('fly-to-cart-animation')}></div>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       <div className={cx('actions')}>

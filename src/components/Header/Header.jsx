@@ -1,5 +1,5 @@
-import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { FaUser, FaShoppingCart, FaPhone, FaStore, FaClipboardList, FaHeart, FaSignOutAlt } from 'react-icons/fa';
+import { Link, useNavigate } from 'react-router-dom';
+import { FaUser, FaShoppingCart, FaPhone, FaCheckSquare, FaClipboardList, FaHeart, FaSignOutAlt } from 'react-icons/fa';
 import { IoSearch } from 'react-icons/io5';
 import { FcGoogle } from 'react-icons/fc';
 import classNames from 'classnames/bind';
@@ -25,13 +25,12 @@ function Header() {
     const [suggestions, setSuggestions] = useState([]);
     const [showSuggestions, setShowSuggestions] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
-    const location = useLocation();
     const navigate = useNavigate();
     const cartCount = cartItems.reduce((count, item) => count + item.quantity, 0);
     const [recentSearches, setRecentSearches] = useState(
         JSON.parse(localStorage.getItem('recentSearches')) || []
     );
-    
+
     // Use our Auth context
     const { 
         userInfo, 
@@ -211,12 +210,32 @@ function Header() {
         setShowAccountPopup(!showAccountPopup);
     };
 
-    const handleSignOutClick = () => {
+    const handleSignOutClick = async () => {
         // Close the account popup first
         setShowAccountPopup(false);
         
-        // Use our auth context's logout method, which includes redirect to homepage
-        logout();
+        try {
+            // Call the logout API directly
+            await logoutAxios();
+            
+            // Manually perform local logout (clear local storage) after API call
+            localStorage.removeItem('access_token');
+            localStorage.setItem('user', 'null');
+            localStorage.setItem('cartItems', 'null');
+            localStorage.setItem('favoriteItems', 'null');
+            
+            // Redirect to homepage after logout
+            window.location.href = '/';
+        } catch (error) {
+            console.error('Logout error:', error);
+            // Still perform local logout even if API call fails
+            localStorage.removeItem('access_token');
+            localStorage.setItem('user', 'null');
+            localStorage.setItem('cartItems', 'null');
+            localStorage.setItem('favoriteItems', 'null');
+            // Redirect to homepage
+            window.location.href = '/';
+        }
     };
 
     // Group suggestions by type for display
@@ -439,11 +458,26 @@ function Header() {
                                 ))}
                         </div>
 
-                        <div className={cx('actionItem')}>
-                            <FaStore className={cx('icon')} />
+                        <div 
+                            className={cx('actionItem')} 
+                            onClick={() => {
+                                if (isLoggedIn()) {
+                                    // If logged in, navigate to skin quiz
+                                    navigate('/skin-quiz');
+                                } else {
+                                    // If not logged in, show login popup
+                                    openLogin(() => {
+                                        // After login, navigate to skin quiz
+                                        navigate('/skin-quiz');
+                                    });
+                                }
+                            }}
+                            style={{ cursor: 'pointer' }}
+                        >
+                            <FaCheckSquare className={cx('icon')} />
                             <div className={cx('actionContent')}>
-                                <span>Hệ thống</span>
-                                <span>cửa hàng</span>
+                                <span>Kiểm tra</span>
+                                <span>loại da</span>
                             </div>
                         </div>
 
@@ -462,8 +496,8 @@ function Header() {
                                 <span className={cx('cartCount')}>{cartCount}</span>
                             </Link>
                         ) : (
-                            <div 
-                                className={cx('actionItem', 'cart')} 
+                            <div
+                                className={cx('actionItem', 'cart')}
                                 onClick={() => {
                                     console.log("Cart icon clicked, showing login popup");
                                     openLogin(() => {

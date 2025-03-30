@@ -5,6 +5,10 @@ import classNames from 'classnames/bind';
 import styles from './BrandPage.module.scss';
 import { Link } from 'react-router-dom';
 import { CartContext } from '~/context/CartContext';
+import { FavoritesContext } from '~/context/FavoritesContext';
+import { useAuth } from '~/context/AuthContext';
+import { toast } from 'react-toastify';
+import { FaHeart } from 'react-icons/fa';
 
 const cx = classNames.bind(styles);
 
@@ -15,6 +19,10 @@ function BrandPage() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const { addToCart } = useContext(CartContext);
+    const { addToFavorites, removeFromFavorites, isInFavorites } = useContext(FavoritesContext);
+    const { isLoggedIn, openLogin } = useAuth();
+    const [animatingItems, setAnimatingItems] = useState({});
+    const [favoriteAnimations, setFavoriteAnimations] = useState({});
 
     useEffect(() => {
         fetchBrandProducts();
@@ -44,6 +52,119 @@ function BrandPage() {
         } finally {
             setLoading(false);
         }
+    };
+
+    // Handle adding to cart
+    const handleAddToCart = (item) => {
+        console.log("BrandPage: Add to cart clicked, isLoggedIn:", isLoggedIn());
+        
+        // STRICT CHECK: Only proceed if logged in
+        if (!isLoggedIn()) {
+            console.log("BrandPage: Not logged in, showing login popup");
+            // Show login popup and set callback to add item to cart after login
+            openLogin(() => {
+                console.log("BrandPage: Login successful, now adding to cart");
+                // Show animation and add to cart ONLY after successful login
+                setAnimatingItems(prev => ({
+                    ...prev,
+                    [item._id]: true
+                }));
+                
+                addToCart(item);
+                toast.success(`${item.name} đã được thêm vào giỏ hàng!`);
+                
+                // Reset animation after it completes
+                setTimeout(() => {
+                    setAnimatingItems(prev => ({
+                        ...prev,
+                        [item._id]: false
+                    }));
+                }, 1000);
+            });
+            // IMPORTANT: Return early to prevent any action
+            return;
+        }
+        
+        console.log("BrandPage: User is logged in, adding to cart");
+        // User is logged in, add to cart with animation
+        setAnimatingItems(prev => ({
+            ...prev,
+            [item._id]: true
+        }));
+        
+        addToCart(item);
+        toast.success(`${item.name} đã được thêm vào giỏ hàng!`);
+        
+        // Reset animation after it completes
+        setTimeout(() => {
+            setAnimatingItems(prev => ({
+                ...prev,
+                [item._id]: false
+            }));
+        }, 1000);
+    };
+
+    // Handle toggling favorites
+    const handleToggleFavorite = (item) => {
+        console.log("BrandPage: Toggle favorite clicked, isLoggedIn:", isLoggedIn());
+        const isFavorite = isInFavorites(item._id);
+        
+        // STRICT CHECK: Only proceed if logged in
+        if (!isLoggedIn()) {
+            console.log("BrandPage: Not logged in, showing login popup");
+            // Show login popup and set callback to toggle favorite after login
+            openLogin(() => {
+                console.log("BrandPage: Login successful, now toggling favorite");
+                // Set animation state ONLY after successful login
+                setFavoriteAnimations(prev => ({
+                    ...prev,
+                    [item._id]: true
+                }));
+                
+                // Add/remove from favorites
+                if (isFavorite) {
+                    removeFromFavorites(item._id);
+                    toast.success(`${item.name} đã được xóa khỏi danh sách yêu thích!`);
+                } else {
+                    addToFavorites(item);
+                    toast.success(`${item.name} đã được thêm vào danh sách yêu thích!`);
+                }
+                
+                // Reset animation after it completes
+                setTimeout(() => {
+                    setFavoriteAnimations(prev => ({
+                        ...prev,
+                        [item._id]: false
+                    }));
+                }, 800);
+            });
+            // IMPORTANT: Return early to prevent any action
+            return;
+        }
+        
+        console.log("BrandPage: User is logged in, toggling favorite");
+        // User is logged in, toggle favorite with animation
+        setFavoriteAnimations(prev => ({
+            ...prev,
+            [item._id]: true
+        }));
+        
+        // Add/remove from favorites
+        if (isFavorite) {
+            removeFromFavorites(item._id);
+            toast.success(`${item.name} đã được xóa khỏi danh sách yêu thích!`);
+        } else {
+            addToFavorites(item);
+            toast.success(`${item.name} đã được thêm vào danh sách yêu thích!`);
+        }
+        
+        // Reset animation after it completes
+        setTimeout(() => {
+            setFavoriteAnimations(prev => ({
+                ...prev,
+                [item._id]: false
+            }));
+        }, 800);
     };
 
     // Calculate original price based on flash sale (if true, add 30% to the price)
@@ -148,15 +269,44 @@ function BrandPage() {
                                         </div>
                                     </div>
                                 </Link>
-                                <button 
-                                    onClick={() => addToCart(item)} 
-                                    className={cx('addToCartButton')}
-                                    disabled={!item.stock}
-                                    aria-label="Add to cart"
-                                    title="Add to cart"
-                                >
-                                    🛒
-                                </button>
+                                <div className={cx('productActions')}>
+                                    <button 
+                                        onClick={() => handleAddToCart(item)} 
+                                        className={cx('addToCartButton', {
+                                            'animating': animatingItems[item._id],
+                                            'disabled': !isLoggedIn()
+                                        })}
+                                        disabled={!item.stock || animatingItems[item._id]}
+                                        aria-label="Add to cart"
+                                        title={isLoggedIn() ? "Thêm vào giỏ hàng" : "Vui lòng đăng nhập"}
+                                    >
+                                        🛒
+                                        {animatingItems[item._id] && (
+                                            <span className={cx('successIndicator')}>✓</span>
+                                        )}
+                                    </button>
+
+                                    <button
+                                        onClick={() => handleToggleFavorite(item)}
+                                        className={cx('favoriteButton', {
+                                            'active': isInFavorites(item._id),
+                                            'animating': favoriteAnimations[item._id],
+                                            'disabled': !isLoggedIn()
+                                        })}
+                                        disabled={favoriteAnimations[item._id]}
+                                        aria-label="Toggle favorite"
+                                        title={isLoggedIn() ? (isInFavorites(item._id) ? "Đã yêu thích" : "Yêu thích") : "Vui lòng đăng nhập"}
+                                    >
+                                        <FaHeart className={cx({
+                                            'heartBeat': favoriteAnimations[item._id] && !isInFavorites(item._id),
+                                            'heartBreak': favoriteAnimations[item._id] && isInFavorites(item._id)
+                                        })} />
+                                    </button>
+
+                                    {animatingItems[item._id] && (
+                                        <div className={cx('flyToCartAnimation')}></div>
+                                    )}
+                                </div>
                             </div>
                         );
                     })}
