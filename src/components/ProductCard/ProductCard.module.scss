@@ -19,14 +19,6 @@
     &:hover {
         transform: translateY(-3px);
         box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
-
-        .addToCartButton {
-            background-color: #236d54;
-        }
-
-        .actionButtons {
-            opacity: 1;
-        }
     }
 }
 
@@ -150,104 +142,109 @@
     right: 10px;
     display: flex;
     gap: 8px;
-    opacity: 0;
-    transition: opacity 0.3s ease;
+    z-index: 10; /* Ensure buttons appear above other elements */
 }
 
 .actionButton {
-    width: 35px;
-    height: 35px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    background-color: white;
-    border: 1px solid #eee;
-    color: #555;
-    transition: all 0.2s ease;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    width: 35px !important;
+    height: 35px !important;
+    border-radius: 50% !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    cursor: pointer !important;
+    background-color: white !important;
+    border: 1px solid #eee !important;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+    transition: all 0.2s ease !important;
 
     &:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 3px 6px rgba(0, 0, 0, 0.15);
+        transform: translateY(-2px) !important;
+        box-shadow: 0 3px 6px rgba(0, 0, 0, 0.15) !important;
     }
 
     &:disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
+        opacity: 0.5 !important;
+        cursor: not-allowed !important;
 
         &:hover {
-            transform: none;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            transform: none !important;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
         }
     }
 }
 
 .addToCartButton {
-    color: #2B7B60;
+    color: #666 !important;
+    
+    svg {
+        fill: #666 !important;
+        color: #666 !important;
+    }
 
     &:hover {
-        background-color: #2B7B60;
-        color: white;
-        border-color: #2B7B60;
+        color: #2B7B60 !important;
+        background-color: #f0f8f5 !important;
+        border-color: #c0e0d6 !important;
+        
+        svg {
+            fill: #2B7B60 !important;
+            color: #2B7B60 !important;
+        }
     }
 
     &.cartClicked {
-        animation: buttonPulse 0.4s ease;
-        background-color: #2B7B60;
-        color: white;
-        border-color: #2B7B60;
+        animation: buttonPulse 0.4s ease !important;
     }
 }
 
 .favoriteButton {
-    color: #999;
+    color: #999 !important;
 
     &:hover {
-        color: #ff6b6b;
-        background-color: #fff0f0;
-        border-color: #ffcaca;
+        color: #ff6b6b !important;
+        background-color: #fff0f0 !important;
+        border-color: #ffcaca !important;
     }
 
     &.isFavorite {
-        color: #ff6b6b;
-        background-color: #fff0f0;
-        border-color: #ffcaca;
+        color: #ff6b6b !important;
+        background-color: #fff0f0 !important;
+        border-color: #ffcaca !important;
     }
 
     &.favoriteClicked {
-        animation: heartPulse 0.7s ease-in-out;
+        animation: heartPulse 0.7s ease-in-out !important;
     }
 }
 
 .compareButton {
-    color: #666;
-    font-size: 16px;
+    color: #666 !important;
+    font-size: 16px !important;
 
     &:hover {
-        color: #2B7B60;
-        background-color: #f0f8f5;
-        border-color: #c0e0d6;
+        color: #2B7B60 !important;
+        background-color: #f0f8f5 !important;
+        border-color: #c0e0d6 !important;
     }
 
     &.isComparing {
-        color: #2B7B60;
-        background-color: #f0f8f5;
-        border-color: #c0e0d6;
+        color: #2B7B60 !important;
+        background-color: #f0f8f5 !important;
+        border-color: #c0e0d6 !important;
     }
 
     &.animating {
-        animation: compareButtonPulse 0.6s ease;
+        animation: compareButtonPulse 0.6s ease !important;
     }
 
     .compareScale {
-        font-size: 16px;
-        transition: transform 0.3s;
+        font-size: 16px !important;
+        transition: transform 0.3s !important;
 
         &.scaleAnimating {
-            animation: scaleAnimation 0.8s ease;
-            color: #2B7B60;
+            animation: scaleAnimation 0.8s ease !important;
+            color: #2B7B60 !important;
         }
     }
 }

@@ -1,14 +1,9 @@
-import { useEffect, useState, useContext, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { getItemsPaginatedAxios } from '~/services/itemAxios';
 import classNames from 'classnames/bind';
 import styles from './Home.module.scss';
-import { Link } from 'react-router-dom';
-import { CartContext } from '~/context/CartContext';
-import { FavoritesContext } from '~/context/FavoritesContext';
+import ProductCard from '~/components/ProductCard';
 import { useCompare } from '~/context/CompareContext';
-import { useAuth } from '~/context/AuthContext';
-import { toast } from 'react-toastify';
-import { FaHeart, FaBalanceScale } from 'react-icons/fa';
 
 const cx = classNames.bind(styles);
 
@@ -19,157 +14,8 @@ function Home() {
     const [currentPage, setCurrentPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
     const [totalItems, setTotalItems] = useState(0);
-    const [itemsPerPage] = useState(12); // 4 products per row, 3 rows or 6 products per row, 2 rows
-    const { addToCart } = useContext(CartContext);
-    const { addToFavorites, removeFromFavorites, isInFavorites } = useContext(FavoritesContext);
-    const { addToCompare, isInCompare } = useCompare();
-    const [animatingItems, setAnimatingItems] = useState({});
-    const [favoriteAnimations, setFavoriteAnimations] = useState({});
-    const [compareAnimations, setCompareAnimations] = useState({});
-    const cartIconRef = useRef(null);
-
-    // Use our Auth context
-    const { isLoggedIn, openLogin } = useAuth();
-
-    const handleAddToCart = (item) => {
-        console.log("Add to cart clicked, isLoggedIn:", isLoggedIn());
-
-        // STRICT CHECK: Only proceed if logged in
-        if (!isLoggedIn()) {
-            console.log("Not logged in, showing login popup");
-            // Show login popup and set callback to add item to cart after login
-            openLogin(() => {
-                console.log("Login successful, now adding to cart");
-                // Show animation and add to cart ONLY after successful login
-                setAnimatingItems(prev => ({
-                    ...prev,
-                    [item._id]: true
-                }));
-
-                addToCart(item);
-                toast.success(`${item.name} đã được thêm vào giỏ hàng!`);
-
-                // Reset animation after it completes
-                setTimeout(() => {
-                    setAnimatingItems(prev => ({
-                        ...prev,
-                        [item._id]: false
-                    }));
-                }, 1000);
-            });
-            // IMPORTANT: Return early to prevent any action
-            return;
-        }
-
-        console.log("User is logged in, adding to cart");
-        // User is logged in, add to cart with animation
-        setAnimatingItems(prev => ({
-            ...prev,
-            [item._id]: true
-        }));
-
-        addToCart(item);
-        toast.success(`${item.name} đã được thêm vào giỏ hàng!`);
-
-        // Reset animation after it completes
-        setTimeout(() => {
-            setAnimatingItems(prev => ({
-                ...prev,
-                [item._id]: false
-            }));
-        }, 1000);
-    };
-
-    const handleToggleFavorite = (item) => {
-        console.log("Toggle favorite clicked, isLoggedIn:", isLoggedIn());
-        const isFavorite = isInFavorites(item._id);
-
-        // STRICT CHECK: Only proceed if logged in
-        if (!isLoggedIn()) {
-            console.log("Not logged in, showing login popup");
-            // Show login popup and set callback to toggle favorite after login
-            openLogin(() => {
-                console.log("Login successful, now toggling favorite");
-                // Set animation state ONLY after successful login
-                setFavoriteAnimations(prev => ({
-                    ...prev,
-                    [item._id]: true
-                }));
-
-                // Add/remove from favorites
-                if (isFavorite) {
-                    removeFromFavorites(item._id);
-                    toast.success(`${item.name} đã được xóa khỏi danh sách yêu thích!`);
-                } else {
-                    addToFavorites(item);
-                    toast.success(`${item.name} đã được thêm vào danh sách yêu thích!`);
-                }
-
-                // Reset animation after it completes
-                setTimeout(() => {
-                    setFavoriteAnimations(prev => ({
-                        ...prev,
-                        [item._id]: false
-                    }));
-                }, 800);
-            });
-            // IMPORTANT: Return early to prevent any action
-            return;
-        }
-
-        console.log("User is logged in, toggling favorite");
-        // User is logged in, toggle favorite with animation
-        setFavoriteAnimations(prev => ({
-            ...prev,
-            [item._id]: true
-        }));
-
-        // Add/remove from favorites
-        if (isFavorite) {
-            removeFromFavorites(item._id);
-            toast.success(`${item.name} đã được xóa khỏi danh sách yêu thích!`);
-        } else {
-            addToFavorites(item);
-            toast.success(`${item.name} đã được thêm vào danh sách yêu thích!`);
-        }
-
-        // Reset animation after it completes
-        setTimeout(() => {
-            setFavoriteAnimations(prev => ({
-                ...prev,
-                [item._id]: false
-            }));
-        }, 800);
-    };
-
-    // New function to handle adding to compare
-    const handleAddToCompare = (item, e) => {
-        e.preventDefault();
-        e.stopPropagation();
-
-        // If already in compare list, show a notification
-        if (isInCompare(item._id)) {
-            toast.info(`${item.name} đã có trong danh sách so sánh!`);
-            return;
-        }
-
-        // Add animation
-        setCompareAnimations(prev => ({
-            ...prev,
-            [item._id]: true
-        }));
-
-        // Add to compare
-        addToCompare(item);
-
-        // Reset animation after it completes
-        setTimeout(() => {
-            setCompareAnimations(prev => ({
-                ...prev,
-                [item._id]: false
-            }));
-        }, 800);
-    };
+    const [itemsPerPage] = useState(15); // Updated to show 15 items per page
+    const { addToCompare } = useCompare();
 
     useEffect(() => {
         fetchItems(currentPage);
@@ -202,14 +48,6 @@ function Home() {
         window.scrollTo(0, 0);
     };
 
-    // Calculate original price based on flash sale (if true, add 30% to the price)
-    const calculateOriginalPrice = (price, isFlashSale) => {
-        if (isFlashSale) {
-            return Math.round(price / 0.7); // 30% discount
-        }
-        return null;
-    };
-
     if (loading && items.length === 0) {
         return (
             <div className={cx('loading-container')}>
@@ -228,123 +66,13 @@ function Home() {
             )}
             <div className={cx('container')}>
                 <div className={cx('productGrid')}>
-                    {items.map((item) => {
-                        const originalPrice = calculateOriginalPrice(item.price, item.flashSale);
-                        const discount = originalPrice ? Math.round(((originalPrice - item.price) / originalPrice) * 100) : null;
-
-                        return (
-                            <div key={item._id} className={cx('productCard')}>
-                                <Link to={`/product/${item._id}`} className={cx('productLink')}>
-                                    <div className={cx('imageContainer')}>
-                                        {item.imageUrls && item.imageUrls.length > 0 ? (
-                                            <img
-                                                src={item.imageUrls[0]}
-                                                alt={item.name}
-                                                className={cx('productImage')}
-                                                onError={(e) => {
-                                                    e.target.onerror = null;
-                                                    e.target.src = 'https://via.placeholder.com/300x300?text=No+Image';
-                                                }}
-                                            />
-                                        ) : (
-                                            <img
-                                                src="https://via.placeholder.com/300x300?text=No+Image"
-                                                alt={item.name}
-                                                className={cx('productImage')}
-                                            />
-                                        )}
-                                        {discount && (
-                                            <div className={cx('discountBadge')}>
-                                                {discount}%
-                                            </div>
-                                        )}
-                                    </div>
-
-                                    <div className={cx('productInfo')}>
-                                        <div className={cx('priceSection')}>
-                                            <div className={cx('currentPrice')}>
-                                                {item.price?.toLocaleString()} đ
-                                            </div>
-                                            {originalPrice && (
-                                                <div className={cx('originalPrice')}>
-                                                    {originalPrice.toLocaleString()} đ
-                                                </div>
-                                            )}
-                                        </div>
-
-                                        <div className={cx('brandName')}>{item.brand?.name || ''}</div>
-                                        <h3 className={cx('productName')}>{item.name}</h3>
-
-                                        <div className={cx('stockStatus')}>
-                                            {item.stock ? 'Còn hàng' : 'Hết hàng'}
-                                        </div>
-                                    </div>
-                                </Link>
-                                <div className={cx('productActions')}>
-                                    {/* Compare button */}
-                                    <button
-                                        onClick={(e) => handleAddToCompare(item, e)}
-                                        className={cx('compareButton', {
-                                            'isComparing': isInCompare(item._id),
-                                            'animating': compareAnimations[item._id]
-                                        })}
-                                        aria-label="So sánh"
-                                        title={isInCompare(item._id) ? "Đã thêm vào so sánh" : "Thêm vào so sánh"}
-                                    >
-                                        <FaBalanceScale
-                                            size={16}
-                                            className={cx({
-                                                'compareScale': true,
-                                                'scaleAnimating': compareAnimations[item._id]
-                                            })}
-                                        />
-                                    </button>
-
-                                    <button
-                                        onClick={(e) => {
-                                            e.preventDefault();
-                                            e.stopPropagation();
-                                            handleAddToCart(item);
-                                        }}
-                                        className={cx('addToCartButton', {
-                                            'animating': animatingItems[item._id]
-                                        })}
-                                        disabled={!item.stock || animatingItems[item._id]}
-                                        aria-label="Add to cart"
-                                        title="Add to cart"
-                                    >
-                                        🛒
-                                        {animatingItems[item._id] && (
-                                            <span className={cx('successIndicator')}>✓</span>
-                                        )}
-                                    </button>
-                                    <button
-                                        onClick={(e) => {
-                                            e.preventDefault();
-                                            e.stopPropagation();
-                                            handleToggleFavorite(item);
-                                        }}
-                                        className={cx('favoriteButton', {
-                                            'active': isInFavorites(item._id),
-                                            'animating': favoriteAnimations[item._id]
-                                        })}
-                                        disabled={favoriteAnimations[item._id]}
-                                        aria-label="Toggle favorite"
-                                        title="Add to favorites"
-                                    >
-                                        <FaHeart className={cx({
-                                            'heartBeat': favoriteAnimations[item._id] && !isInFavorites(item._id),
-                                            'heartBreak': favoriteAnimations[item._id] && isInFavorites(item._id)
-                                        })} />
-                                    </button>
-
-                                    {animatingItems[item._id] && (
-                                        <div className={cx('flyToCartAnimation')}></div>
-                                    )}
-                                </div>
-                            </div>
-                        );
-                    })}
+                    {items.map((item) => (
+                        <ProductCard 
+                            key={item._id} 
+                            product={item} 
+                            onAddToCompare={() => addToCompare(item)}
+                        />
+                    ))}
                 </div>
 
                 {totalPages > 1 && (

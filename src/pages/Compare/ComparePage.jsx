@@ -383,13 +383,6 @@ const ComparePage = () => {
           </div>
         </div>
       </div>
-      
-      {/* Action buttons at the bottom */}
-      <div className={cx('actionButtons')}>
-        <Link to="/" className={cx('continueShoppingButton')}>
-          Tiếp tục mua sắm
-        </Link>
-      </div>
     </div>
   );
 };

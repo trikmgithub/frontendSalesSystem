@@ -204,7 +204,7 @@ function ProductCard({ product, onAddToCompare }) {
           disabled={!product.stock}
           aria-label="Add to cart"
         >
-          <FaShoppingCart className={cx('cartIcon')} />
+          <FaShoppingCart className={cx('cartIcon')} style={{ color: 'white' }} />
         </button>
 
         {/* Favorite Button */}
