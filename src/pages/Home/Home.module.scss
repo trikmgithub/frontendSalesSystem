@@ -10,10 +10,11 @@
     position: relative;
 }
 
+// Updated to have 5 cards per row
 .productGrid {
     display: grid;
-    grid-template-columns: repeat(6, 1fr);
-    gap: 8px;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 15px;
     margin-bottom: 30px;
 }
 
@@ -26,7 +27,7 @@
     padding: 40px;
     text-align: center;
     min-height: 300px;
-    
+
     p {
         margin-top: 16px;
         color: #666;
@@ -59,162 +60,13 @@
     border-radius: 4px;
     border-left: 4px solid #ffc107;
     font-size: 14px;
-    
+
     p {
         margin: 0;
     }
 }
 
-.productCard {
-    background: white;
-    border-radius: 4px;
-    overflow: hidden;
-    position: relative;
-    transition: transform 0.2s, box-shadow 0.2s;
-
-    &:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
-        
-        .addToCartButton, .favoriteButton {
-            opacity: 1;
-        }
-    }
-}
-
-.productLink {
-    text-decoration: none;
-    color: inherit;
-    display: block;
-    padding: 0;
-}
-
-.imageContainer {
-    position: relative;
-    padding-top: 100%; /* 1:1 Aspect Ratio */
-    background: #f9f9f9;
-    overflow: hidden;
-}
-
-.productImage {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
-    padding: 10px;
-}
-
-.discountBadge {
-    position: absolute;
-    top: 8px;
-    right: 8px;
-    background-color: #ff6801;
-    color: white;
-    font-size: 12px;
-    font-weight: bold;
-    padding: 2px 6px;
-    border-radius: 4px;
-    z-index: 2;
-}
-
-.productInfo {
-    padding: 8px 12px 12px;
-}
-
-.brandName {
-    font-size: 12px;
-    color: #2B7B60;
-    margin-bottom: 4px;
-    font-weight: 500;
-}
-
-.productName {
-    font-size: 13px;
-    color: #333;
-    margin: 0 0 8px;
-    line-height: 1.3;
-    height: 2.6em;
-    overflow: hidden;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    font-weight: normal;
-}
-
-.priceSection {
-    display: flex;
-    align-items: baseline;
-    gap: 8px;
-    margin-bottom: 5px;
-}
-
-.currentPrice {
-    color: #f26522;
-    font-size: 16px;
-    font-weight: 600;
-}
-
-.originalPrice {
-    color: #999;
-    font-size: 13px;
-    text-decoration: line-through;
-}
-
-.stockStatus {
-    color: #2B7B60;
-    font-size: 12px;
-    margin-top: 4px;
-}
-
-.productActions {
-    position: absolute;
-    bottom: 3px;
-    right: 10px;
-    display: flex;
-    gap: 8px;
-}
-
-.addToCartButton {
-    background-color: white;
-    color: white;
-    border: none;
-    border-radius: 50%;
-    width: 36px;
-    height: 36px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    cursor: pointer;
-    opacity: 0;
-    transition: opacity 0.2s, background-color 0.2s;
-}
-
-.favoriteButton {
-    background-color: white;
-    color: #ccc;
-    border: none;
-    border-radius: 50%;
-    width: 36px;
-    height: 36px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    cursor: pointer;
-    opacity: 0;
-    transition: opacity 0.2s, color 0.2s;
-    
-    &.active {
-        color: #ff6b6b;
-        opacity: 1;
-    }
-    
-    &:hover {
-        color: #ff6b6b;
-    }
-}
-
+// Pagination styles
 .pagination {
     display: flex;
     justify-content: center;
@@ -237,26 +89,27 @@
     border-radius: 4px;
     font-size: 14px;
     transition: all 0.2s;
-    
+
     &:hover {
         border-color: #f26522;
         color: #f26522;
     }
-    
+
     &.active {
         background-color: #f26522;
         border-color: #f26522;
         color: white;
     }
-    
+
     &.navButton {
         font-weight: bold;
         min-width: 40px;
     }
-    
+
     &:disabled {
         opacity: 0.5;
         cursor: not-allowed;
+
         &:hover {
             border-color: #ddd;
             color: #666;
@@ -286,7 +139,7 @@
     align-items: center;
     justify-content: center;
     z-index: 999;
-    
+
     .loading-spinner {
         width: 40px;
         height: 40px;
@@ -295,7 +148,7 @@
         border-top-color: #f26522;
         animation: spin 1s ease-in-out infinite;
     }
-    
+
     p {
         margin-top: 10px;
         color: #666;
@@ -310,213 +163,24 @@
     }
 }
 
-@media screen and (max-width: 768px) {
+@media screen and (max-width: 992px) {
     .productGrid {
         grid-template-columns: repeat(3, 1fr);
     }
-    
-    .productName {
-        font-size: 12px;
+}
+
+@media screen and (max-width: 768px) {
+    .productGrid {
+        grid-template-columns: repeat(2, 1fr);
     }
 }
 
 @media screen and (max-width: 576px) {
     .productGrid {
-        grid-template-columns: repeat(2, 1fr);
+        grid-template-columns: repeat(1, 1fr);
     }
-    
+
     .pagination {
         flex-wrap: wrap;
-    }
-}
-
-.addToCartButton {
-    background-color: white;
-    color: #333;
-    border: none;
-    border-radius: 50%;
-    width: 36px;
-    height: 36px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    cursor: pointer;
-    opacity: 0;
-    transition: opacity 0.2s, transform 0.3s, background-color 0.3s;
-    position: relative;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-    
-    &:hover {
-        background-color: #f8f8f8;
-        transform: translateY(-2px);
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
-    }
-    
-    &:active {
-        transform: scale(0.95);
-    }
-    
-    &.animating {
-        background-color: #f26522;
-        color: white;
-        opacity: 1;
-        transform: scale(1.1);
-        animation: addToCartPulse 0.8s ease;
-    }
-    
-    .successIndicator {
-        position: absolute;
-        font-size: 14px;
-        animation: fadeInOut 0.8s ease;
-        color: white;
-    }
-}
-
-.favoriteButton {
-    background-color: white;
-    color: #ccc;
-    border: none;
-    border-radius: 50%;
-    width: 36px;
-    height: 36px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    cursor: pointer;
-    opacity: 0;
-    transition: opacity 0.2s, transform 0.3s, box-shadow 0.3s;
-    position: relative;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-    
-    &:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
-    }
-    
-    &:active {
-        transform: scale(0.95);
-    }
-    
-    &.active {
-        color: #ff6b6b;
-        opacity: 1;
-        transform: scale(1);
-    }
-    
-    &.animating {
-        transform: scale(1.1);
-        opacity: 1;
-        background-color: #ffeff1;
-    }
-    
-    .heartBeat {
-        animation: heartbeat 0.8s ease;
-        color: #ff6b6b;
-    }
-    
-    .heartBreak {
-        animation: heartbreak 0.8s ease;
-    }
-}
-
-.productCard:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
-    
-    .addToCartButton, .favoriteButton {
-        opacity: 1;
-    }
-}
-
-.flyToCartAnimation {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 15px;
-    height: 15px;
-    background-color: #f26522;
-    border-radius: 50%;
-    z-index: 999;
-    animation: flyToCart 1s cubic-bezier(0.47, 0, 0.745, 0.715);
-    pointer-events: none;
-}
-
-// Animations
-@keyframes addToCartPulse {
-    0% {
-        transform: scale(1);
-    }
-    50% {
-        transform: scale(1.2);
-    }
-    100% {
-        transform: scale(1.1);
-    }
-}
-
-@keyframes fadeInOut {
-    0% {
-        opacity: 0;
-        transform: scale(0.5);
-    }
-    50% {
-        opacity: 1;
-        transform: scale(1.2);
-    }
-    100% {
-        opacity: 0;
-        transform: scale(1);
-    }
-}
-
-@keyframes heartbeat {
-    0% {
-        transform: scale(1);
-    }
-    25% {
-        transform: scale(1.3);
-    }
-    50% {
-        transform: scale(1);
-    }
-    75% {
-        transform: scale(1.3);
-    }
-    100% {
-        transform: scale(1);
-    }
-}
-
-@keyframes heartbreak {
-    0% {
-        transform: scale(1);
-        opacity: 1;
-    }
-    25% {
-        transform: scale(1.2) rotate(5deg);
-        opacity: 1;
-    }
-    50% {
-        transform: scale(1) rotate(-5deg);
-        opacity: 0.8;
-    }
-    100% {
-        transform: scale(1);
-        opacity: 1;
-    }
-}
-
-@keyframes flyToCart {
-    0% {
-        transform: scale(0) translate(-50%, -50%);
-        opacity: 0.8;
-    }
-    20% {
-        transform: scale(1) translate(-50%, -50%);
-        opacity: 1;
-    }
-    100% {
-        transform: scale(0.5) translate(-1000%, -1000%);
-        opacity: 0;
     }
 }

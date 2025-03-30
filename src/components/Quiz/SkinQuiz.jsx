@@ -3,12 +3,23 @@ import { useNavigate } from 'react-router-dom';
 import styles from './SkinQuiz.module.scss';
 import classNames from 'classnames/bind';
 import config from '~/config';
+import { useAuth } from '~/context/AuthContext';
+import { updateUserSkinTypeAxios } from '~/services/userAxios';
 
 const cx = classNames.bind(styles);
 
 const SkinQuiz = () => {
   const navigate = useNavigate();
   const [currentAnswers, setCurrentAnswers] = useState({});
+  const { isLoggedIn } = useAuth();
+
+  // Skin type mapping
+  const skinTypesMap = {
+    oily: 'Da Dầu',
+    combination: 'Da Hỗn Hợp',
+    normal: 'Da Thường',
+    dry: 'Da Khô'
+  };
 
   const questions = [
     {
@@ -123,7 +134,7 @@ const SkinQuiz = () => {
     });
   };
 
-  const calculateResult = () => {
+  const calculateResult = async () => {
     let points = 0;
     
     // Calculate points from all answers
@@ -135,21 +146,39 @@ const SkinQuiz = () => {
       }
     });
     
-    // Determine skin type based on total points
-    let skinType = '';
+    // Determine skin type based on total points (English keys for routing)
+    let skinTypeKey = '';
     if (points <= 18) {
-      skinType = 'oily';
+      skinTypeKey = 'oily';
     } else if (points <= 27) {
-      skinType = 'combination';
+      skinTypeKey = 'combination';
     } else if (points <= 36) {
-      skinType = 'normal';
+      skinTypeKey = 'normal';
     } else {
-      skinType = 'dry';
+      skinTypeKey = 'dry';
+    }
+    
+    // Get the Vietnamese skin type for API update
+    const vietnameseSkinType = skinTypesMap[skinTypeKey];
+    
+    // Update user's skin type in the database if user is logged in
+    if (isLoggedIn()) {
+      try {
+        // Send the Vietnamese skin type to the API
+        const response = await updateUserSkinTypeAxios(vietnameseSkinType);
+        if (response.error) {
+          console.error('Failed to update skin type:', response.message);
+        } else {
+          console.log('Successfully updated skin type to:', vietnameseSkinType);
+        }
+      } catch (error) {
+        console.error('Error updating skin type:', error);
+      }
     }
     
     // Navigate to results page with state data
-    const resultPath = config.routes.skinQuizResult.replace(':skinType', skinType);
-    navigate(resultPath, { state: { points, answers: currentAnswers } });
+    const resultPath = config.routes.skinQuizResult.replace(':skinType', skinTypeKey);
+    navigate(resultPath, { state: { points, answers: currentAnswers, skinType: vietnameseSkinType } });
   };
 
   const allQuestionsAnswered = questions.length === Object.keys(currentAnswers).length;
@@ -160,15 +189,12 @@ const SkinQuiz = () => {
         <h1>BÀI KIỂM TRA LOẠI DA & CÁCH CHĂM SÓC</h1>
         <p>
           Mỗi người chúng ta đều có một cơ địa và làn da khác nhau. Để có cách chăm sóc da đúng đắn, 
-          điều quan trọng là bạn cần phải thấu hiểu làn da. Grace Skincare Clinic hân hạnh mang đến bài trắc nghiệm nhỏ để 
+          điều quan trọng là bạn cần phải thấu hiểu làn da. Beauty Skin hân hạnh mang đến bài trắc nghiệm nhỏ để 
           bạn có thể tự kiểm tra loại da và tình trạng da của mình.
         </p>
         <p>
           Hãy trả lời 9 câu hỏi trong bài trắc nghiệm dưới đây để hiểu hơn về làn da của mình, 
           từ đó biết được cách thức chăm da nào sẽ phù hợp với bạn.
-        </p>
-        <p className={cx('author')}>
-          Tác giả: <a href="https://www.graceskinclinic.com/skin_guru/bac-si-hun-kim-thao-bac-si-da-lieu-gioi-tai-tp-hcm" target="_blank" rel="noopener noreferrer">Bác sĩ Da liễu Hun Kim Thảo</a>
         </p>
       </div>
 

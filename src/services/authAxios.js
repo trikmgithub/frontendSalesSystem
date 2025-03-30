@@ -1,6 +1,6 @@
 import * as axiosConfig from '~/utils/axiosConfig';
 
-// Login API with nested user details fetch
+// Login API with improved user details handling
 const loginAxios = async (userData) => {
     try {
         const res = await axiosConfig.post('auth/login', userData, { withCredentials: true });
@@ -18,7 +18,9 @@ const loginAxios = async (userData) => {
                 role: res.data.role,
             };
 
+            // Make sure to use JSON.stringify correctly
             localStorage.setItem('user', JSON.stringify(basicUserData));
+            console.log("User data saved to localStorage:", basicUserData);
 
             // Only attempt to fetch detailed user data if we have an ID
             if (res.data._id) {
@@ -50,6 +52,7 @@ const loginAxios = async (userData) => {
 
                         // Update localStorage with complete user data
                         localStorage.setItem('user', JSON.stringify(completeUserData));
+                        console.log("Updated user data in localStorage:", completeUserData);
                     }
                 } catch (detailsError) {
                     console.error('Error fetching user details:', detailsError.message);
@@ -59,18 +62,22 @@ const loginAxios = async (userData) => {
 
             // SIMPLE ROLE-BASED REDIRECTION
             const role = res.data.role;
+            console.log("User role for redirection:", role);
 
             // Add a short delay to ensure localStorage is updated before redirection
             setTimeout(() => {
                 if (['ADMIN', 'MANAGER'].includes(role)) {
+                    console.log("Redirecting to admin dashboard");
                     window.location.href = '/admin';
                 } else if (role === 'STAFF') {
+                    console.log("Redirecting to staff dashboard");
                     window.location.href = '/staff';
                 } else {
                     // Regular users go to homepage
+                    console.log("Reloading page for regular user");
                     window.location.reload();
                 }
-            }, 300); // 300ms delay
+            }, 500); // Increased delay for better reliability
         }
 
         return res;
@@ -193,9 +200,11 @@ const logoutAxios = async () => {
             console.log('No access token found, proceeding with local logout');
             // Still perform local logout even without a token
             localStorage.removeItem('access_token');
-            localStorage.removeItem('confirmedAddress');
-            localStorage.setItem('user', 'null');
-            window.location.reload();
+            localStorage.setItem('user', 'null');  // Set to 'null' string instead of removing
+            localStorage.setItem('cartItems', 'null');
+            localStorage.setItem('favoriteItems', 'null');
+            // Redirect to homepage
+            window.location.href = '/';
             return;
         }
 
@@ -220,17 +229,21 @@ const logoutAxios = async () => {
         } finally {
             // Always perform local logout regardless of server response
             localStorage.removeItem('access_token');
-            localStorage.removeItem('confirmedAddress');
-            localStorage.setItem('user', 'null');
-            window.location.reload();
+            localStorage.setItem('user', 'null');  // Set to 'null' string instead of removing
+            localStorage.setItem('cartItems', 'null');
+            localStorage.setItem('favoriteItems', 'null');
+            // Redirect to homepage
+            window.location.href = '/';
         }
     } catch (error) {
         console.error('Logout process error:', error);
         // Ensure we still do the local logout even if there's an error
         localStorage.removeItem('access_token');
-        localStorage.removeItem('confirmedAddress');
-        localStorage.setItem('user', 'null');
-        window.location.reload();
+        localStorage.setItem('user', 'null');  // Set to 'null' string instead of removing
+        localStorage.setItem('cartItems', 'null');
+        localStorage.setItem('favoriteItems', 'null');
+        // Redirect to homepage
+        window.location.href = '/';
     }
 };
 

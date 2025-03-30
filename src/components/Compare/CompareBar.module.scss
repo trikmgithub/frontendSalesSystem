@@ -1,0 +1,174 @@
+.compareBarContainer {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background-color: #fff;
+    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+    z-index: 1000;
+    transform: translateY(100%);
+    transition: transform 0.3s ease-out;
+
+    &.visible {
+        transform: translateY(0);
+    }
+}
+
+.compareBar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 12px 20px;
+}
+
+.compareItems {
+    display: flex;
+    gap: 10px;
+    flex: 1;
+}
+
+.compareItem {
+    position: relative;
+    width: 70px;
+    height: 70px;
+    border: 1px solid #eee;
+    border-radius: 4px;
+    overflow: hidden;
+
+    img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+    }
+
+    .removeCompareItem {
+        position: absolute;
+        top: 2px;
+        right: 2px;
+        width: 18px;
+        height: 18px;
+        background-color: rgba(255, 255, 255, 0.8);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        font-size: 12px;
+        color: #777;
+        transition: all 0.2s;
+
+        &:hover {
+            background-color: #ff6b6b;
+            color: white;
+        }
+    }
+}
+
+.compareItemPlaceholder {
+    width: 70px;
+    height: 70px;
+    border: 1px dashed #ccc;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #999;
+    font-size: 20px;
+}
+
+.compareActions {
+    display: flex;
+    gap: 10px;
+}
+
+.clearCompareButton,
+.compareNowButton {
+    padding: 8px 16px;
+    border-radius: 4px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.compareNowButton {
+    background-color: #2B7B60;
+    color: white;
+    border: none;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    &:hover {
+        background-color: #236d54;
+        color: white;
+        /* Explicitly set hover color */
+    }
+
+    &:visited,
+    &:active,
+    &:focus {
+        color: white;
+        /* Maintain white text for all states */
+        text-decoration: none;
+    }
+
+    &[disabled] {
+        background-color: #ccc;
+        cursor: not-allowed;
+        pointer-events: none;
+    }
+}
+
+.clearCompareButton {
+    background-color: transparent;
+    color: #666;
+    border: 1px solid #ddd;
+
+    &:hover {
+        background-color: #f5f5f5;
+        border-color: #ccc;
+    }
+}
+
+.toggleCompareBar {
+    position: fixed;
+    bottom: 100px;
+    right: 20px;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background-color: #2B7B60;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+    cursor: pointer;
+    z-index: 999;
+    transition: all 0.3s;
+
+    &:hover {
+        transform: scale(1.1);
+        background-color: #236d54;
+    }
+
+    .count {
+        position: absolute;
+        top: -5px;
+        right: -5px;
+        background-color: #ff6600;
+        color: white;
+        width: 22px;
+        height: 22px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+        font-weight: bold;
+    }
+}

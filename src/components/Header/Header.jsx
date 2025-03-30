@@ -1,65 +1,44 @@
-import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { FaUser, FaShoppingCart, FaPhone, FaStore, FaClipboardList, FaHeart, FaSignOutAlt } from 'react-icons/fa';
+import { Link, useNavigate } from 'react-router-dom';
+import { FaUser, FaShoppingCart, FaPhone, FaCheckSquare, FaClipboardList, FaHeart, FaSignOutAlt } from 'react-icons/fa';
 import { IoSearch } from 'react-icons/io5';
 import { FcGoogle } from 'react-icons/fc';
 import classNames from 'classnames/bind';
 import styles from './Header.module.scss';
 import logo from '~/assets/beautySkin.png';
 import { useState, useEffect, useRef, useContext } from 'react';
-import LoginForm from './LoginPopup';
-import SignupForm from './SignupPopup';
-import OtpForm from './OtpForm';
 import Navigation from '../Navigation/Navigation';
-import { getItemsAxios } from '~/services/itemAxios';
-import { googleLoginAxios, googleRedirectAxios, logoutAxios } from '~/services/authAxios';
+import { getItemsAxios, checkUserSkinTypeAxios } from '~/services/itemAxios';
+import { googleLoginAxios, logoutAxios } from '~/services/authAxios';
 import { CartContext } from '~/context/CartContext';
+import { useAuth } from '~/context/AuthContext';
 import routes from '~/config/routes';
+import SearchLink from '../SearchLink/SearchLink';
 
 const cx = classNames.bind(styles);
 
 function Header() {
     const [showAccountPopup, setShowAccountPopup] = useState(false);
-    const [showLoginForm, setShowLoginForm] = useState(false);
-    const [showSignupForm, setShowSignupForm] = useState(false);
-    const [showOtpForm, setShowOtpForm] = useState(false);
     const popupRef = useRef(null);
     const searchRef = useRef(null);
-    const [userInfo, setUserInfo] = useState(JSON.parse(localStorage.getItem('user')) || {});
     const { cartItems } = useContext(CartContext);
     const [query, setQuery] = useState('');
     const [items, setItems] = useState([]);
     const [suggestions, setSuggestions] = useState([]);
     const [showSuggestions, setShowSuggestions] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
-    const location = useLocation();
-    const [verifiedEmail, setVerifiedEmail] = useState('');
     const navigate = useNavigate();
     const cartCount = cartItems.reduce((count, item) => count + item.quantity, 0);
     const [recentSearches, setRecentSearches] = useState(
         JSON.parse(localStorage.getItem('recentSearches')) || []
     );
 
-    useEffect(() => {
-        const updateUserInfo = () => {
-            try {
-                const userData = JSON.parse(localStorage.getItem('user') || 'null');
-                if (userData && userData._id) {
-                    setUserInfo(userData);
-                }
-            } catch (err) {
-                console.error("Error parsing user data:", err);
-            }
-        };
-
-        updateUserInfo();
-
-        // Listen for storage changes (e.g. from other tabs)
-        window.addEventListener('storage', updateUserInfo);
-
-        return () => {
-            window.removeEventListener('storage', updateUserInfo);
-        };
-    }, []);
+    // Use our Auth context
+    const {
+        userInfo,
+        openLogin,
+        openSignup,
+        isLoggedIn
+    } = useAuth();
 
     useEffect(() => {
         const fetchItems = async () => {
@@ -82,37 +61,7 @@ function Header() {
         fetchItems();
     }, []);
 
-    useEffect(() => {
-        // Handle Google OAuth Redirection
-        const handleGoogleRedirect = async () => {
-            const urlParams = new URLSearchParams(window.location.search);
-            const code = urlParams.get('code');
-
-            // Check if we're on the Google redirect path or have a code parameter
-            if (location.pathname.includes("auth/google/redirect") || code) {
-                try {
-                    const response = await googleRedirectAxios();
-
-                    // If successful, update user state
-                    if (response?.data) {
-                        setUserInfo({
-                            _id: response.data._id,
-                            name: response.data.name,
-                            email: response.data.email,
-                            role: response.data.role,
-                            avatar: response.data.avatar
-                        });
-                    }
-                } catch (error) {
-                    console.error("Google Redirect Error:", error);
-                }
-            }
-        };
-
-        handleGoogleRedirect();
-    }, [location]);
-
-    // Click outside handler for search suggestions
+    // Click outside handler for search suggestions and account popup
     useEffect(() => {
         const handleClickOutside = (event) => {
             if (searchRef.current && !searchRef.current.contains(event.target)) {
@@ -134,6 +83,50 @@ function Header() {
             await googleLoginAxios();
         } catch (error) {
             console.error("Google Login Error:", error);
+        }
+    };
+
+    const handleSkinQuizClick = async () => {
+        // Only proceed if user is logged in
+        if (!isLoggedIn()) {
+            // If not logged in, show login popup
+            openLogin(() => {
+                // After login, check if user has taken the quiz and navigate accordingly
+                checkQuizStatusAndNavigate();
+            });
+            return;
+        }
+
+        // If logged in, check quiz status and navigate
+        checkQuizStatusAndNavigate();
+    };
+
+    const checkQuizStatusAndNavigate = async () => {
+        try {
+            // Show loading state (optional)
+            // You could add a loading state here if desired
+
+            // Check if user has taken the quiz
+            const response = await checkUserSkinTypeAxios();
+
+            if (response.hasTakenQuiz) {
+                // User has taken the quiz before, navigate directly to results
+                console.log('User has taken quiz before, navigating to results');
+                navigate(`/skin-quiz/results/${response.skinType}`, {
+                    state: {
+                        fromDirectNavigation: true,
+                        skinType: response.skinType
+                    }
+                });
+            } else {
+                // User hasn't taken the quiz, navigate to quiz page
+                console.log('User has not taken quiz, navigating to quiz page');
+                navigate('/skin-quiz');
+            }
+        } catch (error) {
+            console.error('Error checking quiz status:', error);
+            // If any error occurs, default to navigating to the quiz page
+            navigate('/skin-quiz');
         }
     };
 
@@ -261,22 +254,32 @@ function Header() {
         setShowAccountPopup(!showAccountPopup);
     };
 
-    const handleLoginClick = () => {
-        setShowLoginForm(true);
-        setShowAccountPopup(false);
-    };
-
     const handleSignOutClick = async () => {
-        try {
-            const response = await logoutAxios();
-        } catch (error) {
-            throw new Error(error);
-        }
-    };
-
-    const handleSignupClick = () => {
-        setShowOtpForm(true);
+        // Close the account popup first
         setShowAccountPopup(false);
+
+        try {
+            // Call the logout API directly
+            await logoutAxios();
+
+            // Manually perform local logout (clear local storage) after API call
+            localStorage.removeItem('access_token');
+            localStorage.setItem('user', 'null');
+            localStorage.setItem('cartItems', 'null');
+            localStorage.setItem('favoriteItems', 'null');
+
+            // Redirect to homepage after logout
+            window.location.href = '/';
+        } catch (error) {
+            console.error('Logout error:', error);
+            // Still perform local logout even if API call fails
+            localStorage.removeItem('access_token');
+            localStorage.setItem('user', 'null');
+            localStorage.setItem('cartItems', 'null');
+            localStorage.setItem('favoriteItems', 'null');
+            // Redirect to homepage
+            window.location.href = '/';
+        }
     };
 
     // Group suggestions by type for display
@@ -295,22 +298,40 @@ function Header() {
                         <nav className={cx('headerNav')}>
                             <ul className={cx('navMenu')}>
                                 <li>
-                                    <Link to="/kem-chong-nang">Kem Chống Nắng</Link>
+                                    <SearchLink
+                                        text="Kem Chống Nắng"
+                                        className={cx('navLink')}
+                                    />
                                 </li>
                                 <li>
-                                    <Link to="/tay-trang">Tẩy Trang</Link>
+                                    <SearchLink
+                                        text="Tẩy Trang"
+                                        className={cx('navLink')}
+                                    />
                                 </li>
                                 <li>
-                                    <Link to="/toner">Toner</Link>
+                                    <SearchLink
+                                        text="Toner"
+                                        className={cx('navLink')}
+                                    />
                                 </li>
                                 <li>
-                                    <Link to="/sua-rua-mat">Sữa Rửa Mặt</Link>
+                                    <SearchLink
+                                        text="Sữa Rửa Mặt"
+                                        className={cx('navLink')}
+                                    />
                                 </li>
                                 <li>
-                                    <Link to="/tay-te-bao-chet">Tẩy tế bào chết</Link>
+                                    <SearchLink
+                                        text="Tẩy tế bào chết"
+                                        className={cx('navLink')}
+                                    />
                                 </li>
                                 <li>
-                                    <Link to="/retinol">Retinol</Link>
+                                    <SearchLink
+                                        text="Retinol"
+                                        className={cx('navLink')}
+                                    />
                                 </li>
                             </ul>
                         </nav>
@@ -442,9 +463,9 @@ function Header() {
                         <div ref={popupRef} className={cx('actionItem', 'accountItem')} onClick={handleAccountClick}>
                             <FaUser className={cx('icon')} />
                             <div className={cx('actionContent')}>
-                                {userInfo.name ? (
+                                {isLoggedIn() && userInfo ? (
                                     <div>
-                                        <div><span>Chào {userInfo.name}</span></div>
+                                        <div><span>Chào {userInfo?.name || 'Khách hàng'}</span></div>
                                         <div><span>Tài khoản</span></div>
                                     </div>
                                 ) : (
@@ -456,7 +477,7 @@ function Header() {
                             </div>
 
                             {showAccountPopup &&
-                                (userInfo?.name ? (
+                                (isLoggedIn() && userInfo ? (
                                     <div className={cx('accountPopupAfter')}>
                                         <ul>
                                             <li onClick={() => {
@@ -486,12 +507,12 @@ function Header() {
                                         <div className={cx('divider')}>
                                             <span>Hoặc đăng nhập với BeautySkin</span>
                                         </div>
-                                        <button className={cx('loginBtn')} onClick={handleLoginClick}>
+                                        <button className={cx('loginBtn')} onClick={openLogin}>
                                             Đăng nhập
                                         </button>
                                         <div className={cx('registerLink')}>
                                             <span>Bạn chưa có tài khoản?</span>
-                                            <button className={cx('signupBtn')} onClick={handleSignupClick}>
+                                            <button className={cx('signupBtn')} onClick={openSignup}>
                                                 ĐĂNG KÝ NGAY
                                             </button>
                                         </div>
@@ -499,11 +520,15 @@ function Header() {
                                 ))}
                         </div>
 
-                        <div className={cx('actionItem')}>
-                            <FaStore className={cx('icon')} />
+                        <div
+                            className={cx('actionItem')}
+                            onClick={handleSkinQuizClick}
+                            style={{ cursor: 'pointer' }}
+                        >
+                            <FaCheckSquare className={cx('icon')} />
                             <div className={cx('actionContent')}>
-                                <span>Hệ thống</span>
-                                <span>cửa hàng</span>
+                                <span>Kiểm tra</span>
+                                <span>loại da</span>
                             </div>
                         </div>
 
@@ -515,48 +540,30 @@ function Header() {
                             </div>
                         </Link>
 
-                        <Link to={routes.cart} className={cx('actionItem', 'cart')}>
-                            <FaShoppingCart className={cx('icon')} />
-                            <span className={cx('cartCount')}>{cartCount}</span>
-                        </Link>
+                        {/* Conditional cart link based on login status */}
+                        {isLoggedIn() ? (
+                            <Link to={routes.cart} className={cx('actionItem', 'cart')}>
+                                <FaShoppingCart className={cx('icon')} />
+                                <span className={cx('cartCount')}>{cartCount}</span>
+                            </Link>
+                        ) : (
+                            <div
+                                className={cx('actionItem', 'cart')}
+                                onClick={() => {
+                                    console.log("Cart icon clicked, showing login popup");
+                                    openLogin(() => {
+                                        // After login, navigate to cart
+                                        navigate(routes.cart);
+                                    });
+                                }}
+                                style={{ cursor: 'pointer' }}
+                            >
+                                <FaShoppingCart className={cx('icon')} />
+                                <span className={cx('cartCount')}>{cartCount}</span>
+                            </div>
+                        )}
                     </div>
                 </div>
-
-                {showLoginForm && (
-                    <LoginForm
-                        onClose={() => setShowLoginForm(false)}
-                        onShowSignup={() => {
-                            setShowLoginForm(false);
-                            setShowSignupForm(true);
-                        }}
-                    />
-                )}
-
-                {showOtpForm && (
-                    <OtpForm
-                        onClose={() => setShowOtpForm(false)}
-                        onShowLogin={() => {
-                            setShowSignupForm(false);
-                            setShowLoginForm(true);
-                        }}
-                        onVerificationSuccess={(email) => {
-                            setVerifiedEmail(email);
-                            setShowOtpForm(false);
-                            setShowSignupForm(true);
-                        }}
-                    />
-                )}
-
-                {showSignupForm && (
-                    <SignupForm
-                        onClose={() => setShowSignupForm(false)}
-                        onShowLogin={() => {
-                            setShowSignupForm(false);
-                            setShowLoginForm(true);
-                        }}
-                        verifiedEmail={verifiedEmail}
-                    />
-                )}
             </header>
             <Navigation />
         </>

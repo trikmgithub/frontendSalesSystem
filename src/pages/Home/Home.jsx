@@ -1,11 +1,9 @@
-import { useEffect, useState, useContext, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { getItemsPaginatedAxios } from '~/services/itemAxios';
 import classNames from 'classnames/bind';
 import styles from './Home.module.scss';
-import { Link } from 'react-router-dom';
-import { CartContext } from '~/context/CartContext';
-import { FavoritesContext } from '~/context/FavoritesContext';
-import { FaHeart } from 'react-icons/fa';
+import ProductCard from '~/components/ProductCard';
+import { useCompare } from '~/context/CompareContext';
 
 const cx = classNames.bind(styles);
 
@@ -16,56 +14,8 @@ function Home() {
     const [currentPage, setCurrentPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
     const [totalItems, setTotalItems] = useState(0);
-    const [itemsPerPage] = useState(12); // 4 products per row, 3 rows or 6 products per row, 2 rows
-    const { addToCart } = useContext(CartContext);
-    const { addToFavorites, removeFromFavorites, isInFavorites } = useContext(FavoritesContext);
-    const [animatingItems, setAnimatingItems] = useState({});
-    const [favoriteAnimations, setFavoriteAnimations] = useState({});
-    const cartIconRef = useRef(null);
-
-    const handleAddToCart = (item) => {
-        // Show the animation
-        setAnimatingItems(prev => ({
-            ...prev,
-            [item._id]: true
-        }));
-
-        // Add item to cart
-        addToCart(item);
-
-        // Reset animation after it completes
-        setTimeout(() => {
-            setAnimatingItems(prev => ({
-                ...prev,
-                [item._id]: false
-            }));
-        }, 1000); // Duration matches the animation length
-    };
-
-    const handleToggleFavorite = (item) => {
-        const isFavorite = isInFavorites(item._id);
-
-        // Set animation state
-        setFavoriteAnimations(prev => ({
-            ...prev,
-            [item._id]: true
-        }));
-
-        // Add/remove from favorites
-        if (isFavorite) {
-            removeFromFavorites(item._id);
-        } else {
-            addToFavorites(item);
-        }
-
-        // Reset animation after it completes
-        setTimeout(() => {
-            setFavoriteAnimations(prev => ({
-                ...prev,
-                [item._id]: false
-            }));
-        }, 800); // Duration matches the animation length
-    };
+    const [itemsPerPage] = useState(15); // Updated to show 15 items per page
+    const { addToCompare } = useCompare();
 
     useEffect(() => {
         fetchItems(currentPage);
@@ -98,14 +48,6 @@ function Home() {
         window.scrollTo(0, 0);
     };
 
-    // Calculate original price based on flash sale (if true, add 30% to the price)
-    const calculateOriginalPrice = (price, isFlashSale) => {
-        if (isFlashSale) {
-            return Math.round(price / 0.7); // 30% discount
-        }
-        return null;
-    };
-
     if (loading && items.length === 0) {
         return (
             <div className={cx('loading-container')}>
@@ -124,96 +66,13 @@ function Home() {
             )}
             <div className={cx('container')}>
                 <div className={cx('productGrid')}>
-                    {items.map((item) => {
-                        const originalPrice = calculateOriginalPrice(item.price, item.flashSale);
-                        const discount = originalPrice ? Math.round(((originalPrice - item.price) / originalPrice) * 100) : null;
-
-                        return (
-                            <div key={item._id} className={cx('productCard')}>
-                                <Link to={`/product/${item._id}`} className={cx('productLink')}>
-                                    <div className={cx('imageContainer')}>
-                                        {item.imageUrls && item.imageUrls.length > 0 ? (
-                                            <img
-                                                src={item.imageUrls[0]}
-                                                alt={item.name}
-                                                className={cx('productImage')}
-                                                onError={(e) => {
-                                                    e.target.onerror = null;
-                                                    e.target.src = 'https://via.placeholder.com/300x300?text=No+Image';
-                                                }}
-                                            />
-                                        ) : (
-                                            <img
-                                                src="https://via.placeholder.com/300x300?text=No+Image"
-                                                alt={item.name}
-                                                className={cx('productImage')}
-                                            />
-                                        )}
-                                        {discount && (
-                                            <div className={cx('discountBadge')}>
-                                                {discount}%
-                                            </div>
-                                        )}
-                                    </div>
-
-                                    <div className={cx('productInfo')}>
-                                        <div className={cx('priceSection')}>
-                                            <div className={cx('currentPrice')}>
-                                                {item.price?.toLocaleString()} đ
-                                            </div>
-                                            {originalPrice && (
-                                                <div className={cx('originalPrice')}>
-                                                    {originalPrice.toLocaleString()} đ
-                                                </div>
-                                            )}
-                                        </div>
-
-                                        <div className={cx('brandName')}>{item.brand?.name || ''}</div>
-                                        <h3 className={cx('productName')}>{item.name}</h3>
-
-                                        <div className={cx('stockStatus')}>
-                                            {item.stock ? 'Còn hàng' : 'Hết hàng'}
-                                        </div>
-                                    </div>
-                                </Link>
-                                <div className={cx('productActions')}>
-                                    <button
-                                        onClick={() => handleAddToCart(item)}
-                                        className={cx('addToCartButton', {
-                                            'animating': animatingItems[item._id]
-                                        })}
-                                        disabled={!item.stock || animatingItems[item._id]}
-                                        aria-label="Add to cart"
-                                        title="Add to cart"
-                                    >
-                                        🛒
-                                        {animatingItems[item._id] && (
-                                            <span className={cx('successIndicator')}>✓</span>
-                                        )}
-                                    </button>
-                                    <button
-                                        onClick={() => handleToggleFavorite(item)}
-                                        className={cx('favoriteButton', {
-                                            'active': isInFavorites(item._id),
-                                            'animating': favoriteAnimations[item._id]
-                                        })}
-                                        disabled={favoriteAnimations[item._id]}
-                                        aria-label="Toggle favorite"
-                                        title="Add to favorites"
-                                    >
-                                        <FaHeart className={cx({
-                                            'heartBeat': favoriteAnimations[item._id] && !isInFavorites(item._id),
-                                            'heartBreak': favoriteAnimations[item._id] && isInFavorites(item._id)
-                                        })} />
-                                    </button>
-
-                                    {animatingItems[item._id] && (
-                                        <div className={cx('flyToCartAnimation')}></div>
-                                    )}
-                                </div>
-                            </div>
-                        );
-                    })}
+                    {items.map((item) => (
+                        <ProductCard 
+                            key={item._id} 
+                            product={item} 
+                            onAddToCompare={() => addToCompare(item)}
+                        />
+                    ))}
                 </div>
 
                 {totalPages > 1 && (
@@ -227,49 +86,70 @@ function Home() {
                             &laquo;
                         </button>
 
-                        {/* First page */}
-                        {currentPage > 3 && (
-                            <button
-                                onClick={() => handlePageChange(1)}
-                                className={cx('paginationButton')}
-                            >
-                                1
-                            </button>
-                        )}
+                        {/* Improved pagination logic */}
+                        {(() => {
+                            // Create array to hold page numbers we want to display
+                            const pagesToShow = [];
 
-                        {/* Ellipsis if needed */}
-                        {currentPage > 4 && (
-                            <span className={cx('paginationEllipsis')}>...</span>
-                        )}
+                            // Always show current page
+                            pagesToShow.push(currentPage);
 
-                        {/* Page number buttons (show max 5 pages around current) */}
-                        {Array.from({ length: totalPages }, (_, i) => i + 1)
-                            .filter(page => page === 1 || page === totalPages ||
-                                (page >= currentPage - 2 && page <= currentPage + 2))
-                            .map((page) => (
-                                <button
-                                    key={page}
-                                    onClick={() => handlePageChange(page)}
-                                    className={cx('paginationButton', { active: currentPage === page })}
-                                >
-                                    {page}
-                                </button>
-                            ))}
+                            // Add pages before current page (up to 2)
+                            for (let i = 1; i <= 2; i++) {
+                                if (currentPage - i > 0) {
+                                    pagesToShow.unshift(currentPage - i);
+                                }
+                            }
 
-                        {/* Ellipsis if needed */}
-                        {currentPage < totalPages - 3 && (
-                            <span className={cx('paginationEllipsis')}>...</span>
-                        )}
+                            // Add pages after current page (up to 2)
+                            for (let i = 1; i <= 2; i++) {
+                                if (currentPage + i <= totalPages) {
+                                    pagesToShow.push(currentPage + i);
+                                }
+                            }
 
-                        {/* Last page */}
-                        {currentPage < totalPages - 2 && totalPages > 1 && (
-                            <button
-                                onClick={() => handlePageChange(totalPages)}
-                                className={cx('paginationButton')}
-                            >
-                                {totalPages}
-                            </button>
-                        )}
+                            // Always add first page if not already included
+                            if (!pagesToShow.includes(1)) {
+                                pagesToShow.unshift(1);
+
+                                // Add ellipsis after first page if there's a gap
+                                if (pagesToShow[1] > 2) {
+                                    pagesToShow.splice(1, 0, 'ellipsis-start');
+                                }
+                            }
+
+                            // Always add last page if not already included and if it's not the only page
+                            if (!pagesToShow.includes(totalPages) && totalPages > 1) {
+
+                                // Add ellipsis before last page if there's a gap
+                                if (pagesToShow[pagesToShow.length - 1] < totalPages - 1) {
+                                    pagesToShow.push('ellipsis-end');
+                                }
+
+                                pagesToShow.push(totalPages);
+                            }
+
+                            // Render the page buttons and ellipses
+                            return pagesToShow.map((page, index) => {
+                                // Render ellipsis
+                                if (page === 'ellipsis-start' || page === 'ellipsis-end') {
+                                    return (
+                                        <span key={`ellipsis-${index}`} className={cx('paginationEllipsis')}>...</span>
+                                    );
+                                }
+
+                                // Render page button
+                                return (
+                                    <button
+                                        key={`page-${page}`}
+                                        onClick={() => handlePageChange(page)}
+                                        className={cx('paginationButton', { active: currentPage === page })}
+                                    >
+                                        {page}
+                                    </button>
+                                );
+                            });
+                        })()}
 
                         {/* Next page button */}
                         <button
