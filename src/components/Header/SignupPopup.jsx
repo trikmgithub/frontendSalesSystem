@@ -1,10 +1,10 @@
 import classNames from 'classnames/bind';
 import styles from './SignupPopup.module.scss';
-import { Link, useLocation } from 'react-router-dom';
-import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
+import { useState } from 'react';
 import { FcGoogle } from 'react-icons/fc';
 import { IoWarning, IoCheckmarkCircle } from 'react-icons/io5';
-import { googleLoginAxios, googleRedirectAxios, registerAxios } from '~/services/authAxios';
+import { googleLoginAxios, registerAxios } from '~/services/authAxios';
 import useDisableBodyScroll from '~/hooks/useDisableBodyScroll';
 
 const cx = classNames.bind(styles);
@@ -105,51 +105,59 @@ function SignupForm({ onClose, onShowLogin, verifiedEmail = '' }) {
     district: '',
     ward: ''
   });
-  const location = useLocation();
 
   // Use the custom hook to disable body scroll
   useDisableBodyScroll(true);
 
-  useEffect(() => {
-    // Handle Google OAuth Redirection
-    const handleGoogleRedirect = async () => {
-      const urlParams = new URLSearchParams(window.location.search);
-      const code = urlParams.get('code');
-      const data = urlParams.get('data');
-
-      // Check if we're on the Google redirect path or have a code parameter
-      if (location.pathname.includes("auth/google/redirect") || code || data) {
-        try {
-          const response = await googleRedirectAxios();
-
-          // Our updated googleRedirectAxios handles everything including localStorage
-          if (response?.success) {
-            console.log("Google authentication successful");
-
-            // Close the signup popup
-            onClose();
-
-            // Refresh the page to reflect logged in state
-            window.location.reload();
-          }
-        } catch (error) {
-          console.error("Google Redirect Error:", error);
-          setError("Authentication failed. Please try again.");
-        }
-      }
-    };
-
-    handleGoogleRedirect();
-  }, [location, onClose]);
-
   const handleGoogleLogin = async () => {
     try {
-      console.log('Initiating Google login from signup popup...');
-      await googleLoginAxios();
-      // Page will redirect to Google auth
+      // Show loading state - you can use a state variable or toast
+      // setIsLoading(true); // If you have a loading state
+
+      console.log('Initiating Google login API call...');
+
+      // Call the Google login API
+      const response = await googleLoginAxios();
+
+      if (response.error) {
+        toast.error(response.message || "Đăng nhập Google thất bại", {
+          position: "top-center",
+          autoClose: 3000
+        });
+        return;
+      }
+
+      if (response.success) {
+        toast.success("Đăng nhập thành công!", {
+          position: "top-center",
+          autoClose: 2000
+        });
+
+        // Close any open popups
+        setShowAccountPopup(false);
+
+        // If using login modal
+        if (onClose) {
+          onClose();
+        }
+
+        // Call any success callbacks
+        if (onLoginSuccess) {
+          onLoginSuccess();
+        }
+
+        // Update UI to reflect logged in state
+        // For a cleaner approach, just reload the page
+        window.location.reload();
+      }
     } catch (error) {
       console.error("Google Login Error:", error);
-      setError("Google login failed. Please try again.");
+      toast.error("Đăng nhập Google thất bại. Vui lòng thử lại sau.", {
+        position: "top-center",
+        autoClose: 3000
+      });
+    } finally {
+      // setIsLoading(false); // If you have a loading state
     }
   };
 

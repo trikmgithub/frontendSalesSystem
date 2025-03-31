@@ -1,14 +1,16 @@
+// src/components/Header/LoginPopup.jsx
 import classNames from 'classnames/bind';
 import styles from './LoginPopup.module.scss';
-import { Link, useLocation } from 'react-router-dom';
-import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
+import { useState } from 'react';
 import { FcGoogle } from 'react-icons/fc';
 import { IoWarning } from 'react-icons/io5';
 import { FaSpinner } from 'react-icons/fa';
 import ForgotPasswordPopup from './ForgotPasswordPopup';
-import { googleLoginAxios, googleRedirectAxios, loginAxios } from '~/services/authAxios';
+import { googleLoginAxios, loginAxios } from '~/services/authAxios';
 import useDisableBodyScroll from '~/hooks/useDisableBodyScroll';
 import { useAuth } from '~/context/AuthContext';
+import { toast } from 'react-toastify';
 
 const cx = classNames.bind(styles);
 
@@ -18,62 +20,60 @@ function LoginForm({ onClose, onShowSignup, onLoginSuccess }) {
     const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [showForgotPassword, setShowForgotPassword] = useState(false);
-    const location = useLocation();
     const { handleLoginSuccess } = useAuth();
 
     // Use the custom hook to disable body scroll
     useDisableBodyScroll(true);
 
-    useEffect(() => {
-        // Handle Google OAuth Redirection
-        const handleGoogleRedirect = async () => {
-            const urlParams = new URLSearchParams(window.location.search);
-            const code = urlParams.get('code');
-            const data = urlParams.get('data');
-
-            // Check if we're on the Google redirect path or have auth data
-            if (location.pathname.includes("auth/google/redirect") || code || data) {
-                try {
-                    setIsLoading(true); // Show loading state
-                    const response = await googleRedirectAxios();
-
-                    // Our updated googleRedirectAxios handles everything including localStorage updates
-                    if (response?.success) {
-                        console.log("Google authentication successful");
-
-                        // Close the login popup
-                        onClose();
-
-                        // Call any success callbacks
-                        if (onLoginSuccess) {
-                            onLoginSuccess();
-                        }
-                        if (handleLoginSuccess) {
-                            handleLoginSuccess();
-                        }
-                    } else if (response?.error) {
-                        setError(response.message || "Authentication failed");
-                    }
-                } catch (error) {
-                    console.error("Google Redirect Error:", error);
-                    setError("Authentication failed. Please try again.");
-                } finally {
-                    setIsLoading(false);
-                }
-            }
-        };
-
-        handleGoogleRedirect();
-    }, [location, onClose, onLoginSuccess, handleLoginSuccess]);
-
     const handleGoogleLogin = async () => {
         try {
-            console.log('Initiating Google login from login popup...');
-            await googleLoginAxios();
-            // Page will redirect to Google auth
+            // Show loading state - you can use a state variable or toast
+            // setIsLoading(true); // If you have a loading state
+
+            console.log('Initiating Google login API call...');
+
+            // Call the Google login API
+            const response = await googleLoginAxios();
+
+            if (response.error) {
+                toast.error(response.message || "Đăng nhập Google thất bại", {
+                    position: "top-center",
+                    autoClose: 3000
+                });
+                return;
+            }
+
+            if (response.success) {
+                toast.success("Đăng nhập thành công!", {
+                    position: "top-center",
+                    autoClose: 2000
+                });
+
+                // Close any open popups
+                setShowAccountPopup(false);
+
+                // If using login modal
+                if (onClose) {
+                    onClose();
+                }
+
+                // Call any success callbacks
+                if (onLoginSuccess) {
+                    onLoginSuccess();
+                }
+
+                // Update UI to reflect logged in state
+                // For a cleaner approach, just reload the page
+                window.location.reload();
+            }
         } catch (error) {
             console.error("Google Login Error:", error);
-            setError("Google login failed. Please try again.");
+            toast.error("Đăng nhập Google thất bại. Vui lòng thử lại sau.", {
+                position: "top-center",
+                autoClose: 3000
+            });
+        } finally {
+            // setIsLoading(false); // If you have a loading state
         }
     };
 
@@ -145,9 +145,22 @@ function LoginForm({ onClose, onShowSignup, onLoginSuccess }) {
                     </button>
                     <h3>Đăng nhập với</h3>
                     <div className={cx('socialButtons')}>
-                        <button className={cx('googleBtn')} onClick={handleGoogleLogin}>
-                            <FcGoogle />
-                            Google +
+                        <button
+                            className={cx('googleBtn')}
+                            onClick={handleGoogleLogin}
+                            disabled={isLoading}
+                        >
+                            {isLoading ? (
+                                <span className={cx('loadingWrapper')}>
+                                    <FaSpinner className={cx('loadingIcon')} />
+                                    Đang xử lý...
+                                </span>
+                            ) : (
+                                <>
+                                    <FcGoogle />
+                                    Google +
+                                </>
+                            )}
                         </button>
                     </div>
                     <div className={cx('divider')}>

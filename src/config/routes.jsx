@@ -8,7 +8,6 @@ const routes = {
     skinQuizResult: '/skin-quiz/results/:skinType',
     passwordChangePage: '/profile/password-change',
     ordersPage: '/profile/orders',
-    googleAuthCallback: '/auth/google/callback',
     itemDetail: '/product/:id',
     brand: '/brand/:id',
     brandMenu: '/thuong-hieu',

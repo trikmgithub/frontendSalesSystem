@@ -1,3 +1,4 @@
+// src/services/authAxios.js
 import * as axiosConfig from '~/utils/axiosConfig';
 
 // Login API with improved user details handling
@@ -87,123 +88,90 @@ const loginAxios = async (userData) => {
     }
 };
 
-const googleRedirectAxios = async () => {
-    try {
-        console.log('Processing Google authentication redirect...');
-
-        // Get existing user data from URL or localStorage
-        const urlParams = new URLSearchParams(window.location.search);
-        const code = urlParams.get('code');
-        const data = urlParams.get('data');
-
-        // If we have data in the URL, process it
-        if (data) {
-            try {
-                // Decode and parse the data
-                const userData = JSON.parse(decodeURIComponent(data));
-
-                if (userData.access_token) {
-                    // Store access token
-                    localStorage.setItem('access_token', userData.access_token);
-
-                    // Store basic user info first - all Google login users have role 'USER'
-                    const basicUserData = {
-                        _id: userData._id,
-                        name: userData.name,
-                        email: userData.email,
-                        role: 'USER', // Google login always assigns 'USER' role
-                        avatar: userData.picture || null
-                    };
-
-                    localStorage.setItem('user', JSON.stringify(basicUserData));
-                    console.log("Basic user data saved to localStorage after Google login:", basicUserData);
-
-                    // Only attempt to fetch detailed user data if we have an ID
-                    if (userData._id) {
-                        try {
-                            // Fetch complete user info right after login
-                            const endpoint = `users/info/${userData._id}`;
-
-                            const userDetailsRes = await axiosConfig.get(endpoint, {
-                                headers: {
-                                    Authorization: `Bearer ${userData.access_token}`
-                                }
-                            });
-
-                            // Check the structure of the response to extract user data correctly
-                            const detailedUserData = userDetailsRes.data?.user || userDetailsRes.data;
-
-                            if (detailedUserData) {
-                                // Ensure password is not included
-                                if (detailedUserData.password) {
-                                    delete detailedUserData.password;
-                                }
-
-                                // Make sure to preserve access token and basic info
-                                const completeUserData = {
-                                    ...basicUserData,
-                                    ...detailedUserData,
-                                    access_token: userData.access_token
-                                };
-
-                                // Update localStorage with complete user data
-                                localStorage.setItem('user', JSON.stringify(completeUserData));
-                                console.log("Updated user data in localStorage after Google login:", completeUserData);
-                            }
-                        } catch (detailsError) {
-                            console.error('Error fetching detailed user info after Google login:', detailsError.message);
-                            // We already saved the basic info, so login still succeeds
-                        }
-                    }
-
-                    // All Google login users have the role 'USER' - simply redirect to homepage
-                    setTimeout(() => {
-                        console.log("Google login successful, redirecting to homepage");
-                        window.location.href = '/';
-                    }, 500);
-
-                    return { success: true, user: basicUserData };
-                } else {
-                    console.warn('No access token found in Google login response');
-                    return { error: true, message: 'No access token found in response' };
-                }
-            } catch (parseError) {
-                console.error('Error parsing Google login response data:', parseError);
-                return { error: true, message: 'Failed to parse authentication data' };
-            }
-        }
-
-        // If code is present but no data, the backend flow might be different
-        // This might be a server-side OAuth flow where the backend will redirect with data
-        if (code) {
-            console.log('Google OAuth code received, awaiting backend processing...');
-            return { pending: true, message: 'OAuth code received, processing...' };
-        }
-
-        return { success: false, message: 'No authentication data found' };
-    } catch (error) {
-        console.error('Google Redirect Error:', error);
-        return { error: true, message: error.message };
-    }
-};
-
-// Google Login API - Keep redirecting to Google login page
-// No changes needed here as the backend handles the OAuth flow
+// Google Login API - Direct API call
 const googleLoginAxios = async () => {
     try {
-        // Use the environment variable for API base URL
-        const apiBaseUrl = import.meta.env.VITE_API_URI || '';
+        console.log('Making API request to Google login endpoint...');
 
-        console.log('Redirecting to Google login page...');
+        // Make a GET request to the Google login API endpoint
+        const response = await axiosConfig.get('auth/google/login', {
+            withCredentials: true
+        });
 
-        // Simply redirect the user to Google login page
-        // The backend will handle the OAuth flow and redirect back with user data
-        window.location.href = `${apiBaseUrl}/auth/google/login`;
+        // Check if we received valid data
+        if (!response.data || response.error) {
+            console.error('Invalid response from Google login API:', response);
+            throw new Error(response.message || 'Failed to authenticate with Google');
+        }
 
-        // Note: Code after this line won't execute due to the page redirect
+        // Get user data from response
+        const userData = response.data;
+
+        // Store access token
+        if (userData.access_token) {
+            localStorage.setItem('access_token', userData.access_token);
+
+            // Store basic user info first
+            const basicUserData = {
+                _id: userData._id,
+                name: userData.name,
+                email: userData.email,
+                role: userData.role || 'USER',
+                avatar: userData.picture || null
+            };
+
+            localStorage.setItem('user', JSON.stringify(basicUserData));
+            console.log("Basic user data saved after Google login:", basicUserData);
+
+            // Get detailed user info
+            try {
+                if (userData._id) {
+                    const userDetailsRes = await axiosConfig.get(`users/info/${userData._id}`, {
+                        headers: {
+                            Authorization: `Bearer ${userData.access_token}`
+                        }
+                    });
+
+                    // Extract detailed user data
+                    const detailedUserData = userDetailsRes.data?.user || userDetailsRes.data;
+
+                    if (detailedUserData) {
+                        // Remove sensitive data
+                        if (detailedUserData.password) {
+                            delete detailedUserData.password;
+                        }
+
+                        // Merge with basic data
+                        const completeUserData = {
+                            ...basicUserData,
+                            ...detailedUserData,
+                            access_token: userData.access_token
+                        };
+
+                        // Update localStorage
+                        localStorage.setItem('user', JSON.stringify(completeUserData));
+                        console.log("Complete user data saved after Google login:", completeUserData);
+
+                        return { success: true, user: completeUserData };
+                    }
+                }
+
+                // If detailed info fetch fails, still return success with basic info
+                return { success: true, user: basicUserData };
+            } catch (detailsError) {
+                console.error('Error fetching detailed user info:', detailsError);
+                // Basic auth still succeeded
+                return { success: true, user: basicUserData };
+            }
+        } else {
+            throw new Error('No access token in response');
+        }
     } catch (error) {
         console.error("Google Login Error:", error);
-        throw error; // Just throw the original error for better debugging
+        return {
+            error: true,
+            message: error.response?.data?.message || error.message
+        };
     }
 };
 
@@ -279,4 +247,4 @@ const registerAxios = async (userData) => {
     }
 };
 
-export { loginAxios, googleLoginAxios, googleRedirectAxios, logoutAxios, registerAxios };
+export { loginAxios, googleLoginAxios, logoutAxios, registerAxios };
