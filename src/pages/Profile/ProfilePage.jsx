@@ -1,108 +1,242 @@
 import React, { useState, useEffect } from 'react';
-import { User, Lock, Check, Upload } from 'lucide-react';
+import { User, Lock, Edit2, X, Check, Calendar } from 'lucide-react';
 import cx from 'classnames';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import styles from './ProfilePage.module.scss';
 import routes from '~/config/routes';
 import { updateUserAxios } from '~/services/userAxios';
+import ToastNotification from './ToastNotification';
 
 const ProfilePage = () => {
+  // State variables
   const [selectedTab, setSelectedTab] = useState('profile');
-  const [gender, setGender] = useState('');
-  const [agreeToPolicy, setAgreeToPolicy] = useState(false);
-  const [fullName, setFullName] = useState('');
-  const [email, setEmail] = useState('');
-  const [day, setDay] = useState('');
-  const [month, setMonth] = useState('');
-  const [year, setYear] = useState('');
-  const [avatarPreview, setAvatarPreview] = useState(null);
-  const [address, setAddress] = useState('');
-  const [userId, setUserId] = useState('');
-
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [toast, setToast] = useState({ show: false, message: '', type: '' });
+  
+  // User data state
+  const [userData, setUserData] = useState({
+    fullName: '',
+    email: '',
+    gender: '',
+    day: '',
+    month: '',
+    year: '',
+    address: '',
+    avatar: null,
+    userId: ''
+  });
+  
+  // Form data state (for the modal)
+  const [formData, setFormData] = useState({
+    fullName: '',
+    gender: '',
+    day: '',
+    month: '',
+    year: '',
+    address: '',
+    agreeToPolicy: false
+  });
+  
+  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
-  const location = useLocation();
 
-  // Lấy thông tin người dùng từ localStorage
+  // Load user data from localStorage
   useEffect(() => {
     const user = JSON.parse(localStorage.getItem('user'));
     if (user) {
-      setFullName(user.name || '');
-      setEmail(user.email || '');
-      setGender(user.gender?.toLowerCase() || '');
-      setAddress(user.address || '');
-      setUserId(user._id || '');
-
+      // Set up the userData state
+      const newUserData = {
+        fullName: user.name || '',
+        email: user.email || '',
+        gender: user.gender?.toLowerCase() || '',
+        address: user.address || '',
+        userId: user._id || '',
+        avatar: user.avatar || null,
+        day: '',
+        month: '',
+        year: ''
+      };
+      
       if (user.dateOfBirth) {
         const date = new Date(user.dateOfBirth);
-        setDay(date.getDate().toString());
-        setMonth((date.getMonth() + 1).toString());
-        setYear(date.getFullYear().toString());
+        newUserData.day = date.getDate().toString();
+        newUserData.month = (date.getMonth() + 1).toString();
+        newUserData.year = date.getFullYear().toString();
       }
-
-      if (user.avatar) {
-        setAvatarPreview(user.avatar);
-      }
+      
+      setUserData(newUserData);
+      
+      // Also initialize the form data
+      setFormData({
+        fullName: newUserData.fullName,
+        gender: newUserData.gender,
+        day: newUserData.day,
+        month: newUserData.month,
+        year: newUserData.year,
+        address: newUserData.address,
+        agreeToPolicy: false
+      });
     } else {
       console.warn('No user data found in localStorage');
     }
   }, []);
 
-  const handleAvatarChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      const previewUrl = URL.createObjectURL(file);
-      setAvatarPreview(previewUrl);
+  // Format the date of birth for display
+  const formatDateOfBirth = () => {
+    if (userData.day && userData.month && userData.year) {
+      return `${userData.day}/${userData.month}/${userData.year}`;
     }
+    return 'Chưa cập nhật';
   };
 
-  const handleSubmit = async (event) => {
-    event.preventDefault();
+  // Open the edit modal
+  const openModal = () => {
+    setFormData({
+      fullName: userData.fullName,
+      gender: userData.gender,
+      day: userData.day,
+      month: userData.month,
+      year: userData.year,
+      address: userData.address,
+      agreeToPolicy: false
+    });
+    setIsModalOpen(true);
+  };
 
-    // Lấy token từ localStorage
+  // Close the edit modal
+  const closeModal = () => {
+    setIsModalOpen(false);
+  };
+
+  // Handle changes in form fields
+  const handleFormChange = (field, value) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  // Submit the form data
+  const handleSubmit = async (event) => {
+    if (event) event.preventDefault();
+    
+    // Check if policy is agreed to
+    if (!formData.agreeToPolicy) {
+      showToast('Vui lòng đồng ý với chính sách xử lý dữ liệu cá nhân', 'error');
+      return;
+    }
+    
+    // Get token from localStorage
     const token = localStorage.getItem('access_token');
-    console.log('Token từ localStorage:', token);
     if (!token) {
-      alert('Bạn chưa đăng nhập. Vui lòng đăng nhập để tiếp tục.');
+      showToast('Bạn chưa đăng nhập. Vui lòng đăng nhập để tiếp tục.', 'error');
       return;
     }
 
-    // Chuẩn bị dữ liệu để gửi
-    const userData = {
-      _id: userId,
-      email: email,
-      name: fullName,
-      dateOfBirth: `${year}-${month}-${day}T00:00:00.000Z`, // Định dạng ISO 8601
-      gender: gender,
+    // Format day and month with leading zeros
+    const formattedDay = String(formData.day).padStart(2, '0');
+    const formattedMonth = String(formData.month).padStart(2, '0');
+    
+    // Only include dateOfBirth if all date parts are provided
+    let dateOfBirth;
+    if (formData.year && formData.month && formData.day) {
+      dateOfBirth = `${formData.year}-${formattedMonth}-${formattedDay}T00:00:00.000Z`;
+    }
+    
+    // Prepare data to send
+    const updateData = {
+      _id: userData.userId,
+      email: userData.email,
+      name: formData.fullName,
+      gender: formData.gender,
       role: 'user',
-      address: address,
+      address: formData.address,
     };
+    
+    // Only include dateOfBirth if it's valid
+    if (dateOfBirth) {
+      updateData.dateOfBirth = dateOfBirth;
+    }
 
-    console.log('Dữ liệu gửi đi:', userData);
+    setIsLoading(true);
 
     try {
-      // Gọi API thông qua userAxios
-      const response = await updateUserAxios(userData);
+      // Call API through userAxios
+      const response = await updateUserAxios(updateData);
       if (response.error) {
         throw new Error(response.message);
       }
 
-      console.log('Cập nhật thành công:', response);
-      alert('Thông tin đã được cập nhật thành công!');
+      // Update userData state with new values
+      setUserData(prev => ({
+        ...prev,
+        fullName: formData.fullName,
+        gender: formData.gender,
+        day: formData.day,
+        month: formData.month,
+        year: formData.year,
+        address: formData.address
+      }));
+
+      // Also update the user in localStorage
+      try {
+        const user = JSON.parse(localStorage.getItem('user'));
+        if (user) {
+          user.name = formData.fullName;
+          user.gender = formData.gender;
+          user.address = formData.address;
+          user.dateOfBirth = `${formData.year}-${formData.month}-${formData.day}`;
+          localStorage.setItem('user', JSON.stringify(user));
+        }
+      } catch (err) {
+        console.error('Error updating user in localStorage:', err);
+      }
+
+      showToast('Thông tin đã được cập nhật thành công!', 'success');
+      closeModal();
     } catch (error) {
       console.error('Lỗi khi cập nhật thông tin:', error);
-      alert(error.message || 'Đã xảy ra lỗi khi cập nhật thông tin. Vui lòng thử lại.');
+      
+      // Log additional error details if available
+      if (error.response) {
+        console.error('Error response data:', error.response.data);
+        console.error('Error response status:', error.response.status);
+      }
+      
+      showToast(error.message || 'Đã xảy ra lỗi khi cập nhật thông tin. Vui lòng thử lại.', 'error');
+    } finally {
+      setIsLoading(false);
     }
+  };
+
+  // Show toast notification
+  const showToast = (message, type) => {
+    setToast({ show: true, message, type });
+  };
+
+  // Close toast notification
+  const closeToast = () => {
+    setToast({ show: false, message: '', type: '' });
   };
 
   return (
     <div className={cx(styles.profileContainer)}>
+      {/* Toast Notification */}
+      {toast.show && (
+        <ToastNotification
+          message={toast.message}
+          type={toast.type}
+          onClose={closeToast}
+        />
+      )}
+      
       {/* Sidebar */}
       <div className={cx(styles.sidebar)}>
         <div className={cx(styles.sidebarHeader)}>
           <div className={cx(styles.avatarPlaceholder)}>
-            {avatarPreview ? (
+            {userData.avatar ? (
               <img
-                src={avatarPreview}
+                src={userData.avatar}
                 alt="User Avatar"
                 className={cx(styles.avatarImage)}
               />
@@ -111,8 +245,12 @@ const ProfilePage = () => {
             )}
           </div>
           <div className={cx(styles.userInfo)}>
-            <h2 className={cx(styles.userGreeting)}>Chào {fullName ? fullName.split(' ').pop() : '(K18 HCM)'}</h2>
-            <p className={cx(styles.editAccount)}>Chỉnh sửa tài khoản</p>
+            <h2 className={cx(styles.userGreeting)}>
+              Chào {userData.fullName ? userData.fullName.split(' ').pop() : '(K18 HCM)'}
+            </h2>
+            <p className={cx(styles.editAccount)} onClick={openModal}>
+              Chỉnh sửa tài khoản
+            </p>
           </div>
         </div>
 
@@ -153,153 +291,83 @@ const ProfilePage = () => {
       <div className={cx(styles.mainContent)}>
         {selectedTab === 'profile' && (
           <>
-            {/* Profile Information Section */}
+            {/* Profile Information Card */}
             <div className={cx(styles.contentSection)}>
-              <h1 className={cx(styles.sectionTitle)}>Thông tin tài khoản</h1>
+              <div className={cx(styles.profileHeader)}>
+                <h1 className={cx(styles.sectionTitle)}>Thông tin tài khoản</h1>
+                <button 
+                  className={cx(styles.editProfileButton)}
+                  onClick={openModal}
+                >
+                  <Edit2 size={16} />
+                  <span>Chỉnh sửa</span>
+                </button>
+              </div>
 
-              <form className={cx(styles.profileForm)} onSubmit={handleSubmit}>
-                {/* Avatar Section */}
-                <div className={cx(styles.avatarSection)}>
-                  <div className={cx(styles.avatarUpload)}>
-                    {avatarPreview ? (
+              {/* Profile Information Display */}
+              <div className={cx(styles.profileInfo)}>
+                {/* Avatar Display Section */}
+                <div className={cx(styles.avatarDisplaySection)}>
+                  <div className={cx(styles.avatarLarge)}>
+                    {userData.avatar ? (
                       <img
-                        src={avatarPreview}
-                        alt="Avatar Preview"
-                        className={cx(styles.avatarPreview)}
+                        src={userData.avatar}
+                        alt="User Avatar"
+                        className={cx(styles.avatarImage)}
                       />
                     ) : (
-                      <User size={40} className={cx(styles.avatarIcon)} />
+                      <User size={64} className={cx(styles.avatarIconLarge)} />
                     )}
-
-                    <div className={cx(styles.uploadOverlay)}>
-                      <Upload size={24} className={cx(styles.uploadIcon)} />
-                    </div>
-
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleAvatarChange}
-                      className={cx(styles.fileInput)}
-                      id="avatar-upload"
-                    />
                   </div>
-                  <label htmlFor="avatar-upload" className={cx(styles.avatarLabel)}>
-                    Tải ảnh của bạn
-                  </label>
+                  <div className={cx(styles.avatarInfo)}>
+                    <h3 className={cx(styles.userName)}>{userData.fullName || 'Chưa cập nhật'}</h3>
+                    <p className={cx(styles.userEmail)}>{userData.email}</p>
+                  </div>
                 </div>
 
-                {/* Form Section */}j 
-                <div className={cx(styles.formFields)}>
-                  <div className={cx(styles.formField)}>
-                    <input
-                      type="text"
-                      className={cx(styles.textInput)}
-                      value={fullName}
-                      onChange={(e) => setFullName(e.target.value)}
-                      placeholder="Họ và tên"
-                    />
-                  </div>
-
-                  <div className={cx(styles.formField)}>
-                    <input
-                      type="email"
-                      className={cx(styles.textInput, styles.disabledInput)}
-                      value={email}
-                      readOnly
-                      placeholder="Email"
-                    />
-                  </div>
-
-                  <div className={cx(styles.genderSelection)}>
-                    <label className={cx(styles.checkboxLabel)}>
-                      <div className={cx(styles.customCheckbox, { [styles.checked]: gender === 'male' })}>
-                        {gender === 'male' && <Check size={14} className={cx(styles.checkIcon)} />}
-                      </div>
-                      <input
-                        type="radio"
-                        name="gender"
-                        checked={gender === 'male'}
-                        onChange={() => setGender('male')}
-                        className={cx(styles.radioInput, styles.hidden)}
-                      />
-                      <span className={cx(styles.radioText)}>Nam</span>
-                    </label>
-
-                    <label className={cx(styles.checkboxLabel)}>
-                      <div className={cx(styles.customCheckbox, { [styles.checked]: gender === 'female' })}>
-                        {gender === 'female' && <Check size={14} className={cx(styles.checkIcon)} />}
-                      </div>
-                      <input
-                        type="radio"
-                        name="gender"
-                        checked={gender === 'female'}
-                        onChange={() => setGender('female')}
-                        className={cx(styles.radioInput, styles.hidden)}
-                      />
-                      <span className={cx(styles.radioText)}>Nữ</span>
-                    </label>
-                  </div>
-
-                  <div className={cx(styles.birthdayField)}>
-                    <p className={cx(styles.birthdayLabel)}>Ngày sinh (Không bắt buộc)</p>
-                    <div className={cx(styles.dateSelects)}>
-                      <select
-                        className={cx(styles.dateSelect)}
-                        value={day}
-                        onChange={(e) => setDay(e.target.value)}
-                      >
-                        <option value="">Ngày</option>
-                        {[...Array(31)].map((_, i) => (
-                          <option key={i + 1} value={i + 1}>{i + 1}</option>
-                        ))}
-                      </select>
-
-                      <select
-                        className={cx(styles.dateSelect)}
-                        value={month}
-                        onChange={(e) => setMonth(e.target.value)}
-                      >
-                        <option value="">Tháng</option>
-                        {[...Array(12)].map((_, i) => (
-                          <option key={i + 1} value={i + 1}>{i + 1}</option>
-                        ))}
-                      </select>
-
-                      <select
-                        className={cx(styles.dateSelect)}
-                        value={year}
-                        onChange={(e) => setYear(e.target.value)}
-                      >
-                        <option value="">Năm</option>
-                        {[...Array(100)].map((_, i) => (
-                          <option key={2025 - i} value={2025 - i}>{2025 - i}</option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-
-                  <label className={cx(styles.checkboxLabel)}>
-                    <div className={cx(styles.customCheckbox, { [styles.checked]: agreeToPolicy })}>
-                      {agreeToPolicy && <Check size={14} className={cx(styles.checkIcon)} />}
-                    </div>
-                    <input
-                      type="checkbox"
-                      checked={agreeToPolicy}
-                      onChange={() => setAgreeToPolicy(!agreeToPolicy)}
-                      className={cx(styles.checkboxInput, styles.hidden)}
-                    />
-                    <span className={cx(styles.checkboxText)}>
-                      Tôi đồng ý với <a href="#" className={cx(styles.policyLink)}>chính sách xử lý dữ liệu cá nhân</a> của Beauty Skin
+                <div className={cx(styles.profileRow)}>
+                  <div className={cx(styles.profileField)}>
+                    <span className={cx(styles.fieldLabel)}>Họ và tên</span>
+                    <span className={cx(styles.fieldValue)}>
+                      {userData.fullName || 'Chưa cập nhật'}
                     </span>
-                  </label>
-
-                  <div className={cx(styles.formActions)}>
-                    <button type="submit" className={cx(styles.updateButton)}>
-                      Cập nhật
-                    </button>
+                  </div>
+                  
+                  <div className={cx(styles.profileField)}>
+                    <span className={cx(styles.fieldLabel)}>Email</span>
+                    <span className={cx(styles.fieldValue)}>
+                      {userData.email}
+                    </span>
                   </div>
                 </div>
-              </form>
+
+                <div className={cx(styles.profileRow)}>
+                  <div className={cx(styles.profileField)}>
+                    <span className={cx(styles.fieldLabel)}>Giới tính</span>
+                    <span className={cx(styles.fieldValue)}>
+                      {userData.gender === 'male' ? 'Nam' : 
+                       userData.gender === 'female' ? 'Nữ' : 
+                       'Chưa cập nhật'}
+                    </span>
+                  </div>
+                  
+                  <div className={cx(styles.profileField)}>
+                    <span className={cx(styles.fieldLabel)}>Ngày sinh</span>
+                    <span className={cx(styles.fieldValue)}>
+                      {formatDateOfBirth()}
+                    </span>
+                  </div>
+                </div>
+
+                <div className={cx(styles.profileRow)}>
+                  <div className={cx(styles.profileField, styles.fullWidth)}>
+                    <span className={cx(styles.fieldLabel)}>Địa chỉ</span>
+                    <span className={cx(styles.fieldValue)}>
+                      {userData.address || 'Chưa cập nhật'}
+                    </span>
+                  </div>
+                </div>
+              </div>
             </div>
 
             {/* Password Section */}
@@ -322,6 +390,159 @@ const ProfilePage = () => {
           </>
         )}
       </div>
+
+      {/* Edit Profile Modal */}
+      {isModalOpen && (
+        <div className={cx(styles.modalOverlay)}>
+          <div className={cx(styles.modalContent)}>
+            <div className={cx(styles.modalHeader)}>
+              <h2 className={cx(styles.modalTitle)}>Chỉnh sửa thông tin tài khoản</h2>
+              <button className={cx(styles.closeButton)} onClick={closeModal}>
+                <X size={20} />
+              </button>
+            </div>
+            
+            <form className={cx(styles.modalForm)} onSubmit={handleSubmit}>
+              <div className={cx(styles.formField)}>
+                <label className={cx(styles.formLabel)}>Họ và tên</label>
+                <input
+                  type="text"
+                  className={cx(styles.textInput)}
+                  value={formData.fullName}
+                  onChange={(e) => handleFormChange('fullName', e.target.value)}
+                  placeholder="Họ và tên"
+                />
+              </div>
+
+              <div className={cx(styles.formField)}>
+                <label className={cx(styles.formLabel)}>Email</label>
+                <input
+                  type="email"
+                  className={cx(styles.textInput, styles.disabledInput)}
+                  value={userData.email}
+                  readOnly
+                  placeholder="Email"
+                />
+                <small className={cx(styles.fieldHint)}>Email không thể thay đổi</small>
+              </div>
+
+              <div className={cx(styles.formField)}>
+                <label className={cx(styles.formLabel)}>Giới tính</label>
+                <div className={cx(styles.genderSelection)}>
+                  <label className={cx(styles.checkboxLabel)}>
+                    <div className={cx(styles.customCheckbox, { [styles.checked]: formData.gender === 'male' })}>
+                      {formData.gender === 'male' && <Check size={14} className={cx(styles.checkIcon)} />}
+                    </div>
+                    <input
+                      type="radio"
+                      name="gender"
+                      checked={formData.gender === 'male'}
+                      onChange={() => handleFormChange('gender', 'male')}
+                      className={cx(styles.radioInput, styles.hidden)}
+                    />
+                    <span className={cx(styles.radioText)}>Nam</span>
+                  </label>
+
+                  <label className={cx(styles.checkboxLabel)}>
+                    <div className={cx(styles.customCheckbox, { [styles.checked]: formData.gender === 'female' })}>
+                      {formData.gender === 'female' && <Check size={14} className={cx(styles.checkIcon)} />}
+                    </div>
+                    <input
+                      type="radio"
+                      name="gender"
+                      checked={formData.gender === 'female'}
+                      onChange={() => handleFormChange('gender', 'female')}
+                      className={cx(styles.radioInput, styles.hidden)}
+                    />
+                    <span className={cx(styles.radioText)}>Nữ</span>
+                  </label>
+                </div>
+              </div>
+
+              <div className={cx(styles.formField)}>
+                <label className={cx(styles.formLabel)}>Ngày sinh (Không bắt buộc)</label>
+                <div className={cx(styles.dateSelects)}>
+                  <select
+                    className={cx(styles.dateSelect)}
+                    value={formData.day}
+                    onChange={(e) => handleFormChange('day', e.target.value)}
+                  >
+                    <option value="">Ngày</option>
+                    {[...Array(31)].map((_, i) => (
+                      <option key={i + 1} value={i + 1}>{i + 1}</option>
+                    ))}
+                  </select>
+
+                  <select
+                    className={cx(styles.dateSelect)}
+                    value={formData.month}
+                    onChange={(e) => handleFormChange('month', e.target.value)}
+                  >
+                    <option value="">Tháng</option>
+                    {[...Array(12)].map((_, i) => (
+                      <option key={i + 1} value={i + 1}>{i + 1}</option>
+                    ))}
+                  </select>
+
+                  <select
+                    className={cx(styles.dateSelect)}
+                    value={formData.year}
+                    onChange={(e) => handleFormChange('year', e.target.value)}
+                  >
+                    <option value="">Năm</option>
+                    {[...Array(100)].map((_, i) => (
+                      <option key={2025 - i} value={2025 - i}>{2025 - i}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div className={cx(styles.formField)}>
+                <label className={cx(styles.formLabel)}>Địa chỉ</label>
+                <input
+                  type="text"
+                  className={cx(styles.textInput)}
+                  value={formData.address}
+                  onChange={(e) => handleFormChange('address', e.target.value)}
+                  placeholder="Địa chỉ"
+                />
+              </div>
+
+              <label className={cx(styles.checkboxLabel, styles.policyCheckbox)}>
+                <div className={cx(styles.customCheckbox, { [styles.checked]: formData.agreeToPolicy })}>
+                  {formData.agreeToPolicy && <Check size={14} className={cx(styles.checkIcon)} />}
+                </div>
+                <input
+                  type="checkbox"
+                  checked={formData.agreeToPolicy}
+                  onChange={() => handleFormChange('agreeToPolicy', !formData.agreeToPolicy)}
+                  className={cx(styles.checkboxInput, styles.hidden)}
+                />
+                <span className={cx(styles.checkboxText)}>
+                  Tôi đồng ý với <a href="#" className={cx(styles.policyLink)}>chính sách xử lý dữ liệu cá nhân</a> của Beauty Skin
+                </span>
+              </label>
+
+              <div className={cx(styles.modalActions)}>
+                <button 
+                  type="button" 
+                  className={cx(styles.cancelButton)}
+                  onClick={closeModal}
+                >
+                  Hủy
+                </button>
+                <button 
+                  type="submit" 
+                  className={cx(styles.updateButton)}
+                  disabled={isLoading}
+                >
+                  {isLoading ? 'Đang xử lý...' : 'Cập nhật'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
