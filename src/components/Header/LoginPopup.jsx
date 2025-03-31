@@ -1,14 +1,16 @@
+// src/components/Header/LoginPopup.jsx
 import classNames from 'classnames/bind';
 import styles from './LoginPopup.module.scss';
-import { Link, useLocation } from 'react-router-dom';
-import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
+import { useState } from 'react';
 import { FcGoogle } from 'react-icons/fc';
 import { IoWarning } from 'react-icons/io5';
 import { FaSpinner } from 'react-icons/fa';
 import ForgotPasswordPopup from './ForgotPasswordPopup';
-import { googleLoginAxios, googleRedirectAxios, loginAxios } from '~/services/authAxios';
+import { googleLoginAxios, loginAxios } from '~/services/authAxios';
 import useDisableBodyScroll from '~/hooks/useDisableBodyScroll';
 import { useAuth } from '~/context/AuthContext';
+import { toast } from 'react-toastify';
 
 const cx = classNames.bind(styles);
 
@@ -18,42 +20,60 @@ function LoginForm({ onClose, onShowSignup, onLoginSuccess }) {
     const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [showForgotPassword, setShowForgotPassword] = useState(false);
-    const location = useLocation();
     const { handleLoginSuccess } = useAuth();
 
     // Use the custom hook to disable body scroll
     useDisableBodyScroll(true);
 
-    useEffect(() => {
-        // Handle Google OAuth Redirection
-        const handleGoogleRedirect = async () => {
-            const urlParams = new URLSearchParams(window.location.search);
-            const code = urlParams.get('code');
-            
-            // Check if we're on the Google redirect path or have a code parameter
-            if (location.pathname.includes("auth/google/redirect") || code) {
-                try {
-                    await googleRedirectAxios();
-                    if (onLoginSuccess) {
-                        onLoginSuccess();
-                    }
-                    if (handleLoginSuccess) {
-                        handleLoginSuccess();
-                    }
-                } catch (error) {
-                    console.error("Google Redirect Error:", error);
-                }
-            }
-        };
-        
-        handleGoogleRedirect();
-    }, [location, onLoginSuccess, handleLoginSuccess]);
-
     const handleGoogleLogin = async () => {
         try {
-            await googleLoginAxios();
+            // Show loading state - you can use a state variable or toast
+            // setIsLoading(true); // If you have a loading state
+
+            console.log('Initiating Google login API call...');
+
+            // Call the Google login API
+            const response = await googleLoginAxios();
+
+            if (response.error) {
+                toast.error(response.message || "Đăng nhập Google thất bại", {
+                    position: "top-center",
+                    autoClose: 3000
+                });
+                return;
+            }
+
+            if (response.success) {
+                toast.success("Đăng nhập thành công!", {
+                    position: "top-center",
+                    autoClose: 2000
+                });
+
+                // Close any open popups
+                setShowAccountPopup(false);
+
+                // If using login modal
+                if (onClose) {
+                    onClose();
+                }
+
+                // Call any success callbacks
+                if (onLoginSuccess) {
+                    onLoginSuccess();
+                }
+
+                // Update UI to reflect logged in state
+                // For a cleaner approach, just reload the page
+                window.location.reload();
+            }
         } catch (error) {
             console.error("Google Login Error:", error);
+            toast.error("Đăng nhập Google thất bại. Vui lòng thử lại sau.", {
+                position: "top-center",
+                autoClose: 3000
+            });
+        } finally {
+            // setIsLoading(false); // If you have a loading state
         }
     };
 
@@ -104,7 +124,7 @@ function LoginForm({ onClose, onShowSignup, onLoginSuccess }) {
         } catch (error) {
             setIsLoading(false); // Stop loading on error
             console.error('Login Popup Error:', error);
-            
+
             // Check if this is an auth error
             if (error.response?.status === 401) {
                 setError('Email hoặc mật khẩu không chính xác.');
@@ -125,9 +145,22 @@ function LoginForm({ onClose, onShowSignup, onLoginSuccess }) {
                     </button>
                     <h3>Đăng nhập với</h3>
                     <div className={cx('socialButtons')}>
-                        <button className={cx('googleBtn')} onClick={handleGoogleLogin}>
-                            <FcGoogle />
-                            Google +
+                        <button
+                            className={cx('googleBtn')}
+                            onClick={handleGoogleLogin}
+                            disabled={isLoading}
+                        >
+                            {isLoading ? (
+                                <span className={cx('loadingWrapper')}>
+                                    <FaSpinner className={cx('loadingIcon')} />
+                                    Đang xử lý...
+                                </span>
+                            ) : (
+                                <>
+                                    <FcGoogle />
+                                    Google +
+                                </>
+                            )}
                         </button>
                     </div>
                     <div className={cx('divider')}>
@@ -175,8 +208,8 @@ function LoginForm({ onClose, onShowSignup, onLoginSuccess }) {
                                 Quên mật khẩu
                             </Link>
                         </div>
-                        <button 
-                            type="submit" 
+                        <button
+                            type="submit"
                             className={cx('submitBtn')}
                             disabled={isLoading}
                         >

@@ -10,7 +10,6 @@ import SkinQuizPage from '~/pages/Quiz/SkinQuizPage';
 import QuizResultPage from '~/pages/QuizResult/QuizResultPage';
 import PasswordChangePage from '~/pages/Profile/PasswordChangePage';
 import OrdersPage from '~/pages/Profile/OrdersPage';
-import GoogleAuthCallback from '~/components/GoogleAuthCallback';
 import ItemDetail from '~/pages/ItemDetail/ItemDetail';
 import BrandPage from '~/pages/Brand/BrandPage'; 
 import StaffPage from '~/pages/Staff/Staff';
@@ -31,7 +30,6 @@ const publicRoutes = [
     { path: config.routes.passwordChangePage, component: PasswordChangePage, layout: HeaderOnly },
     { path: config.routes.ordersPage, component: OrdersPage, layout: HeaderOnly },
     { path: config.routes.favorites, component: Favorites, layout: HeaderOnly },
-    { path: config.routes.googleAuthCallback, component: GoogleAuthCallback, layout: null },
     { path: config.routes.itemDetail, component: ItemDetail, layout: HeaderOnly },
     { path: config.routes.brand, component: BrandPage, layout: HeaderOnly }, 
     { path: config.routes.brandMenu, component: BrandMenu, layout: HeaderOnly }, 

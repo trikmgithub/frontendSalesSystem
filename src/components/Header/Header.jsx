@@ -13,6 +13,7 @@ import { CartContext } from '~/context/CartContext';
 import { useAuth } from '~/context/AuthContext';
 import routes from '~/config/routes';
 import SearchLink from '../SearchLink/SearchLink';
+import { toast } from 'react-toastify';
 
 const cx = classNames.bind(styles);
 
@@ -80,9 +81,53 @@ function Header() {
 
     const handleGoogleLogin = async () => {
         try {
-            await googleLoginAxios();
+            // Show loading state - you can use a state variable or toast
+            // setIsLoading(true); // If you have a loading state
+
+            console.log('Initiating Google login API call...');
+
+            // Call the Google login API
+            const response = await googleLoginAxios();
+
+            if (response.error) {
+                toast.error(response.message || "Đăng nhập Google thất bại", {
+                    position: "top-center",
+                    autoClose: 3000
+                });
+                return;
+            }
+
+            if (response.success) {
+                toast.success("Đăng nhập thành công!", {
+                    position: "top-center",
+                    autoClose: 2000
+                });
+
+                // Close any open popups
+                setShowAccountPopup(false);
+
+                // If using login modal
+                if (onClose) {
+                    onClose();
+                }
+
+                // Call any success callbacks
+                if (onLoginSuccess) {
+                    onLoginSuccess();
+                }
+
+                // Update UI to reflect logged in state
+                // For a cleaner approach, just reload the page
+                window.location.reload();
+            }
         } catch (error) {
             console.error("Google Login Error:", error);
+            toast.error("Đăng nhập Google thất bại. Vui lòng thử lại sau.", {
+                position: "top-center",
+                autoClose: 3000
+            });
+        } finally {
+            // setIsLoading(false); // If you have a loading state
         }
     };
 

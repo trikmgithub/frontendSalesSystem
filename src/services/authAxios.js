@@ -1,3 +1,4 @@
+// src/services/authAxios.js
 import * as axiosConfig from '~/utils/axiosConfig';
 
 // Login API with improved user details handling
@@ -87,44 +88,90 @@ const loginAxios = async (userData) => {
     }
 };
 
-// Google Login API - FIXED VERSION
-// Only redirects to Google login page, backend handles the rest
+// Google Login API - Direct API call
 const googleLoginAxios = async () => {
     try {
-        // Use the environment variable for API base URL
-        const apiBaseUrl = import.meta.env.VITE_API_URI || '';
-        
-        console.log('Redirecting to Google login page...');
-        
-        // Simply redirect the user to Google login page
-        // The backend will handle the OAuth flow and redirect back with user data
-        window.location.href = `${apiBaseUrl}/auth/google/login`;
-        
-        // Note: Code after this line won't execute due to the page redirect
-        
+        console.log('Making API request to Google login endpoint...');
+
+        // Make a GET request to the Google login API endpoint
+        const response = await axiosConfig.get('auth/google/login', {
+            withCredentials: true
+        });
+
+        // Check if we received valid data
+        if (!response.data || response.error) {
+            console.error('Invalid response from Google login API:', response);
+            throw new Error(response.message || 'Failed to authenticate with Google');
+        }
+
+        // Get user data from response
+        const userData = response.data;
+
+        // Store access token
+        if (userData.access_token) {
+            localStorage.setItem('access_token', userData.access_token);
+
+            // Store basic user info first
+            const basicUserData = {
+                _id: userData._id,
+                name: userData.name,
+                email: userData.email,
+                role: userData.role || 'USER',
+                avatar: userData.picture || null
+            };
+
+            localStorage.setItem('user', JSON.stringify(basicUserData));
+            console.log("Basic user data saved after Google login:", basicUserData);
+
+            // Get detailed user info
+            try {
+                if (userData._id) {
+                    const userDetailsRes = await axiosConfig.get(`users/info/${userData._id}`, {
+                        headers: {
+                            Authorization: `Bearer ${userData.access_token}`
+                        }
+                    });
+
+                    // Extract detailed user data
+                    const detailedUserData = userDetailsRes.data?.user || userDetailsRes.data;
+
+                    if (detailedUserData) {
+                        // Remove sensitive data
+                        if (detailedUserData.password) {
+                            delete detailedUserData.password;
+                        }
+
+                        // Merge with basic data
+                        const completeUserData = {
+                            ...basicUserData,
+                            ...detailedUserData,
+                            access_token: userData.access_token
+                        };
+
+                        // Update localStorage
+                        localStorage.setItem('user', JSON.stringify(completeUserData));
+                        console.log("Complete user data saved after Google login:", completeUserData);
+
+                        return { success: true, user: completeUserData };
+                    }
+                }
+
+                // If detailed info fetch fails, still return success with basic info
+                return { success: true, user: basicUserData };
+            } catch (detailsError) {
+                console.error('Error fetching detailed user info:', detailsError);
+                // Basic auth still succeeded
+                return { success: true, user: basicUserData };
+            }
+        } else {
+            throw new Error('No access token in response');
+        }
     } catch (error) {
         console.error("Google Login Error:", error);
-        throw error; // Just throw the original error for better debugging
-    }
-};
-
-// Google Redirect API - SIMPLIFIED VERSION
-// Since the backend handles most of this functionality
-const googleRedirectAxios = async () => {
-    try {
-        // This function might not need to do anything if everything is handled by backend
-        console.log('Google redirect process handled by backend');
-        
-        // If needed, you can check if the user data is in localStorage
-        const userData = localStorage.getItem('user');
-        if (!userData || userData === 'null') {
-            console.warn('No user data found in localStorage after Google redirect');
-        }
-        
-        return { success: true };
-    } catch (error) {
-        console.error('Google Redirect Error:', error);
-        return { error: true, message: error.message };
+        return {
+            error: true,
+            message: error.response?.data?.message || error.message
+        };
     }
 };
 
@@ -200,4 +247,4 @@ const registerAxios = async (userData) => {
     }
 };
 
-export { loginAxios, googleLoginAxios, googleRedirectAxios, logoutAxios, registerAxios };
+export { loginAxios, googleLoginAxios, logoutAxios, registerAxios };
