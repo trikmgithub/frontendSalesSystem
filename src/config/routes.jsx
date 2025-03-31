@@ -16,6 +16,7 @@ const routes = {
     favorites: '/favorites',
     search: '/search',
     compare: '/compare',
+    googleLoginError: '/auth/google-login-error',
 };
 
 export default routes;

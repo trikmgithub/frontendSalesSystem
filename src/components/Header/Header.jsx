@@ -8,14 +8,27 @@ import logo from '~/assets/beautySkin.png';
 import { useState, useEffect, useRef, useContext } from 'react';
 import Navigation from '../Navigation/Navigation';
 import { getItemsAxios, checkUserSkinTypeAxios } from '~/services/itemAxios';
-import { googleLoginAxios, logoutAxios } from '~/services/authAxios';
+import { logoutAxios } from '~/services/authAxios';
 import { CartContext } from '~/context/CartContext';
 import { useAuth } from '~/context/AuthContext';
 import routes from '~/config/routes';
 import SearchLink from '../SearchLink/SearchLink';
 import { toast } from 'react-toastify';
+import * as axiosConfig from '~/utils/axiosConfig';
 
 const cx = classNames.bind(styles);
+
+// Function to get cookie by name
+const getCookie = (name) => {
+    const cookies = document.cookie.split(';');
+    for (let i = 0; i < cookies.length; i++) {
+        const cookie = cookies[i].trim();
+        if (cookie.startsWith(name + '=')) {
+            return decodeURIComponent(cookie.substring(name.length + 1));
+        }
+    }
+    return null;
+};
 
 function Header() {
     const [showAccountPopup, setShowAccountPopup] = useState(false);
@@ -38,10 +51,115 @@ function Header() {
         userInfo,
         openLogin,
         openSignup,
-        isLoggedIn
+        isLoggedIn,
+        handleLoginSuccess
     } = useAuth();
 
+    // Process user_info cookie and save to localStorage
+    const processUserInfoCookie = async () => {
+        try {
+            const userInfoCookie = getCookie('user_info');
+            
+            if (!userInfoCookie) {
+                console.log("No user_info cookie found");
+                return null;
+            }
+            
+            // Parse the cookie data (handling 'j:' prefix if exists)
+            const cookieData = JSON.parse(userInfoCookie.startsWith('j:') ? 
+                userInfoCookie.substring(2) : userInfoCookie);
+                
+            console.log("Retrieved user data from cookie:", cookieData);
+            
+            // Store access token
+            if (cookieData.access_token) {
+                localStorage.setItem('access_token', cookieData.access_token);
+                
+                // Clean up user data before storing
+                const basicUserData = { ...cookieData };
+                // Don't store refresh token in localStorage for security
+                if (basicUserData.refresh_token) {
+                    delete basicUserData.refresh_token;
+                }
+                
+                // Store basic user info immediately
+                localStorage.setItem('user', JSON.stringify(basicUserData));
+                console.log("Basic user data from cookie saved to localStorage");
+                
+                // Clear the cookie after processing
+                document.cookie = 'user_info=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+                
+                // Get detailed user info if we have an ID
+                if (basicUserData._id) {
+                    try {
+                        // Import axiosConfig at the top of the file
+                        const endpoint = `users/info/${basicUserData._id}`;
+                        
+                        const userDetailsRes = await axiosConfig.get(endpoint, {
+                            headers: {
+                                Authorization: `Bearer ${basicUserData.access_token}`
+                            }
+                        });
+                        
+                        // Check the structure of the response to extract user data correctly
+                        const userData = userDetailsRes.data?.user || userDetailsRes.data;
+                        
+                        if (userData) {
+                            // Ensure password is not included
+                            if (userData.password) {
+                                delete userData.password;
+                            }
+                            
+                            // Make sure to preserve access token and basic info
+                            const completeUserData = {
+                                ...basicUserData,
+                                ...userData,
+                                access_token: basicUserData.access_token
+                            };
+                            
+                            // Update localStorage with complete user data
+                            localStorage.setItem('user', JSON.stringify(completeUserData));
+                            console.log("Updated user data in localStorage with details:", completeUserData);
+                            
+                            return completeUserData;
+                        }
+                    } catch (detailsError) {
+                        console.error('Error fetching user details:', detailsError.message);
+                        // We already saved the basic info, so login still succeeds
+                    }
+                }
+                
+                return basicUserData;
+            }
+        } catch (error) {
+            console.error('Error processing user_info cookie:', error);
+        }
+        
+        return null;
+    };
+
     useEffect(() => {
+        // Check for user_info cookie on component mount
+        const checkForUserCookie = async () => {
+            const userData = await processUserInfoCookie();
+            if (userData) {
+                console.log("Found and processed user_info cookie on component mount");
+                
+                // Notify user of successful login
+                toast.success("Đăng nhập thành công!", {
+                    position: "top-center",
+                    autoClose: 2000
+                });
+                
+                // Call handleLoginSuccess to update auth context
+                if (handleLoginSuccess) {
+                    handleLoginSuccess();
+                }
+            }
+        };
+        
+        checkForUserCookie();
+        
         const fetchItems = async () => {
             try {
                 const response = await getItemsAxios();
@@ -60,7 +178,7 @@ function Header() {
         };
 
         fetchItems();
-    }, []);
+    }, [handleLoginSuccess]);
 
     // Click outside handler for search suggestions and account popup
     useEffect(() => {
@@ -79,55 +197,18 @@ function Header() {
         };
     }, []);
 
-    const handleGoogleLogin = async () => {
+    const handleGoogleLogin = () => {
         try {
-            // Show loading state - you can use a state variable or toast
-            // setIsLoading(true); // If you have a loading state
-
-            console.log('Initiating Google login API call...');
-
-            // Call the Google login API
-            const response = await googleLoginAxios();
-
-            if (response.error) {
-                toast.error(response.message || "Đăng nhập Google thất bại", {
-                    position: "top-center",
-                    autoClose: 3000
-                });
-                return;
-            }
-
-            if (response.success) {
-                toast.success("Đăng nhập thành công!", {
-                    position: "top-center",
-                    autoClose: 2000
-                });
-
-                // Close any open popups
-                setShowAccountPopup(false);
-
-                // If using login modal
-                if (onClose) {
-                    onClose();
-                }
-
-                // Call any success callbacks
-                if (onLoginSuccess) {
-                    onLoginSuccess();
-                }
-
-                // Update UI to reflect logged in state
-                // For a cleaner approach, just reload the page
-                window.location.reload();
-            }
+            console.log('Initiating Google login redirect...');
+            
+            // Redirect to Google login endpoint
+            window.location.href = `${import.meta.env.VITE_API_URI}/auth/google/login`;
         } catch (error) {
             console.error("Google Login Error:", error);
             toast.error("Đăng nhập Google thất bại. Vui lòng thử lại sau.", {
                 position: "top-center",
                 autoClose: 3000
             });
-        } finally {
-            // setIsLoading(false); // If you have a loading state
         }
     };
 
