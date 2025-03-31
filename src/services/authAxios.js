@@ -87,107 +87,44 @@ const loginAxios = async (userData) => {
     }
 };
 
-// Google Login API (Redirect to Google's OAuth page)
+// Google Login API - FIXED VERSION
+// Only redirects to Google login page, backend handles the rest
 const googleLoginAxios = async () => {
     try {
-        // Use the environment variable instead of hardcoded URL
+        // Use the environment variable for API base URL
         const apiBaseUrl = import.meta.env.VITE_API_URI || '';
-
-        // Redirect the user to Google login page
+        
+        console.log('Redirecting to Google login page...');
+        
+        // Simply redirect the user to Google login page
+        // The backend will handle the OAuth flow and redirect back with user data
         window.location.href = `${apiBaseUrl}/auth/google/login`;
-
-        const role = res.data.role;
-
-        // Redirect based on role after Google OAuth login
-        if (['ADMIN', 'MANAGER'].includes(role)) {
-            window.location.href = '/admin';
-        } else if (role === 'STAFF') {
-            window.location.href = '/staff';
-        } else {
-            // Regular users go to homepage
-            window.location.href = '/';
-        }
+        
+        // Note: Code after this line won't execute due to the page redirect
+        
     } catch (error) {
         console.error("Google Login Error:", error);
-        throw new Error("Google login failed.");
+        throw error; // Just throw the original error for better debugging
     }
 };
 
-// Google Redirect API (Handles OAuth response)
+// Google Redirect API - SIMPLIFIED VERSION
+// Since the backend handles most of this functionality
 const googleRedirectAxios = async () => {
     try {
-        // Get the URL parameters (for code parsing if needed)
-        const urlParams = new URLSearchParams(window.location.search);
-        const code = urlParams.get('code');
-
-        // If there's no code in the URL but we're on the redirect path,
-        // we might need to adjust the API call
-        let endpoint = 'auth/google/redirect';
-        if (code) {
-            endpoint += `?code=${code}`;
+        // This function might not need to do anything if everything is handled by backend
+        console.log('Google redirect process handled by backend');
+        
+        // If needed, you can check if the user data is in localStorage
+        const userData = localStorage.getItem('user');
+        if (!userData || userData === 'null') {
+            console.warn('No user data found in localStorage after Google redirect');
         }
-
-        const res = await axiosConfig.get(endpoint, { withCredentials: true });
-
-        // Process the response and store user data
-        if (res.data?.access_token) {
-            localStorage.setItem('access_token', res.data.access_token);
-
-            // Get basic user info from Google OAuth response
-            const basicUserData = {
-                _id: res.data._id,
-                name: res.data.name,
-                email: res.data.email,
-                role: res.data.role,
-                avatar: res.data.avatar
-            };
-
-            localStorage.setItem('user', JSON.stringify(basicUserData));
-
-            // Try to fetch complete user profile if we have an ID
-            if (res.data._id) {
-                try {
-                    const userDetailsRes = await axiosConfig.get(`users/info/${res.data._id}`, {
-                        headers: {
-                            Authorization: `Bearer ${res.data.access_token}`
-                        }
-                    });
-
-                    // Get full user data
-                    const userData = userDetailsRes.data?.user || userDetailsRes.data;
-
-                    if (userData) {
-                        // Remove sensitive data like password
-                        if (userData.password) {
-                            delete userData.password;
-                        }
-
-                        // Create complete user data object with OAuth and profile info
-                        const completeUserData = {
-                            ...basicUserData,
-                            ...userData,
-                            access_token: res.data.access_token
-                        };
-
-                        // Save complete user profile to localStorage
-                        localStorage.setItem('user', JSON.stringify(completeUserData));
-                    }
-                } catch (detailsError) {
-                    console.error('Error fetching user details after Google login:', detailsError);
-                    // Continue with basic info since login was successful
-                }
-            }
-
-            // Redirect to homepage after storing data
-            window.location.href = '/';
-        }
-
-        return res;
+        
+        return { success: true };
     } catch (error) {
         console.error('Google Redirect Error:', error);
-        // Redirect to home page with error state if needed
-        window.location.href = '/?login_error=true';
-        throw new Error('Failed to authenticate with Google.');
+        return { error: true, message: error.message };
     }
 };
 
