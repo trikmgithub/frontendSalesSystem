@@ -71,6 +71,25 @@ const updateUserAxios = async (userData) => {
     }
 };
 
+// Update user password
+const updatePasswordAxios = async (passwordData) => {
+    try {
+        const res = await axiosConfig.patch('users/password', passwordData, {
+            headers: {
+                Authorization: `Bearer ${localStorage.getItem('access_token')}`
+            }
+        });
+        return res;
+    } catch (error) {
+        console.error('Error updating password:', error);
+        return {
+            error: true,
+            message: error.response?.data?.message || error.message || 'Failed to update password',
+            status: error.response?.status
+        };
+    }
+};
+
 // Permanently delete user
 const deleteUserAxios = async (userId) => {
     try {
@@ -154,5 +173,6 @@ export {
     updateUserAxios,
     deleteUserAxios,
     updateAddressAxios,
-    updateUserSkinTypeAxios
+    updateUserSkinTypeAxios,
+    updatePasswordAxios
 };

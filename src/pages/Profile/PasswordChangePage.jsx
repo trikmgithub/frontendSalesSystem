@@ -3,7 +3,8 @@ import { User, Lock } from 'lucide-react';
 import cx from 'classnames';
 import styles from './ProfilePage.module.scss';
 import { useNavigate } from 'react-router-dom';
-import ToastNotification from './ToastNotification'; // Import component ToastNotification
+import ToastNotification from './ToastNotification';
+import { updatePasswordAxios } from '~/services/userAxios';
 
 const PasswordChangePage = () => {
   const [selectedTab, setSelectedTab] = useState('profile');
@@ -36,11 +37,13 @@ const PasswordChangePage = () => {
     // extract it from the token as a fallback
     if (!email) {
       try {
-        const token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0b2tlbiBsb2dpbiIsImlzcyI6ImZyb20gc2VydmVyIiwiX2lkIjoiNjdkZTdjZWFmMzk0NDAwNmRkYTA2N2Y4IiwibmFtZSI6IlNvbiBOZ3V5ZW4iLCJlbWFpbCI6Im5ndGhlc29uMjI0QGdtYWlsLmNvbSIsInJvbGUiOiJVU0VSIiwiaWF0IjoxNzQyNjQyNDk5LCJleHAiOjE3NDI2NDYwOTl9.zeo1v9RusIgIh6dF9N__HdLFP6lgHNiY2OMafRLFApg';
-        const payload = JSON.parse(atob(token.split('.')[1]));
-        if (payload && payload.email) {
-          setEmail(payload.email);
-          console.log("Email from token:", payload.email);
+        const token = localStorage.getItem('access_token');
+        if (token) {
+          const payload = JSON.parse(atob(token.split('.')[1]));
+          if (payload && payload.email) {
+            setEmail(payload.email);
+            console.log("Email from token:", payload.email);
+          }
         }
       } catch (error) {
         console.error('Error extracting email from token:', error);
@@ -92,15 +95,7 @@ const PasswordChangePage = () => {
     setIsLoading(true);
 
     try {
-      // Lấy access token từ localStorage
-      let accessToken = localStorage.getItem('access_token');
-      
-      // Nếu không có trong localStorage, dùng token cứng
-      if (!accessToken) {
-        accessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0b2tlbiBsb2dpbiIsImlzcyI6ImZyb20gc2VydmVyIiwiX2lkIjoiNjdkZTdjZWFmMzk0NDAwNmRkYTA2N2Y4IiwibmFtZSI6IlNvbiBOZ3V5ZW4iLCJlbWFpbCI6Im5ndGhlc29uMjI0QGdtYWlsLmNvbSIsInJvbGUiOiJVU0VSIiwiaWF0IjoxNzQyNjQyNDk5LCJleHAiOjE3NDI2NDYwOTl9.zeo1v9RusIgIh6dF9N__HdLFP6lgHNiY2OMafRLFApg';
-      }
-      
-      // Trim mật khẩu để loại bỏ khoảng trắng không mong muốn
+      // Trim passwords to remove unwanted whitespace
       const trimmedPassword = currentPassword.trim();
       const trimmedNewPassword = newPassword.trim();
       
@@ -112,18 +107,10 @@ const PasswordChangePage = () => {
       
       console.log('Sending password update request:', JSON.stringify(requestData));
       
-      const response = await fetch('http://localhost:8000/api/v1/users/password', {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${accessToken}`
-        },
-        body: JSON.stringify(requestData)
-      });
+      // Use the axios service instead of fetch
+      const response = await updatePasswordAxios(requestData);
 
-      const data = await response.json();
-
-      if (response.ok) {
+      if (!response.error) {
         // Password updated successfully
         showToast('Cập nhật mật khẩu thành công', 'success');
         
@@ -133,7 +120,7 @@ const PasswordChangePage = () => {
         setConfirmPassword('');
       } else {
         // Server returned an error
-        showToast(data.message || 'Cập nhật mật khẩu thất bại', 'error');
+        showToast(response.message || 'Cập nhật mật khẩu thất bại', 'error');
       }
     } catch (error) {
       console.error('Error updating password:', error);

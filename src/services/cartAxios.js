@@ -231,8 +231,9 @@ const downloadInvoiceAxios = async (cartId) => {
     }
 
     // Get base URL from environment variables with fallback
-    const baseURL = import.meta.env.VITE_API_URL ||
-      'http://localhost:8000/api/v1';
+    const baseURL = import.meta.env.VITE_API_URI ||
+      import.meta.env.VITE_API_URL ||
+      '';
 
     // Log token for debugging (hide most of it)
     const tokenShort = token ? `${token.substring(0, 10)}...` : 'none';
@@ -353,13 +354,13 @@ const downloadInvoiceAxios = async (cartId) => {
   }
 };
 
-// Direct download fallback function - add this to cartAxios.js
+// Direct download fallback function
 const downloadInvoiceDirectAxios = async (cartId) => {
   try {
     // Get base URL from environment or configuration
-    const baseURL = import.meta.env.VITE_API_URL ||
-      import.meta.env.VITE_APP_API_URL ||
-      'http://localhost:8000/api/v1';
+    const baseURL = import.meta.env.VITE_API_URI ||
+      import.meta.env.VITE_API_URL ||
+      '';
 
     const token = localStorage.getItem('access_token');
     if (!token) {
@@ -448,7 +449,7 @@ const downloadInvoiceDirectAxios = async (cartId) => {
   }
 };
 
-// Function to test API configuration - add this to cartAxios.js
+// Function to test API configuration
 const testApiConfig = () => {
   try {
     // Get what axiosConfig is using as the base URL
@@ -456,8 +457,8 @@ const testApiConfig = () => {
 
     // Check available environment variables
     const envVars = {
+      VITE_API_URI: import.meta.env.VITE_API_URI,
       VITE_API_URL: import.meta.env.VITE_API_URL,
-      VITE_APP_API_URL: import.meta.env.VITE_APP_API_URL,
       NODE_ENV: import.meta.env.NODE_ENV
     };
 
@@ -527,5 +528,5 @@ export {
   sendInvoiceEmailAxios,
   downloadInvoiceDirectAxios,
   testApiConfig,
-  getCartDetailAxios // Added the new function export
+  getCartDetailAxios
 };

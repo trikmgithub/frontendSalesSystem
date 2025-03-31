@@ -90,8 +90,8 @@ const loginAxios = async (userData) => {
 // Google Login API (Redirect to Google's OAuth page)
 const googleLoginAxios = async () => {
     try {
-        // Use the environment variable or fallback to hardcoded URL
-        const apiBaseUrl = 'http://localhost:8000/api/v1';
+        // Use the environment variable instead of hardcoded URL
+        const apiBaseUrl = import.meta.env.VITE_API_URI || '';
 
         // Redirect the user to Google login page
         window.location.href = `${apiBaseUrl}/auth/google/login`;

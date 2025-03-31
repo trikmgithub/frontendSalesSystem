@@ -3,6 +3,7 @@ import classNames from 'classnames/bind';
 import styles from './ForgotPasswordPopup.module.scss';
 import { IoWarning } from 'react-icons/io5';
 import useDisableBodyScroll from '~/hooks/useDisableBodyScroll';
+import { sendOtpForPasswordResetAxios, verifyOtpAxios } from '~/services/otpAxios';
 
 const cx = classNames.bind(styles);
 
@@ -41,21 +42,12 @@ function ForgotPasswordPopup({ onClose }) {
         }
 
         try {
-            // Send OTP to the provided email/phone with the correct API endpoint
-            const response = await fetch('https://mybeautyskinapp.azurewebsites.net/api/v1/email/send-otp-forget-password', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json'
-                },
-                body: JSON.stringify({ email })
-            });
-
-            const data = await response.json();
+            // Send OTP to the provided email/phone using the service
+            const response = await sendOtpForPasswordResetAxios(email);
             
             // Check response status
-            if (!response.ok || (data.data && data.data.success === false)) {
-                const errorMessage = data.data?.message || data.message || 'Có lỗi xảy ra khi gửi mã OTP';
+            if (!response.data || (response.data && response.data.success === false)) {
+                const errorMessage = response.message || 'Có lỗi xảy ra khi gửi mã OTP';
                 throw new Error(errorMessage);
             }
             
@@ -77,22 +69,12 @@ function ForgotPasswordPopup({ onClose }) {
         }
 
         try {
-            // Verify OTP with the correct API endpoint
-            const response = await fetch('https://mybeautyskinapp.azurewebsites.net/api/v1/email/verify-otp', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json'
-                },
-                body: JSON.stringify({ email, otp })
-            });
-
-            const data = await response.json();
-            console.log("123", data);
+            // Verify OTP using the service
+            const response = await verifyOtpAxios(email, otp);
             
             // Check response status
-            if (!response.ok || !data.data.success) {
-                const errorMessage = data.message || 'OTP không hợp lệ.';
+            if (!response.data || !response.data.success) {
+                const errorMessage = response.message || 'OTP không hợp lệ.';
                 throw new Error(errorMessage);
             }
             
