@@ -34,4 +34,21 @@ const verifyOtpAxios = async (email, otp) => {
     }
 };
 
-export { sendOtpAxios, verifyOtpAxios };
+// ✅ Send OTP for Password Reset
+const sendOtpForPasswordResetAxios = async (email) => {
+    try {
+        const res = await axiosConfig.post('email/send-otp-forget-password', { email }, { withCredentials: true });
+        return res.data;
+    } catch (error) {
+        console.error('Send OTP for Password Reset Error:', error);
+        
+        // Return the error response data if available
+        if (error.response && error.response.data) {
+            return error.response.data;
+        }
+        
+        throw new Error('Failed to send OTP for password reset.');
+    }
+};
+
+export { sendOtpAxios, verifyOtpAxios, sendOtpForPasswordResetAxios };

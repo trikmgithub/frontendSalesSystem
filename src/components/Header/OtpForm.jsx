@@ -1,7 +1,7 @@
+// src/components/Header/OtpForm.jsx
 import { useState, useEffect } from 'react';
 import classNames from 'classnames/bind';
 import styles from './OtpForm.module.scss';
-import SignupForm from './SignupPopup';
 import { IoWarning, IoCheckmarkCircle } from 'react-icons/io5';
 import { sendOtpAxios, verifyOtpAxios } from '~/services/otpAxios';
 import useDisableBodyScroll from '~/hooks/useDisableBodyScroll';
@@ -87,8 +87,18 @@ function OtpForm({ onVerificationSuccess, onClose, onShowLogin }) {
       }
       
       // If verification successful
-      onVerificationSuccess(email);
-      onClose();
+      setOtpSuccess('Xác minh thành công!');
+      
+      // Delay slightly before calling onVerificationSuccess to ensure UI updates
+      setTimeout(() => {
+        if (onVerificationSuccess) {
+          console.log('Calling onVerificationSuccess with email:', email);
+          onVerificationSuccess(email);
+        }
+        
+        // Don't call onClose here - we need to wait for onVerificationSuccess to complete first
+        // The parent component should handle closing this modal after showing the signup form
+      }, 500);
     } catch (error) {
       setOtpError('OTP không hợp lệ.');
     }
