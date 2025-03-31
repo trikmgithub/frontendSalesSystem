@@ -29,7 +29,7 @@ axiosConfig.interceptors.request.use(
         if (config.headers['Content-Type'] === 'multipart/form-data') {
             delete config.headers['Content-Type'];
         }
-        
+
         const accessToken = localStorage.getItem('access_token');
         if (accessToken) {
             config.headers.Authorization = `Bearer ${accessToken}`;
@@ -53,11 +53,21 @@ axiosConfig.interceptors.response.use(
         } else {
             console.log('Error Message:', error.message);
         }
-        
+
         const originalRequest = error.config;
 
         // Kiểm tra nếu lỗi là 401 (Unauthorized) và chưa thử refresh token
-        if (error.response?.status === 401 && !originalRequest._retry) {
+        // IMPORTANT: Ignore login endpoint to prevent refresh attempts on login failures
+        if (error.response?.status === 401 &&
+            !originalRequest._retry &&
+            !originalRequest.url.includes('/auth/login')) {
+
+            // Also check if we have an access token before attempting to refresh
+            const hasAccessToken = localStorage.getItem('access_token');
+            if (!hasAccessToken) {
+                return Promise.reject(error);
+            }
+
             if (isRefreshing) {
                 // Nếu đang refresh, chờ token mới và thử lại request
                 return new Promise((resolve) => {
