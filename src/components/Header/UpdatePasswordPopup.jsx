@@ -1,37 +1,80 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import classNames from 'classnames/bind';
 import styles from './UpdatePasswordPopup.module.scss';
-import { updatePasswordAxios } from '~/services/userAxios';
+import { forgetPasswordAxios } from '~/services/userAxios';
 
 const cx = classNames.bind(styles);
 
-function UpdatePasswordPopup({ onClose }) {
+function UpdatePasswordPopup({ onClose, initialEmail = '' }) {
+    const [email, setEmail] = useState(initialEmail);
     const [newPassword, setNewPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
+    
+    // Update email state if initialEmail prop changes
+    useEffect(() => {
+        if (initialEmail) {
+            setEmail(initialEmail);
+        }
+    }, [initialEmail]);
+
+    // Hàm kiểm tra input fields
+    const handleInputChange = (e) => {
+        const { name, value } = e.target;
+
+        if (name === 'email') {
+            setEmail(value);
+        } else if (name === 'newPassword') {
+            setNewPassword(value);
+        } else if (name === 'confirmPassword') {
+            setConfirmPassword(value);
+        }
+
+        // Kiểm tra ngay khi người dùng nhập mật khẩu
+        if (name === 'confirmPassword' || name === 'newPassword') {
+            if (value !== (name === 'newPassword' ? confirmPassword : newPassword)) {
+                setError('Mật khẩu mới và xác nhận mật khẩu không khớp');
+            } else {
+                setError('');
+            }
+        }
+    };
 
     const handleSubmit = async () => {
         setError('');
         setSuccess('');
 
-        if (!newPassword || !confirmPassword) {
-            setError('Vui lòng nhập đầy đủ thông tin');
+        // Check for email
+        if (!email) {
+            setError('Vui lòng nhập địa chỉ email');
             return;
         }
 
+        // Validate email format
+        const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailPattern.test(email)) {
+            setError('Địa chỉ email không hợp lệ');
+            return;
+        }
+
+        if (!newPassword || !confirmPassword) {
+            setError('Vui lòng nhập đầy đủ thông tin mật khẩu');
+            return;
+        }
+
+        // Validate passwords match locally
         if (newPassword !== confirmPassword) {
-            setError('Mật khẩu mới và xác nhận mật khẩu không khớp');
+            setError('Mật khẩu không khớp');
             return;
         }
 
         try {
-            const response = await updatePasswordAxios({
-                newPassword,
-                headers: {
-                    Authorization: `Bearer ${localStorage.getItem('access_token')}`,
-                    'Content-Type': 'application/json',
-                },
+            // Send with the correct field names: email, password, recheck
+            const response = await forgetPasswordAxios({ 
+                email: email.trim(),
+                password: newPassword,
+                recheck: confirmPassword  // Use the recheck field as shown in the API docs
             });
 
             if (response.error) {
@@ -40,8 +83,9 @@ function UpdatePasswordPopup({ onClose }) {
 
             setSuccess('Cập nhật mật khẩu thành công!');
             setTimeout(() => {
-                onClose(); // Đóng popup sau khi thành công
-            }, 2000);
+                onClose(); // Đóng popup
+                window.location.reload(); // Reload trang
+            }, 3000);
         } catch (err) {
             setError(err.message || 'Có lỗi xảy ra, vui lòng thử lại');
         }
@@ -64,24 +108,40 @@ function UpdatePasswordPopup({ onClose }) {
                         {success}
                     </div>
                 )}
-
+                
+                <div className={cx('inputField')}>
+                    <input
+                        type="email"
+                        name="email"
+                        placeholder="Nhập địa chỉ email"
+                        value={email}
+                        onChange={handleInputChange}
+                        readOnly={initialEmail !== ''} // Make it read-only if initialEmail was provided
+                    />
+                </div>
                 <div className={cx('inputField')}>
                     <input
                         type="password"
+                        name="newPassword"
                         placeholder="Nhập mật khẩu mới"
                         value={newPassword}
-                        onChange={(e) => setNewPassword(e.target.value)}
+                        onChange={handleInputChange}
                     />
                 </div>
                 <div className={cx('inputField')}>
                     <input
                         type="password"
+                        name="confirmPassword"
                         placeholder="Xác nhận mật khẩu mới"
                         value={confirmPassword}
-                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        onChange={handleInputChange}
                     />
                 </div>
-                <button className={cx('submitButton')} onClick={handleSubmit}>
+                <button
+                    className={cx('submitButton')}
+                    onClick={handleSubmit}
+                    disabled={!!error} // Vô hiệu hóa nút nếu có lỗi
+                >
                     Gửi
                 </button>
             </div>
