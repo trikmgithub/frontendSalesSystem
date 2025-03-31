@@ -166,6 +166,30 @@ const updateUserSkinTypeAxios = async (skinType) => {
     }
 };
 
+const forgetPasswordAxios = async (passwordData) => {
+    try {
+        // Match exactly the API's expected fields: email, password, recheck
+        const requestData = {
+            email: passwordData.email.trim(),
+            password: passwordData.password,
+            recheck: passwordData.recheck || passwordData.confirmPassword // Use either name provided
+        };
+        
+        console.log('Sending password reset request with correct fields:', 
+            JSON.stringify(requestData, null, 2));
+        
+        const res = await axiosConfig.post('users/forget-password', requestData);
+        return res;
+    } catch (error) {
+        console.error('Error resetting password:', error);
+        return {
+            error: true,
+            message: error.response?.data?.message || error.message || 'Failed to reset password',
+            status: error.response?.status
+        };
+    }
+};
+
 export { 
     getUsersAxios, 
     getUserByIdAxios, 
@@ -174,5 +198,6 @@ export {
     deleteUserAxios,
     updateAddressAxios,
     updateUserSkinTypeAxios,
-    updatePasswordAxios
+    updatePasswordAxios,
+    forgetPasswordAxios  
 };
