@@ -44,10 +44,18 @@
   align-items: center;
   justify-content: center;
   border: 1px solid #e0e0e0;
+  overflow: hidden; // Add this to contain the image
 }
 
 .avatarIcon {
   color: #a0a0a0;
+}
+
+// Add this for avatar image in sidebar
+.avatarImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .userInfo {
@@ -158,12 +166,58 @@
   align-items: center;
   justify-content: center;
   margin-bottom: 0.5rem;
+  position: relative; // Add this for positioning overlay
+  cursor: pointer;
+  overflow: hidden; // Add this to contain the image
+  
+  &:hover .uploadOverlay {
+    opacity: 1;
+  }
+}
+
+// Add these new classes for avatar upload functionality
+.avatarPreview {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.uploadOverlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.uploadIcon {
+  color: white;
+}
+
+.fileInput {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
 }
 
 .avatarLabel {
   font-size: 0.875rem;
   color: #6b7280;
   text-align: center;
+  cursor: pointer;
+  
+  &:hover {
+    color: #2e7d32;
+    text-decoration: underline;
+  }
 }
 
 .formFields {
@@ -525,7 +579,6 @@
 }
 
 /* Additional CSS for Order List - Add to ProfilePage.module.scss */
-
 .filterBar {
   display: flex;
   align-items: center;
@@ -761,6 +814,7 @@
   }
 }
 
+// Add new loading indicator styles
 .loadingIndicator {
   display: flex;
   flex-direction: column;

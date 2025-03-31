@@ -4,6 +4,7 @@ import styles from './ForgotPasswordPopup.module.scss';
 import { IoWarning } from 'react-icons/io5';
 import useDisableBodyScroll from '~/hooks/useDisableBodyScroll';
 import { sendOtpForPasswordResetAxios, verifyOtpAxios } from '~/services/otpAxios';
+import UpdatePasswordPopup from './UpdatePasswordPopup';
 
 const cx = classNames.bind(styles);
 
@@ -13,6 +14,7 @@ function ForgotPasswordPopup({ onClose }) {
     const [error, setError] = useState('');
     const [countdown, setCountdown] = useState(0);
     const [isVerifyMode, setIsVerifyMode] = useState(false);
+    const [showUpdatePasswordPopup, setShowUpdatePasswordPopup] = useState(false);
     
     // Use the custom hook to disable body scroll
     useDisableBodyScroll(true);
@@ -32,29 +34,23 @@ function ForgotPasswordPopup({ onClose }) {
             return;
         }
 
-        // Validate email format
         const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
         const phoneRegex = /^[0-9]{10}$/;
-        
+
         if (!emailRegex.test(email) && !phoneRegex.test(email)) {
             setError('Email hoặc số điện thoại không hợp lệ');
             return;
         }
 
         try {
-            // Send OTP to the provided email/phone using the service
             const response = await sendOtpForPasswordResetAxios(email);
-            
-            // Check response status
-            if (!response.data || (response.data && response.data.success === false)) {
-                const errorMessage = response.message || 'Có lỗi xảy ra khi gửi mã OTP';
-                throw new Error(errorMessage);
+
+            if (response.success) {
+                setCountdown(60);
+                setIsVerifyMode(true);
+            } else {
+                throw new Error(response.message || 'Có lỗi xảy ra khi gửi mã OTP');
             }
-            
-            // Success case
-            setCountdown(60);
-            setIsVerifyMode(true);
-            
         } catch (err) {
             setError(err.message || 'Có lỗi xảy ra khi gửi mã OTP');
         }
@@ -68,29 +64,32 @@ function ForgotPasswordPopup({ onClose }) {
             return;
         }
 
+        if (!/^\d{6}$/.test(otp)) {
+            setError('OTP phải là 6 chữ số');
+            return;
+        }
+
         try {
-            // Verify OTP using the service
             const response = await verifyOtpAxios(email, otp);
-            
-            // Check response status
-            if (!response.data || !response.data.success) {
-                const errorMessage = response.message || 'OTP không hợp lệ.';
-                throw new Error(errorMessage);
+
+            if (response.success) {
+                setShowUpdatePasswordPopup(true);
+            } else {
+                throw new Error(response.message || 'OTP không hợp lệ.');
             }
-            
-            // Success case - here you would typically redirect to a password reset page
-            onClose();
-            // window.location.href = '/reset-password?token=' + data.token;
-            
         } catch (err) {
             setError(err.message || 'OTP không hợp lệ.');
         }
     };
 
+    const handleClose = () => {
+        onClose();
+    };
+
     return (
-        <div className={cx('modalOverlay')} onClick={onClose}>
+        <div className={cx('modalOverlay')} onClick={handleClose}>
             <div className={cx('modalContent')} onClick={(e) => e.stopPropagation()}>
-                <button className={cx('closeButton')} onClick={onClose}>×</button>
+                <button className={cx('closeButton')} onClick={handleClose}>×</button>
                 <h2 className={cx('modalTitle')}>Quên mật khẩu tài khoản</h2>
                 <p className={cx('modalDescription')}>
                     Nhập địa chỉ email hoặc số điện thoại của bạn dưới đây và hệ thống sẽ gửi cho bạn một liên kết để đặt lại mật khẩu của bạn
@@ -113,9 +112,18 @@ function ForgotPasswordPopup({ onClose }) {
                             />
                         </div>
                         <div className={cx('otpInputs')}>
-                            <button className={cx('countdownButton')} disabled>
-                                {countdown}s
-                            </button>
+                            {countdown > 0 ? (
+                                <button className={cx('countdownButton')} disabled>
+                                    {countdown}s
+                                </button>
+                            ) : (
+                                <button
+                                    className={cx('resendButton')}
+                                    onClick={handleSendOtp}
+                                >
+                                    Gửi lại OTP
+                                </button>
+                            )}
                             <input
                                 type="text"
                                 placeholder="Nhập mã OTP"
@@ -148,6 +156,10 @@ function ForgotPasswordPopup({ onClose }) {
                             Gửi
                         </button>
                     </>
+                )}
+
+                {showUpdatePasswordPopup && (
+                    <UpdatePasswordPopup onClose={() => setShowUpdatePasswordPopup(false)} />
                 )}
             </div>
         </div>
