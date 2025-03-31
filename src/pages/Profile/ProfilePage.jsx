@@ -4,6 +4,7 @@ import cx from 'classnames';
 import { useNavigate, useLocation } from 'react-router-dom';
 import styles from './ProfilePage.module.scss';
 import routes from '~/config/routes';
+import { updateUserAxios } from '~/services/userAxios';
 
 const ProfilePage = () => {
   const [selectedTab, setSelectedTab] = useState('profile');
@@ -58,7 +59,7 @@ const ProfilePage = () => {
     event.preventDefault();
 
     // Lấy token từ localStorage
-    const token = localStorage.getItem('access_token'); // Đảm bảo key đúng
+    const token = localStorage.getItem('access_token');
     console.log('Token từ localStorage:', token);
     if (!token) {
       alert('Bạn chưa đăng nhập. Vui lòng đăng nhập để tiếp tục.');
@@ -72,32 +73,24 @@ const ProfilePage = () => {
       name: fullName,
       dateOfBirth: `${year}-${month}-${day}T00:00:00.000Z`, // Định dạng ISO 8601
       gender: gender,
-      role: "user",
+      role: 'user',
       address: address,
     };
 
     console.log('Dữ liệu gửi đi:', userData);
 
     try {
-      const response = await fetch('http://localhost:8000/api/v1/users/update', {
-        method: 'PATCH',
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(userData),
-      });
-
-      if (!response.ok) {
-        throw new Error('Cập nhật thông tin thất bại');
+      // Gọi API thông qua userAxios
+      const response = await updateUserAxios(userData);
+      if (response.error) {
+        throw new Error(response.message);
       }
 
-      const result = await response.json();
-      console.log('Cập nhật thành công:', result);
+      console.log('Cập nhật thành công:', response);
       alert('Thông tin đã được cập nhật thành công!');
     } catch (error) {
       console.error('Lỗi khi cập nhật thông tin:', error);
-      alert('Đã xảy ra lỗi khi cập nhật thông tin. Vui lòng thử lại.');
+      alert(error.message || 'Đã xảy ra lỗi khi cập nhật thông tin. Vui lòng thử lại.');
     }
   };
 
