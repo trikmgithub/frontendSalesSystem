@@ -29,31 +29,51 @@ function LoginForm({ onClose, onShowSignup, onLoginSuccess }) {
         const handleGoogleRedirect = async () => {
             const urlParams = new URLSearchParams(window.location.search);
             const code = urlParams.get('code');
-            
-            // Check if we're on the Google redirect path or have a code parameter
-            if (location.pathname.includes("auth/google/redirect") || code) {
+            const data = urlParams.get('data');
+
+            // Check if we're on the Google redirect path or have auth data
+            if (location.pathname.includes("auth/google/redirect") || code || data) {
                 try {
-                    await googleRedirectAxios();
-                    if (onLoginSuccess) {
-                        onLoginSuccess();
-                    }
-                    if (handleLoginSuccess) {
-                        handleLoginSuccess();
+                    setIsLoading(true); // Show loading state
+                    const response = await googleRedirectAxios();
+
+                    // Our updated googleRedirectAxios handles everything including localStorage updates
+                    if (response?.success) {
+                        console.log("Google authentication successful");
+
+                        // Close the login popup
+                        onClose();
+
+                        // Call any success callbacks
+                        if (onLoginSuccess) {
+                            onLoginSuccess();
+                        }
+                        if (handleLoginSuccess) {
+                            handleLoginSuccess();
+                        }
+                    } else if (response?.error) {
+                        setError(response.message || "Authentication failed");
                     }
                 } catch (error) {
                     console.error("Google Redirect Error:", error);
+                    setError("Authentication failed. Please try again.");
+                } finally {
+                    setIsLoading(false);
                 }
             }
         };
-        
+
         handleGoogleRedirect();
-    }, [location, onLoginSuccess, handleLoginSuccess]);
+    }, [location, onClose, onLoginSuccess, handleLoginSuccess]);
 
     const handleGoogleLogin = async () => {
         try {
+            console.log('Initiating Google login from login popup...');
             await googleLoginAxios();
+            // Page will redirect to Google auth
         } catch (error) {
             console.error("Google Login Error:", error);
+            setError("Google login failed. Please try again.");
         }
     };
 
@@ -104,7 +124,7 @@ function LoginForm({ onClose, onShowSignup, onLoginSuccess }) {
         } catch (error) {
             setIsLoading(false); // Stop loading on error
             console.error('Login Popup Error:', error);
-            
+
             // Check if this is an auth error
             if (error.response?.status === 401) {
                 setError('Email hoặc mật khẩu không chính xác.');
@@ -175,8 +195,8 @@ function LoginForm({ onClose, onShowSignup, onLoginSuccess }) {
                                 Quên mật khẩu
                             </Link>
                         </div>
-                        <button 
-                            type="submit" 
+                        <button
+                            type="submit"
                             className={cx('submitBtn')}
                             disabled={isLoading}
                         >

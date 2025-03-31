@@ -115,36 +115,41 @@ function SignupForm({ onClose, onShowLogin, verifiedEmail = '' }) {
     const handleGoogleRedirect = async () => {
       const urlParams = new URLSearchParams(window.location.search);
       const code = urlParams.get('code');
+      const data = urlParams.get('data');
 
       // Check if we're on the Google redirect path or have a code parameter
-      if (location.pathname.includes("auth/google/redirect") || code) {
+      if (location.pathname.includes("auth/google/redirect") || code || data) {
         try {
           const response = await googleRedirectAxios();
 
-          // If successful, update user state
-          if (response?.data) {
-            setUserInfo({
-              _id: response.data._id,
-              name: response.data.name,
-              email: response.data.email,
-              role: response.data.role,
-              avatar: response.data.avatar
-            });
+          // Our updated googleRedirectAxios handles everything including localStorage
+          if (response?.success) {
+            console.log("Google authentication successful");
+
+            // Close the signup popup
+            onClose();
+
+            // Refresh the page to reflect logged in state
+            window.location.reload();
           }
         } catch (error) {
           console.error("Google Redirect Error:", error);
+          setError("Authentication failed. Please try again.");
         }
       }
     };
 
     handleGoogleRedirect();
-  }, [location]);
+  }, [location, onClose]);
 
   const handleGoogleLogin = async () => {
     try {
+      console.log('Initiating Google login from signup popup...');
       await googleLoginAxios();
+      // Page will redirect to Google auth
     } catch (error) {
       console.error("Google Login Error:", error);
+      setError("Google login failed. Please try again.");
     }
   };
 
@@ -235,13 +240,13 @@ function SignupForm({ onClose, onShowLogin, verifiedEmail = '' }) {
       if (response.error || response.statusCode === 400) {
         // Check if the message indicates email already exists
         if (response.message && (
-           response.message.includes('đã tồn tại trong hệ thống') || 
-           response.message.includes('Email already exists')
+          response.message.includes('đã tồn tại trong hệ thống') ||
+          response.message.includes('Email already exists')
         )) {
           setError('Email đã được sử dụng, vui lòng chọn email khác hoặc đăng nhập.');
           return;
         }
-        
+
         setError(response.message || 'Đăng ký thất bại.');
         return;
       }
@@ -259,8 +264,8 @@ function SignupForm({ onClose, onShowLogin, verifiedEmail = '' }) {
     } catch (error) {
       // If error is a string (from the previous implementation)
       if (typeof error === 'string') {
-        if (error.includes('đã tồn tại trong hệ thống') || 
-            error.includes('Email already exists')) {
+        if (error.includes('đã tồn tại trong hệ thống') ||
+          error.includes('Email already exists')) {
           setError('Email đã được sử dụng, vui lòng chọn email khác hoặc đăng nhập.');
         } else {
           setError(error || 'Lỗi kết nối đến máy chủ. Vui lòng thử lại.');

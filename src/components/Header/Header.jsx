@@ -80,9 +80,16 @@ function Header() {
 
     const handleGoogleLogin = async () => {
         try {
+            console.log('Initiating Google login from header...');
             await googleLoginAxios();
+            // Note: The page will redirect to Google login page
+            // The rest of the auth flow is handled by googleRedirectAxios on return
         } catch (error) {
             console.error("Google Login Error:", error);
+            toast.error("Google login failed. Please try again.", {
+                position: "top-center",
+                autoClose: 3000
+            });
         }
     };
 
