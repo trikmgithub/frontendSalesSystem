@@ -59,7 +59,7 @@ function Header() {
     const processUserInfoCookie = async () => {
         try {
             const userInfoCookie = getCookie('user_info');
-            
+            console.log("User info cookie:", userInfoCookie);
             if (!userInfoCookie) {
                 console.log("No user_info cookie found");
                 return null;
