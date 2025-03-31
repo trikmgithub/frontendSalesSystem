@@ -10,78 +10,6 @@ import { updateAddressAxios } from '~/services/userAxios';
 
 const cx = classNames.bind(styles);
 
-const locationData = {
-    regions: [
-        "Hồ Chí Minh",
-        "Hà Nội",
-        "Đà Nẵng"
-    ],
-    districts: {
-        "Hồ Chí Minh": [
-            "Quận 1",
-            "Quận 2",
-            "Quận 3"
-        ],
-        "Hà Nội": [
-            "Ba Đình",
-            "Hoàn Kiếm",
-            "Hai Bà Trưng"
-        ],
-        "Đà Nẵng": [
-            "Hải Châu",
-            "Thanh Khê",
-            "Sơn Trà"
-        ]
-    },
-    wards: {
-        "Quận 1": [
-            "Phường Bến Nghé",
-            "Phường Bến Thành",
-            "Phường Cô Giang"
-        ],
-        "Quận 2": [
-            "Phường Thảo Điền",
-            "Phường An Phú",
-            "Phường Bình An"
-        ],
-        "Quận 3": [
-            "Phường 1",
-            "Phường 2",
-            "Phường 3"
-        ],
-        "Ba Đình": [
-            "Phường Trúc Bạch",
-            "Phường Vĩnh Phúc",
-            "Phường Cống Vị"
-        ],
-        "Hoàn Kiếm": [
-            "Phường Hàng Bạc",
-            "Phường Hàng Bồ",
-            "Phường Hàng Đào"
-        ],
-        "Hai Bà Trưng": [
-            "Phường Bách Khoa",
-            "Phường Bạch Đằng",
-            "Phường Bùi Thị Xuân"
-        ],
-        "Hải Châu": [
-            "Phường Hải Châu 1",
-            "Phường Hải Châu 2",
-            "Phường Nam Dương"
-        ],
-        "Thanh Khê": [
-            "Phường Thanh Khê Đông",
-            "Phường Thanh Khê Tây",
-            "Phường Xuân Hà"
-        ],
-        "Sơn Trà": [
-            "Phường An Hải Bắc",
-            "Phường An Hải Đông",
-            "Phường An Hải Tây"
-        ]
-    }
-};
-
 function Navigation() {
     const [showLoginForm, setShowLoginForm] = useState(false);
     const [isLocationOpen, setIsLocationOpen] = useState(false);
@@ -89,9 +17,9 @@ function Navigation() {
     const locationSelectorRef = useRef(null);
     const navigate = useNavigate();
 
-    // Get address from user object in localStorage, fallback to confirmedAddress or default value
-    const [confirmedAddress, setConfirmedAddress] = useState(() => {
-        // Try to get address from user object first
+    // Get address directly from user object in localStorage or use default
+    const [userAddress, setUserAddress] = useState(() => {
+        // Try to get address from user object
         try {
             const userData = JSON.parse(localStorage.getItem('user') || '{}');
             if (userData && userData.address) {
@@ -101,18 +29,13 @@ function Navigation() {
             console.error("Error parsing user data from localStorage:", error);
         }
 
-        // Fallback to confirmedAddress or default
-        return localStorage.getItem('confirmedAddress') || "Chọn khu vực của bạn";
+        // Default value if no address is found
+        return "Chọn khu vực của bạn";
     });
-    // Dữ liệu form tạm thời
-    const [temporarySelectedRegion, setTemporarySelectedRegion] = useState("");
-    const [temporarySelectedDistrict, setTemporarySelectedDistrict] = useState("");
-    const [temporarySelectedWard, setTemporarySelectedWard] = useState("");
-    const [errors, setErrors] = useState({
-        region: "",
-        district: "",
-        ward: ""
-    });
+    
+    // Single address field for free-form input
+    const [address, setAddress] = useState("");
+    const [addressError, setAddressError] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     // Create NavSearchLink component for category links
@@ -161,32 +84,13 @@ function Navigation() {
         };
     }, [locationSelectorRef]);
 
-    const handleRegionChange = (region) => {
-        setTemporarySelectedRegion(region);
-        setTemporarySelectedDistrict("");
-        setTemporarySelectedWard("");
-        setErrors({ ...errors, region: "" });
-    };
-
-    const handleDistrictChange = (district) => {
-        setTemporarySelectedDistrict(district);
-        setTemporarySelectedWard("");
-        setErrors({ ...errors, district: "" });
-    };
-
-    const handleWardChange = (ward) => {
-        setTemporarySelectedWard(ward);
-        setErrors({ ...errors, ward: "" });
-    };
-
     const validateForm = () => {
-        const newErrors = {
-            region: !temporarySelectedRegion ? "Vui lòng chọn khu vực" : "",
-            district: !temporarySelectedDistrict ? "Vui lòng chọn quận/ huyện" : "",
-            ward: !temporarySelectedWard ? "Vui lòng chọn phường/ xã" : ""
-        };
-        setErrors(newErrors);
-        return !Object.values(newErrors).some(error => error);
+        if (!address.trim()) {
+            setAddressError("Vui lòng nhập địa chỉ của bạn");
+            return false;
+        }
+        setAddressError("");
+        return true;
     };
 
     const handleSubmit = async () => {
@@ -195,7 +99,7 @@ function Navigation() {
         }
 
         setIsSubmitting(true);
-        const newAddress = `${temporarySelectedWard}, ${temporarySelectedDistrict}, ${temporarySelectedRegion}`;
+        const newAddress = address.trim();
 
         try {
             // Get user data from localStorage
@@ -218,11 +122,8 @@ function Navigation() {
                 localStorage.setItem('user', JSON.stringify(userData));
             }
 
-            // Also maintain the confirmedAddress for backward compatibility
-            localStorage.setItem('confirmedAddress', newAddress);
-
             // Update state
-            setConfirmedAddress(newAddress);
+            setUserAddress(newAddress);
 
             // Close modal and reset form
             setIsAddressModalOpen(false);
@@ -235,10 +136,8 @@ function Navigation() {
     };
 
     const clearForm = () => {
-        setTemporarySelectedRegion("");
-        setTemporarySelectedDistrict("");
-        setTemporarySelectedWard("");
-        setErrors({ region: "", district: "", ward: "" });
+        setAddress("");
+        setAddressError("");
     };
 
     return (
@@ -463,14 +362,14 @@ function Navigation() {
                 </nav>
                 <div ref={locationSelectorRef} className={cx('locationSelector')} onClick={() => setIsLocationOpen(!isLocationOpen)}>
                     <HiOutlineLocationMarker className={cx('locationIcon')} />
-                    <span>{confirmedAddress}</span>
+                    <span>{userAddress}</span>
                     {isLocationOpen && (
                         <div className={cx('locationDropdown')}>
                             <div className={cx('locationHeader')}>Khu vực bạn chọn hiện tại</div>
                             <div className={cx('locationContent')}>
                                 <div className={cx('locationRow')}>
                                     <HiOutlineLocationMarker className={cx('locationIcon')} />
-                                    <span className={cx('locationText')}>{confirmedAddress}</span>
+                                    <span className={cx('locationText')}>{userAddress}</span>
                                 </div>
                                 <button className={cx('changeLocation')} onClick={handleChangeAddress}>
                                     Đổi địa chỉ
@@ -487,36 +386,20 @@ function Navigation() {
                             <div className={cx('modalContent')}>
                                 <div className={cx('locationLabel')}>
                                     <HiOutlineLocationMarker className={cx('locationIcon')} />
-                                    <span>Chọn khu vực của bạn</span>
+                                    <span>Nhập địa chỉ của bạn</span>
                                 </div>
 
                                 <div className={cx('formGroup')}>
-                                    <select value={temporarySelectedRegion} onChange={(e) => handleRegionChange(e.target.value)}>
-                                        <option value="">Tỉnh/Thành phố</option>
-                                        {locationData.regions.map(region => <option key={region} value={region}>{region}</option>)}
-                                    </select>
-                                    {errors.region && <span className={cx('errorMessage')}>{errors.region}</span>}
+                                    <textarea
+                                        value={address}
+                                        onChange={(e) => setAddress(e.target.value)}
+                                        placeholder="Nhập địa chỉ đầy đủ (ví dụ: 123 Nguyễn Văn A, Phường X, Quận Y, TP. Z)"
+                                        className={cx('addressInput', { error: addressError })}
+                                        rows={3}
+                                    />
+                                    {addressError && <span className={cx('errorMessage')}>{addressError}</span>}
                                 </div>
 
-                                <div className={cx('formGroup')}>
-                                    <select value={temporarySelectedDistrict} onChange={(e) => handleDistrictChange(e.target.value)}>
-                                        <option value="">Quận/ huyện</option>
-                                        {temporarySelectedRegion && locationData.districts[temporarySelectedRegion]?.map(district => (
-                                            <option key={district} value={district}>{district}</option>
-                                        ))}
-                                    </select>
-                                    {errors.district && <span className={cx('errorMessage')}>{errors.district}</span>}
-                                </div>
-
-                                <div className={cx('formGroup')}>
-                                    <select value={temporarySelectedWard} onChange={(e) => handleWardChange(e.target.value)}>
-                                        <option value="">Phường/ xã</option>
-                                        {temporarySelectedDistrict && locationData.wards[temporarySelectedDistrict]?.map(ward => (
-                                            <option key={ward} value={ward}>{ward}</option>
-                                        ))}
-                                    </select>
-                                    {errors.ward && <span className={cx('errorMessage')}>{errors.ward}</span>}
-                                </div>
                                 <div className={cx('modalActions')}>
                                     <button
                                         className={cx('closeButton')}
