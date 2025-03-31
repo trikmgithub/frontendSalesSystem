@@ -188,7 +188,7 @@ const ProfilePage = () => {
                   </label>
                 </div>
 
-                {/* Form Section */}
+                {/* Form Section */}j 
                 <div className={cx(styles.formFields)}>
                   <div className={cx(styles.formField)}>
                     <input
