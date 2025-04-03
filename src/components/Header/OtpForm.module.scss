@@ -91,6 +91,12 @@
     border: 1px solid #f26522;
     border-radius: 4px;
     overflow: hidden;
+    cursor: pointer;
+
+    &:hover {
+      background: #e55511;
+      border-color: #e55511;
+    }
   }
 
   .submitButton {
@@ -104,8 +110,8 @@
     cursor: pointer;
 
     &:hover {
-      background: #ff4d4f;
-      border-color: #ff4d4f;
+      background: #e55511;
+      border-color: #e55511;
     }
   }
 

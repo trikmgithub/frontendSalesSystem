@@ -5,7 +5,11 @@ import { forgetPasswordAxios } from '~/services/userAxios';
 
 const cx = classNames.bind(styles);
 
-function UpdatePasswordPopup({ onClose, initialEmail = '' }) {
+function UpdatePasswordPopup({ 
+    onClose, 
+    initialEmail = '', 
+    closeParentPopup = () => {} // Add an optional prop to close parent popup
+}) {
     const [email, setEmail] = useState(initialEmail);
     const [newPassword, setNewPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
@@ -84,6 +88,7 @@ function UpdatePasswordPopup({ onClose, initialEmail = '' }) {
             setSuccess('Cập nhật mật khẩu thành công!');
             setTimeout(() => {
                 onClose(); // Đóng popup
+                closeParentPopup(); // Close the parent (Forgot Password) popup
                 window.location.reload(); // Reload trang
             }, 3000);
         } catch (err) {
@@ -116,7 +121,7 @@ function UpdatePasswordPopup({ onClose, initialEmail = '' }) {
                         placeholder="Nhập địa chỉ email"
                         value={email}
                         onChange={handleInputChange}
-                        readOnly={initialEmail !== ''} // Make it read-only if initialEmail was provided
+                        readOnly={true} // Make it read-only always
                     />
                 </div>
                 <div className={cx('inputField')}>
