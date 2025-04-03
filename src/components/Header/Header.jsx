@@ -14,21 +14,10 @@ import { useAuth } from '~/context/AuthContext';
 import routes from '~/config/routes';
 import SearchLink from '../SearchLink/SearchLink';
 import { toast } from 'react-toastify';
-import * as axiosConfig from '~/utils/axiosConfig';
+import { processUserInfoFromUrl, initiateGoogleLogin } from '~/utils/googleLoginUtils';
+import TruncatedText from '../TruncatedText/TruncatedText';
 
 const cx = classNames.bind(styles);
-
-// Function to get cookie by name
-const getCookie = (name) => {
-    const cookies = document.cookie.split(';');
-    for (let i = 0; i < cookies.length; i++) {
-        const cookie = cookies[i].trim();
-        if (cookie.startsWith(name + '=')) {
-            return decodeURIComponent(cookie.substring(name.length + 1));
-        }
-    }
-    return null;
-};
 
 function Header() {
     const [showAccountPopup, setShowAccountPopup] = useState(false);
@@ -55,111 +44,32 @@ function Header() {
         handleLoginSuccess
     } = useAuth();
 
-    // Process user_info cookie and save to localStorage
-    const processUserInfoCookie = async () => {
-        try {
-            const userInfoCookie = getCookie('user_info');
-            console.log("User info cookie:", userInfoCookie);
-            if (!userInfoCookie) {
-                console.log("No user_info cookie found");
-                return null;
-            }
-            
-            // Parse the cookie data (handling 'j:' prefix if exists)
-            const cookieData = JSON.parse(userInfoCookie.startsWith('j:') ? 
-                userInfoCookie.substring(2) : userInfoCookie);
-                
-            console.log("Retrieved user data from cookie:", cookieData);
-            
-            // Store access token
-            if (cookieData.access_token) {
-                localStorage.setItem('access_token', cookieData.access_token);
-                
-                // Clean up user data before storing
-                const basicUserData = { ...cookieData };
-                // Don't store refresh token in localStorage for security
-                if (basicUserData.refresh_token) {
-                    delete basicUserData.refresh_token;
-                }
-                
-                // Store basic user info immediately
-                localStorage.setItem('user', JSON.stringify(basicUserData));
-                console.log("Basic user data from cookie saved to localStorage");
-                
-                // Clear the cookie after processing
-                document.cookie = 'user_info=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
-                
-                // Get detailed user info if we have an ID
-                if (basicUserData._id) {
-                    try {
-                        // Import axiosConfig at the top of the file
-                        const endpoint = `users/info/${basicUserData._id}`;
-                        
-                        const userDetailsRes = await axiosConfig.get(endpoint, {
-                            headers: {
-                                Authorization: `Bearer ${basicUserData.access_token}`
-                            }
-                        });
-                        
-                        // Check the structure of the response to extract user data correctly
-                        const userData = userDetailsRes.data?.user || userDetailsRes.data;
-                        
-                        if (userData) {
-                            // Ensure password is not included
-                            if (userData.password) {
-                                delete userData.password;
-                            }
-                            
-                            // Make sure to preserve access token and basic info
-                            const completeUserData = {
-                                ...basicUserData,
-                                ...userData,
-                                access_token: basicUserData.access_token
-                            };
-                            
-                            // Update localStorage with complete user data
-                            localStorage.setItem('user', JSON.stringify(completeUserData));
-                            console.log("Updated user data in localStorage with details:", completeUserData);
-                            
-                            return completeUserData;
-                        }
-                    } catch (detailsError) {
-                        console.error('Error fetching user details:', detailsError.message);
-                        // We already saved the basic info, so login still succeeds
+    useEffect(() => {
+        // Check for user info in URL parameters on component mount
+        const checkForUserParams = async () => {
+            try {
+                const userData = await processUserInfoFromUrl();
+                if (userData) {
+                    console.log("Found and processed user info from URL parameters");
+
+                    // Notify user of successful login
+                    toast.success("Đăng nhập thành công!", {
+                        position: "top-center",
+                        autoClose: 2000
+                    });
+
+                    // Call handleLoginSuccess to update auth context
+                    if (handleLoginSuccess) {
+                        handleLoginSuccess();
                     }
                 }
-                
-                return basicUserData;
-            }
-        } catch (error) {
-            console.error('Error processing user_info cookie:', error);
-        }
-        
-        return null;
-    };
-
-    useEffect(() => {
-        // Check for user_info cookie on component mount
-        const checkForUserCookie = async () => {
-            const userData = await processUserInfoCookie();
-            if (userData) {
-                console.log("Found and processed user_info cookie on component mount");
-                
-                // Notify user of successful login
-                toast.success("Đăng nhập thành công!", {
-                    position: "top-center",
-                    autoClose: 2000
-                });
-                
-                // Call handleLoginSuccess to update auth context
-                if (handleLoginSuccess) {
-                    handleLoginSuccess();
-                }
+            } catch (error) {
+                console.error("Error processing URL parameters:", error);
             }
         };
-        
-        checkForUserCookie();
-        
+
+        checkForUserParams();
+
         const fetchItems = async () => {
             try {
                 const response = await getItemsAxios();
@@ -197,12 +107,10 @@ function Header() {
         };
     }, []);
 
-    const handleGoogleLogin = () => {
+    const handleGoogleLogin = async () => {
         try {
             console.log('Initiating Google login redirect...');
-            
-            // Redirect to Google login endpoint
-            window.location.href = `${import.meta.env.VITE_API_URI}/auth/google/login`;
+            await initiateGoogleLogin();
         } catch (error) {
             console.error("Google Login Error:", error);
             toast.error("Đăng nhập Google thất bại. Vui lòng thử lại sau.", {
@@ -591,7 +499,14 @@ function Header() {
                             <div className={cx('actionContent')}>
                                 {isLoggedIn() && userInfo ? (
                                     <div>
-                                        <div><span>Chào {userInfo?.name || 'Khách hàng'}</span></div>
+                                        <div className={cx('greetingLine')}>
+                                            <span className={cx('greetingText')}>Chào </span>
+                                            <TruncatedText
+                                                text={userInfo?.name || 'Khách hàng'}
+                                                maxLength={15}
+                                                className={cx('usernameText')}
+                                            />
+                                        </div>
                                         <div><span>Tài khoản</span></div>
                                     </div>
                                 ) : (

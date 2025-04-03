@@ -88,10 +88,14 @@ const useLocationData = () => {
 
   /**
    * Get formatted address string
+   * @param {string} streetAddress - Optional street address
    * @returns {string} - Formatted address
    */
-  const getFormattedAddress = () => {
+  const getFormattedAddress = (streetAddress = '') => {
     if (selectedRegion && selectedDistrict && selectedWard) {
+      if (streetAddress) {
+        return `${streetAddress}, ${selectedWard}, ${selectedDistrict}, ${selectedRegion}`;
+      }
       return `${selectedWard}, ${selectedDistrict}, ${selectedRegion}`;
     }
     return '';
@@ -159,27 +163,43 @@ const useLocationData = () => {
   const parseAddress = useCallback((address) => {
     if (!address) return;
     
-    // Try to parse address in the format: "Ward, District, Region"
+    console.log("Parsing address:", address);
+    
+    // Try to parse address in the format: "Ward, District, Region" or "Street, Ward, District, Region"
     const parts = address.split(', ');
     
     if (parts.length >= 3) {
-      const regionText = parts[2];
-      const districtText = parts[1];
-      const wardText = parts[0];
+      // The last part is always the region
+      const regionText = parts[parts.length - 1];
+      // The second-to-last part is the district
+      const districtText = parts[parts.length - 2];
+      // The third-to-last part is the ward
+      const wardText = parts[parts.length - 3];
+      
+      console.log("Address parts:", { 
+        ward: wardText, 
+        district: districtText, 
+        region: regionText,
+        street: parts.length > 3 ? parts.slice(0, parts.length - 3).join(', ') : ''
+      });
       
       // Find matching region
       const matchedRegion = findMatchingRegion(regionText);
+      console.log("Matched region:", matchedRegion);
       
       if (matchedRegion) {
+        // Always set region first
         setSelectedRegion(matchedRegion);
         
-        // Find matching district
+        // Find matching district for this region
         const matchedDistrict = findMatchingDistrict(matchedRegion, districtText);
+        console.log("Matched district:", matchedDistrict);
         
         if (matchedDistrict) {
+          // Always set district to ensure UI updates
           setSelectedDistrict(matchedDistrict);
           
-          // Set the ward as-is since we have fewer ward data
+          // Always set ward value
           setSelectedWard(wardText);
         }
       }

@@ -24,7 +24,6 @@ export const CompareProvider = ({ children }) => {
                 setShowCompareBar(true);
             }
         } else {
-            console.log("CompareContext: No compare items, hiding bar");
             setShowCompareBar(false);
         }
     }, [compareItems.length]);
@@ -36,7 +35,6 @@ export const CompareProvider = ({ children }) => {
                 const savedItems = localStorage.getItem('compareItems');
                 if (savedItems && savedItems !== 'null') {
                     const parsedItems = JSON.parse(savedItems);
-                    console.log("CompareContext: Loading compare items:", parsedItems.length);
                     setCompareItems(parsedItems);
                     // Show compare bar if we have items
                     setShowCompareBar(parsedItems.length > 0);
@@ -55,7 +53,6 @@ export const CompareProvider = ({ children }) => {
 
     // Save compare items to localStorage whenever they change
     useEffect(() => {
-        console.log("CompareContext: Saving compare items:", compareItems.length);
         localStorage.setItem('compareItems', JSON.stringify(compareItems));
 
         // Update compare bar visibility
