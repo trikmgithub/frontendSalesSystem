@@ -1,3 +1,5 @@
+@use "sass:color";
+
 // LandingPage.module.scss
 .landing-page {
   width: 100%;
@@ -104,9 +106,9 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  
+
   &:hover {
-    background-color: darken(#2f6e56, 10%);
+    background-color: color.scale(#2f6e56, $lightness: -10%);
     transform: translateY(-2px);
   }
 }
@@ -409,9 +411,9 @@
 .cart-button {
   background-color: #2f6e56;
   background-image: url('../../assets/icons/cart.svg');
-  
+
   &:hover {
-    background-color: darken(#2f6e56, 10%);
+    background-color: color.scale(#2f6e56, $lightness: -10%);
   }
 }
 
