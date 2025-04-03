@@ -77,7 +77,7 @@ const loginAxios = async (userData) => {
                 } else {
                     // Regular users go to homepage
                     console.log("Reloading page for regular user");
-                    window.location.reload();
+                    window.location.href = '/';
                 }
             }, 500); // Increased delay for better reliability
         }

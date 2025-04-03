@@ -159,7 +159,11 @@ function ForgotPasswordPopup({ onClose }) {
                 )}
 
                 {showUpdatePasswordPopup && (
-                    <UpdatePasswordPopup onClose={() => setShowUpdatePasswordPopup(false)} />
+                    <UpdatePasswordPopup 
+                        onClose={() => setShowUpdatePasswordPopup(false)} 
+                        initialEmail={email} 
+                        closeParentPopup={onClose} // Pass the parent popup's close function
+                    />
                 )}
             </div>
         </div>
