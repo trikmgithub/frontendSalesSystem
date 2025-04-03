@@ -9,81 +9,9 @@ import { useNavigate } from "react-router-dom";
 import { payosPayAxios } from "~/services/paymentAxios";
 import { updateAddressAxios, getUserByIdAxios } from "~/services/userAxios";
 import { createCartAxios } from "~/services/cartAxios";
+import AddressSelector from '~/components/AddressSelector';
 
 const cx = classNames.bind(styles);
-
-// Location data for address dropdowns
-const locationData = {
-  regions: [
-    "Hồ Chí Minh",
-    "Hà Nội",
-    "Đà Nẵng"
-  ],
-  districts: {
-    "Hồ Chí Minh": [
-      "Quận 1",
-      "Quận 2",
-      "Quận 3"
-    ],
-    "Hà Nội": [
-      "Ba Đình",
-      "Hoàn Kiếm",
-      "Hai Bà Trưng"
-    ],
-    "Đà Nẵng": [
-      "Hải Châu",
-      "Thanh Khê",
-      "Sơn Trà"
-    ]
-  },
-  wards: {
-    "Quận 1": [
-      "Phường Bến Nghé",
-      "Phường Bến Thành",
-      "Phường Cô Giang"
-    ],
-    "Quận 2": [
-      "Phường Thảo Điền",
-      "Phường An Phú",
-      "Phường Bình An"
-    ],
-    "Quận 3": [
-      "Phường 1",
-      "Phường 2",
-      "Phường 3"
-    ],
-    "Ba Đình": [
-      "Phường Trúc Bạch",
-      "Phường Vĩnh Phúc",
-      "Phường Cống Vị"
-    ],
-    "Hoàn Kiếm": [
-      "Phường Hàng Bạc",
-      "Phường Hàng Bồ",
-      "Phường Hàng Đào"
-    ],
-    "Hai Bà Trưng": [
-      "Phường Bách Khoa",
-      "Phường Bạch Đằng",
-      "Phường Bùi Thị Xuân"
-    ],
-    "Hải Châu": [
-      "Phường Hải Châu 1",
-      "Phường Hải Châu 2",
-      "Phường Nam Dương"
-    ],
-    "Thanh Khê": [
-      "Phường Thanh Khê Đông",
-      "Phường Thanh Khê Tây",
-      "Phường Xuân Hà"
-    ],
-    "Sơn Trà": [
-      "Phường An Hải Bắc",
-      "Phường An Hải Đông",
-      "Phường An Hải Tây"
-    ]
-  }
-};
 
 const Payment = () => {
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
@@ -103,14 +31,12 @@ const Payment = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [userId, setUserId] = useState(null);
 
-  // Address modal state
-  const [temporarySelectedRegion, setTemporarySelectedRegion] = useState("");
-  const [temporarySelectedDistrict, setTemporarySelectedDistrict] = useState("");
-  const [temporarySelectedWard, setTemporarySelectedWard] = useState("");
-  const [addressErrors, setAddressErrors] = useState({
+  // Address modal state (simplified with AddressSelector)
+  const [addressData, setAddressData] = useState({
     region: "",
     district: "",
-    ward: ""
+    ward: "",
+    formattedAddress: ""
   });
   const [isAddressUpdating, setIsAddressUpdating] = useState(false);
 
@@ -121,7 +47,7 @@ const Payment = () => {
         setIsLoading(true);
         // Get user data from localStorage
         const userData = JSON.parse(localStorage.getItem('user') || '{}');
-        
+
         // Set userId for payment
         if (userData && userData._id) {
           setUserId(userData._id);
@@ -152,40 +78,27 @@ const Payment = () => {
     fetchUserData();
   }, []);
 
-  useEffect(() => {
-    // When address modal is opened and we have user address, parse it into components
-    if (showAddressModal && userAddress) {
-      const addressParts = userAddress.split(', ');
-
-      if (addressParts.length >= 3) {
-        setTemporarySelectedWard(addressParts[0]);
-        setTemporarySelectedDistrict(addressParts[1]);
-        setTemporarySelectedRegion(addressParts[2]);
-      }
-    }
-  }, [showAddressModal, userAddress]);
-
   // Create Cart API function using the cartAxios service
   const createCartRecord = async (paymentMethod) => {
     try {
       setLoading(true);
       setError("");
-      
+
       if (!userId) {
         throw new Error("User ID not found. Please log in again.");
       }
-      
+
       // Format cart items for API
       const formattedItems = cartItems.map(item => ({
         itemId: item._id,
         quantity: item.quantity,
         price: item.price
       }));
-      
+
       // Set status based on payment method
       // For bank transfer, set status to "done" immediately
       const orderStatus = paymentMethod === "bank" ? "done" : "pending";
-      
+
       // Prepare request data
       const cartData = {
         userId: userId,
@@ -194,19 +107,19 @@ const Payment = () => {
         status: orderStatus,
         paymentMethod: paymentMethod === "bank" ? "credit_card" : "cod"
       };
-      
+
       // Use our cart service to create the cart
       const response = await createCartAxios(cartData);
-      
+
       // Check if the response contains an error
       if (response.error) {
         throw new Error(response.message || "Failed to create cart record");
       }
-      
+
       // Success! Clear cart items by using the clearCart function
       clearCart();
       return true;
-      
+
     } catch (error) {
       console.error("Error creating cart record:", error);
       setError(error.message || "Failed to process payment. Please try again later.");
@@ -222,12 +135,12 @@ const Payment = () => {
       setError("Please add a delivery address before proceeding");
       return;
     }
-    
+
     if (selectedPayment === "bank") {
       try {
         // First create cart record
         const cartCreated = await createCartRecord("bank");
-        
+
         if (cartCreated) {
           // Cart has been cleared in createCartRecord
           // Then process payment via PayOS
@@ -241,7 +154,7 @@ const Payment = () => {
     } else {
       // COD flow
       const cartCreated = await createCartRecord("cod");
-      
+
       if (cartCreated) {
         // Cart has been cleared in createCartRecord
         setShowSuccessMessage(true);
@@ -254,18 +167,6 @@ const Payment = () => {
 
   const toggleAddressModal = () => {
     setShowAddressModal(!showAddressModal);
-
-    // Reset form when closing modal
-    if (showAddressModal) {
-      setTemporarySelectedRegion("");
-      setTemporarySelectedDistrict("");
-      setTemporarySelectedWard("");
-      setAddressErrors({
-        region: "",
-        district: "",
-        ward: ""
-      });
-    }
   };
 
   const togglePaymentModal = () => {
@@ -280,6 +181,66 @@ const Payment = () => {
   const confirmPaymentMethod = () => {
     setSelectedPayment(tempSelectedPayment); // Update main state
     setShowPaymentModal(false); // Close modal
+  };
+
+  // Handle address changes from the AddressSelector component
+  const handleAddressChange = (newAddressData) => {
+    setAddressData(newAddressData);
+  };
+
+  const handleSaveAddress = async () => {
+    if (!addressData.formattedAddress) {
+      // Show some error that address is incomplete
+      return;
+    }
+
+    setIsAddressUpdating(true);
+
+    try {
+      // Get user data from localStorage
+      const userData = JSON.parse(localStorage.getItem('user') || '{}');
+
+      // Check if we have the necessary user data
+      if (!userData || !userData.email) {
+        throw new Error('Không tìm thấy thông tin email người dùng');
+      }
+
+      try {
+        // Call the API to update address with both email and address fields
+        const response = await updateAddressAxios({
+          email: userData.email,
+          address: addressData.formattedAddress
+        });
+
+        console.log("Address updated successfully via API");
+
+        userData.address = addressData.formattedAddress;
+        localStorage.setItem('user', JSON.stringify(userData));
+
+        // Update local state for UI
+        setUserAddress(addressData.formattedAddress);
+
+      } catch (apiError) {
+        console.error("API address update failed:", apiError);
+
+        // Even if API fails, update in localStorage as fallback
+        userData.address = addressData.formattedAddress;
+        localStorage.setItem('user', JSON.stringify(userData));
+
+        console.log("Address updated in localStorage as fallback");
+
+        // Update local state for UI
+        setUserAddress(addressData.formattedAddress);
+      }
+
+      // Close modal
+      setShowAddressModal(false);
+    } catch (error) {
+      console.error("Error in address update process:", error);
+      alert("Không thể cập nhật địa chỉ. Vui lòng thử lại sau.");
+    } finally {
+      setIsAddressUpdating(false);
+    }
   };
 
   const getPaymentIcon = () => {
@@ -313,93 +274,6 @@ const Payment = () => {
         currentPrice: item.price,
         originalPrice: null
       };
-    }
-  };
-
-  // Address form handlers
-  const handleRegionChange = (event) => {
-    setTemporarySelectedRegion(event.target.value);
-    setTemporarySelectedDistrict("");
-    setTemporarySelectedWard("");
-    setAddressErrors(prev => ({ ...prev, region: "" }));
-  };
-
-  const handleDistrictChange = (event) => {
-    setTemporarySelectedDistrict(event.target.value);
-    setTemporarySelectedWard("");
-    setAddressErrors(prev => ({ ...prev, district: "" }));
-  };
-
-  const handleWardChange = (event) => {
-    setTemporarySelectedWard(event.target.value);
-    setAddressErrors(prev => ({ ...prev, ward: "" }));
-  };
-
-  const validateAddressForm = () => {
-    const newErrors = {
-      region: !temporarySelectedRegion ? "Vui lòng chọn khu vực" : "",
-      district: !temporarySelectedDistrict ? "Vui lòng chọn quận/ huyện" : "",
-      ward: !temporarySelectedWard ? "Vui lòng chọn phường/ xã" : ""
-    };
-
-    setAddressErrors(newErrors);
-    return !Object.values(newErrors).some(error => error);
-  };
-
-  // Updated handleSaveAddress function for the Payment page
-  const handleSaveAddress = async () => {
-    if (!validateAddressForm()) {
-      return;
-    }
-
-    setIsAddressUpdating(true);
-
-    try {
-      const formattedAddress = `${temporarySelectedWard}, ${temporarySelectedDistrict}, ${temporarySelectedRegion}`;
-
-      // Get user data from localStorage
-      const userData = JSON.parse(localStorage.getItem('user') || '{}');
-
-      // Check if we have the necessary user data
-      if (!userData || !userData.email) {
-        throw new Error('Không tìm thấy thông tin email người dùng');
-      }
-
-      try {
-        // Call the API to update address with both email and address fields
-        const response = await updateAddressAxios({
-          email: userData.email,
-          address: formattedAddress
-        });
-
-        console.log("Address updated successfully via API");
-
-        userData.address = formattedAddress;
-        localStorage.setItem('user', JSON.stringify(userData));
-
-        // Update local state for UI
-        setUserAddress(formattedAddress);
-
-      } catch (apiError) {
-        console.error("API address update failed:", apiError);
-
-        // Even if API fails, update in localStorage as fallback
-        userData.address = formattedAddress;
-        localStorage.setItem('user', JSON.stringify(userData));
-
-        console.log("Address updated in localStorage as fallback");
-
-        // Update local state for UI
-        setUserAddress(formattedAddress);
-      }
-
-      // Close modal
-      setShowAddressModal(false);
-    } catch (error) {
-      console.error("Error in address update process:", error);
-      alert("Không thể cập nhật địa chỉ. Vui lòng thử lại sau.");
-    } finally {
-      setIsAddressUpdating(false);
     }
   };
 
@@ -555,59 +429,20 @@ const Payment = () => {
         )}
       </div>
 
-      {/* Address Modal */}
+      {/* Address Modal - Refactored to use AddressSelector */}
       {showAddressModal && (
-        <div className={cx('modal-overlay')}>
-          <div className={cx('address-modal')}>
+        <div className={cx('modal-overlay')} onClick={toggleAddressModal}>
+          <div className={cx('address-modal')} onClick={(e) => e.stopPropagation()}>
             <div className={cx('modal-header')}>
               <h3>Địa chỉ nhận hàng</h3>
               <button className={cx('close-button')} onClick={toggleAddressModal}>×</button>
             </div>
 
             <div className={cx('address-form')}>
-              <div className={cx('form-group')}>
-                <select
-                  value={temporarySelectedRegion}
-                  onChange={handleRegionChange}
-                  className={cx({ 'error': addressErrors.region })}
-                >
-                  <option value="">Tỉnh/Thành phố</option>
-                  {locationData.regions.map(region => (
-                    <option key={region} value={region}>{region}</option>
-                  ))}
-                </select>
-                {addressErrors.region && <span className={cx('error-message')}>{addressErrors.region}</span>}
-              </div>
-
-              <div className={cx('form-group')}>
-                <select
-                  value={temporarySelectedDistrict}
-                  onChange={handleDistrictChange}
-                  disabled={!temporarySelectedRegion}
-                  className={cx({ 'error': addressErrors.district })}
-                >
-                  <option value="">Quận/huyện</option>
-                  {temporarySelectedRegion && locationData.districts[temporarySelectedRegion]?.map(district => (
-                    <option key={district} value={district}>{district}</option>
-                  ))}
-                </select>
-                {addressErrors.district && <span className={cx('error-message')}>{addressErrors.district}</span>}
-              </div>
-
-              <div className={cx('form-group')}>
-                <select
-                  value={temporarySelectedWard}
-                  onChange={handleWardChange}
-                  disabled={!temporarySelectedDistrict}
-                  className={cx({ 'error': addressErrors.ward })}
-                >
-                  <option value="">Phường/xã</option>
-                  {temporarySelectedDistrict && locationData.wards[temporarySelectedDistrict]?.map(ward => (
-                    <option key={ward} value={ward}>{ward}</option>
-                  ))}
-                </select>
-                {addressErrors.ward && <span className={cx('error-message')}>{addressErrors.ward}</span>}
-              </div>
+              <AddressSelector 
+                initialAddress={userAddress} 
+                onAddressChange={handleAddressChange}
+              />
             </div>
 
             <div className={cx('modal-actions')}>

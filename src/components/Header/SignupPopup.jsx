@@ -6,6 +6,7 @@ import { FcGoogle } from 'react-icons/fc';
 import { IoWarning, IoCheckmarkCircle } from 'react-icons/io5';
 import { googleLoginAxios, registerAxios } from '~/services/authAxios';
 import useDisableBodyScroll from '~/hooks/useDisableBodyScroll';
+import AddressSelector from '~/components/AddressSelector';
 
 const cx = classNames.bind(styles);
 
@@ -18,13 +19,12 @@ function SignupForm({ onClose, onShowLogin, verifiedEmail = '' }) {
     month: '',
     day: '',
     gender: '',
-    address: '',  // Free-form address input
+    address: '',
     receivePromotions: false,
     acceptTerms: false,
   });
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  const [addressError, setAddressError] = useState('');
 
   // Use the custom hook to disable body scroll
   useDisableBodyScroll(true);
@@ -81,11 +81,30 @@ function SignupForm({ onClose, onShowLogin, verifiedEmail = '' }) {
     }
   };
 
+  // Handle address change from the AddressSelector component
+  const handleAddressChange = (addressData) => {
+    setFormData(prev => ({
+      ...prev,
+      address: addressData.formattedAddress
+    }));
+    setError(''); // Clear error when address changes
+  };
+
+  const handleInputChange = (e) => {
+    const { name, value, type, checked } = e.target;
+
+    setFormData((prev) => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : value,
+    }));
+
+    setError(''); // Clear error when the user starts typing
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
     setSuccess("");
-    setAddressError("");
 
     const {
       year, month, day, acceptTerms,
@@ -110,13 +129,6 @@ function SignupForm({ onClose, onShowLogin, verifiedEmail = '' }) {
       return;
     }
 
-    // Validate address
-    if (!formData.address.trim()) {
-      setAddressError('Vui lòng nhập địa chỉ của bạn.');
-      setError('Vui lòng điền đầy đủ thông tin địa chỉ.');
-      return;
-    }
-
     // Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(formData.email)) {
@@ -138,7 +150,7 @@ function SignupForm({ onClose, onShowLogin, verifiedEmail = '' }) {
       const response = await registerAxios({
         ...rest,
         dateOfBirth,
-        address: formData.address.trim()
+        address: formData.address
       });
 
       // Check if response has isExistedEmail flag
@@ -185,21 +197,6 @@ function SignupForm({ onClose, onShowLogin, verifiedEmail = '' }) {
         setError('Lỗi kết nối đến máy chủ. Vui lòng thử lại.');
       }
       console.error('Error:', error);
-    }
-  };
-
-  const handleInputChange = (e) => {
-    const { name, value, type, checked } = e.target;
-
-    setFormData((prev) => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : value,
-    }));
-
-    // Clear errors when the user starts typing
-    setError(''); 
-    if (name === 'address') {
-      setAddressError('');
     }
   };
 
@@ -263,18 +260,10 @@ function SignupForm({ onClose, onShowLogin, verifiedEmail = '' }) {
               placeholder="Họ và tên"
             />
           </div>
-          {/* Single address input field */}
-          <div className={cx('formGroup')}>
-            <input
-              type="text"
-              name="address"
-              value={formData.address}
-              onChange={handleInputChange}
-              placeholder="Nhập địa chỉ đầy đủ của bạn"
-              className={cx({ error: addressError })}
-            />
-            {addressError && <span className={cx('fieldError')}>{addressError}</span>}
-          </div>
+          
+          {/* Replace address fields with AddressSelector */}
+          <AddressSelector onAddressChange={handleAddressChange} />
+          
           <div className={cx('genderGroup')}>
             <label>
               <input

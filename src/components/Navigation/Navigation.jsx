@@ -7,6 +7,7 @@ import { HiOutlineLocationMarker } from 'react-icons/hi';
 import { useState, useEffect, useRef } from 'react';
 import LoginForm from '~/components/Header/LoginPopup';
 import { updateAddressAxios } from '~/services/userAxios';
+import AddressSelector from '~/components/AddressSelector';
 
 const cx = classNames.bind(styles);
 
@@ -17,9 +18,9 @@ function Navigation() {
     const locationSelectorRef = useRef(null);
     const navigate = useNavigate();
 
-    // Get address directly from user object in localStorage or use default
-    const [userAddress, setUserAddress] = useState(() => {
-        // Try to get address from user object
+    // Get address from user object in localStorage, fallback to confirmedAddress or default value
+    const [confirmedAddress, setConfirmedAddress] = useState(() => {
+        // Try to get address from user object first
         try {
             const userData = JSON.parse(localStorage.getItem('user') || '{}');
             if (userData && userData.address) {
@@ -29,13 +30,17 @@ function Navigation() {
             console.error("Error parsing user data from localStorage:", error);
         }
 
-        // Default value if no address is found
-        return "Chọn khu vực của bạn";
+        // Fallback to confirmedAddress or default
+        return localStorage.getItem('confirmedAddress') || "Chọn khu vực của bạn";
     });
     
-    // Single address field for free-form input
-    const [address, setAddress] = useState("");
-    const [addressError, setAddressError] = useState("");
+    // State for the address data from selector
+    const [addressData, setAddressData] = useState({
+        region: "",
+        district: "",
+        ward: "",
+        formattedAddress: ""
+    });
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     // Create NavSearchLink component for category links
@@ -84,22 +89,18 @@ function Navigation() {
         };
     }, [locationSelectorRef]);
 
-    const validateForm = () => {
-        if (!address.trim()) {
-            setAddressError("Vui lòng nhập địa chỉ của bạn");
-            return false;
-        }
-        setAddressError("");
-        return true;
+    // Handle address change from AddressSelector
+    const handleAddressChange = (newAddressData) => {
+        setAddressData(newAddressData);
     };
 
     const handleSubmit = async () => {
-        if (!validateForm()) {
-            return;
+        if (!addressData.formattedAddress) {
+            return; // Address is incomplete
         }
 
         setIsSubmitting(true);
-        const newAddress = address.trim();
+        const newAddress = addressData.formattedAddress;
 
         try {
             // Get user data from localStorage
@@ -122,8 +123,11 @@ function Navigation() {
                 localStorage.setItem('user', JSON.stringify(userData));
             }
 
+            // Also maintain the confirmedAddress for backward compatibility
+            localStorage.setItem('confirmedAddress', newAddress);
+
             // Update state
-            setUserAddress(newAddress);
+            setConfirmedAddress(newAddress);
 
             // Close modal and reset form
             setIsAddressModalOpen(false);
@@ -133,11 +137,6 @@ function Navigation() {
         } finally {
             setIsSubmitting(false);
         }
-    };
-
-    const clearForm = () => {
-        setAddress("");
-        setAddressError("");
     };
 
     return (
@@ -362,14 +361,14 @@ function Navigation() {
                 </nav>
                 <div ref={locationSelectorRef} className={cx('locationSelector')} onClick={() => setIsLocationOpen(!isLocationOpen)}>
                     <HiOutlineLocationMarker className={cx('locationIcon')} />
-                    <span>{userAddress}</span>
+                    <span>{confirmedAddress}</span>
                     {isLocationOpen && (
                         <div className={cx('locationDropdown')}>
                             <div className={cx('locationHeader')}>Khu vực bạn chọn hiện tại</div>
                             <div className={cx('locationContent')}>
                                 <div className={cx('locationRow')}>
                                     <HiOutlineLocationMarker className={cx('locationIcon')} />
-                                    <span className={cx('locationText')}>{userAddress}</span>
+                                    <span className={cx('locationText')}>{confirmedAddress}</span>
                                 </div>
                                 <button className={cx('changeLocation')} onClick={handleChangeAddress}>
                                     Đổi địa chỉ
@@ -381,29 +380,24 @@ function Navigation() {
                 {showLoginForm && <LoginForm onClose={() => setShowLoginForm(false)} />}
 
                 {isAddressModalOpen && (
-                    <div className={cx('modalOverlay')} onClick={() => { setIsAddressModalOpen(false); clearForm(); }}>
+                    <div className={cx('modalOverlay')} onClick={() => setIsAddressModalOpen(false)}>
                         <div className={cx('modal')} onClick={(e) => e.stopPropagation()}>
                             <div className={cx('modalContent')}>
                                 <div className={cx('locationLabel')}>
                                     <HiOutlineLocationMarker className={cx('locationIcon')} />
-                                    <span>Nhập địa chỉ của bạn</span>
+                                    <span>Chọn khu vực của bạn</span>
                                 </div>
 
-                                <div className={cx('formGroup')}>
-                                    <textarea
-                                        value={address}
-                                        onChange={(e) => setAddress(e.target.value)}
-                                        placeholder="Nhập địa chỉ đầy đủ (ví dụ: 123 Nguyễn Văn A, Phường X, Quận Y, TP. Z)"
-                                        className={cx('addressInput', { error: addressError })}
-                                        rows={3}
-                                    />
-                                    {addressError && <span className={cx('errorMessage')}>{addressError}</span>}
-                                </div>
+                                {/* Replace with AddressSelector */}
+                                <AddressSelector 
+                                    initialAddress={confirmedAddress} 
+                                    onAddressChange={handleAddressChange}
+                                />
 
                                 <div className={cx('modalActions')}>
                                     <button
                                         className={cx('closeButton')}
-                                        onClick={() => { setIsAddressModalOpen(false); clearForm(); }}
+                                        onClick={() => setIsAddressModalOpen(false)}
                                         disabled={isSubmitting}
                                     >
                                         Đóng
