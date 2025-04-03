@@ -18,16 +18,6 @@ function AuthModals() {
     handleOtpSuccess
   } = useAuth();
 
-  // Debug logging - remove in production
-  useEffect(() => {
-    console.log('Auth Modal States:', { 
-      showLoginModal, 
-      showSignupModal, 
-      showOtpModal,
-      verifiedEmail 
-    });
-  }, [showLoginModal, showSignupModal, showOtpModal, verifiedEmail]);
-
   return (
     <>
       {showLoginModal && (

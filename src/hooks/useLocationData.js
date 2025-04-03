@@ -159,6 +159,8 @@ const useLocationData = () => {
   const parseAddress = useCallback((address) => {
     if (!address) return;
     
+    console.log("Parsing address:", address);
+    
     // Try to parse address in the format: "Ward, District, Region"
     const parts = address.split(', ');
     
@@ -167,19 +169,25 @@ const useLocationData = () => {
       const districtText = parts[1];
       const wardText = parts[0];
       
+      console.log("Address parts:", { ward: wardText, district: districtText, region: regionText });
+      
       // Find matching region
       const matchedRegion = findMatchingRegion(regionText);
+      console.log("Matched region:", matchedRegion);
       
       if (matchedRegion) {
+        // Always set region first
         setSelectedRegion(matchedRegion);
         
-        // Find matching district
+        // Find matching district for this region
         const matchedDistrict = findMatchingDistrict(matchedRegion, districtText);
+        console.log("Matched district:", matchedDistrict);
         
         if (matchedDistrict) {
+          // Always set district to ensure UI updates
           setSelectedDistrict(matchedDistrict);
           
-          // Set the ward as-is since we have fewer ward data
+          // Always set ward value
           setSelectedWard(wardText);
         }
       }

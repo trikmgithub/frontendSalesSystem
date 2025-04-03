@@ -1,5 +1,5 @@
 // src/components/AddressSelector/AddressSelector.jsx
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import classNames from 'classnames/bind';
 import styles from './AddressSelector.module.scss';
 import useLocationData from '~/hooks/useLocationData';
@@ -31,22 +31,48 @@ const AddressSelector = ({
     parseAddress
   } = useLocationData();
 
-  // Parse initial address once when component mounts or initialAddress changes
+  // Use a ref to track if initial address has been parsed
+  const initialParseComplete = useRef(false);
+
+  // Parse initial address when component mounts or when initialAddress changes
   useEffect(() => {
     if (initialAddress) {
-      parseAddress(initialAddress);
+      // Set a small timeout to ensure state is ready
+      setTimeout(() => {
+        parseAddress(initialAddress);
+        initialParseComplete.current = true;
+      }, 10);
     }
   }, [initialAddress, parseAddress]);
 
-  // Call onAddressChange when address components change
+  // Track previous values to prevent unnecessary updates
+  const prevValuesRef = useRef({ region: '', district: '', ward: '' });
+
+  // Call onAddressChange when address components change - with proper change detection
   useEffect(() => {
+    // Only update if we have all required fields AND something has actually changed
     if (selectedRegion && selectedDistrict && selectedWard && onAddressChange) {
-      onAddressChange({
-        region: selectedRegion,
-        district: selectedDistrict,
-        ward: selectedWard,
-        formattedAddress: `${selectedWard}, ${selectedDistrict}, ${selectedRegion}`
-      });
+      const prev = prevValuesRef.current;
+      // Check if anything changed before calling the callback
+      if (prev.region !== selectedRegion || 
+          prev.district !== selectedDistrict || 
+          prev.ward !== selectedWard) {
+        
+        // Update the ref with current values
+        prevValuesRef.current = {
+          region: selectedRegion,
+          district: selectedDistrict,
+          ward: selectedWard
+        };
+        
+        // Call the callback with new data
+        onAddressChange({
+          region: selectedRegion,
+          district: selectedDistrict,
+          ward: selectedWard,
+          formattedAddress: `${selectedWard}, ${selectedDistrict}, ${selectedRegion}`
+        });
+      }
     }
   }, [selectedRegion, selectedDistrict, selectedWard, onAddressChange]);
 
