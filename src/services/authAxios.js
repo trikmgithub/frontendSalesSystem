@@ -1,5 +1,6 @@
 // src/services/authAxios.js
 import * as axiosConfig from '~/utils/axiosConfig';
+import { initiateGoogleLogin } from '~/utils/googleLoginUtils';
 
 // Login API with improved user details handling
 const loginAxios = async (userData) => {
@@ -92,12 +93,7 @@ const loginAxios = async (userData) => {
 const googleLoginAxios = async () => {
     try {
         console.log('Redirecting to Google login endpoint...');
-        
-        // Redirect to Google login endpoint
-        window.location.href = `${import.meta.env.VITE_API_URI}/auth/google/login`;
-        
-        // This function returns a promise that won't resolve due to the redirect
-        return { redirecting: true };
+        return initiateGoogleLogin();
     } catch (error) {
         console.error("Google Login Error:", error);
         return {
@@ -145,9 +141,10 @@ const logoutAxios = async () => {
         } finally {
             // Always perform local logout regardless of server response
             localStorage.removeItem('access_token');
-            localStorage.setItem('user', 'null');  // Set to 'null' string instead of removing
+            localStorage.setItem('user', 'null');
             localStorage.setItem('cartItems', 'null');
             localStorage.setItem('favoriteItems', 'null');
+            localStorage.removeItem('confirmedAddress');
             // Redirect to homepage
             window.location.href = '/';
         }
@@ -155,9 +152,10 @@ const logoutAxios = async () => {
         console.error('Logout process error:', error);
         // Ensure we still do the local logout even if there's an error
         localStorage.removeItem('access_token');
-        localStorage.setItem('user', 'null');  // Set to 'null' string instead of removing
+        localStorage.setItem('user', 'null');
         localStorage.setItem('cartItems', 'null');
         localStorage.setItem('favoriteItems', 'null');
+        localStorage.removeItem('confirmedAddress');
         // Redirect to homepage
         window.location.href = '/';
     }

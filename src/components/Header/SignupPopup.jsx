@@ -4,9 +4,11 @@ import { Link } from 'react-router-dom';
 import { useState } from 'react';
 import { FcGoogle } from 'react-icons/fc';
 import { IoWarning, IoCheckmarkCircle } from 'react-icons/io5';
-import { googleLoginAxios, registerAxios } from '~/services/authAxios';
+import { registerAxios } from '~/services/authAxios';
 import useDisableBodyScroll from '~/hooks/useDisableBodyScroll';
 import AddressSelector from '~/components/AddressSelector';
+import { initiateGoogleLogin } from '~/utils/googleLoginUtils';
+import { toast } from 'react-toastify';
 
 const cx = classNames.bind(styles);
 
@@ -31,53 +33,22 @@ function SignupForm({ onClose, onShowLogin, verifiedEmail = '' }) {
 
   const handleGoogleLogin = async () => {
     try {
-      // Show loading state - you can use a state variable or toast
-      // setIsLoading(true); // If you have a loading state
-
+      // Show loading state
+      setIsLoading(true);
       console.log('Initiating Google login API call...');
 
-      // Call the Google login API
-      const response = await googleLoginAxios();
+      // Use the utility function to redirect to Google login
+      await initiateGoogleLogin();
 
-      if (response.error) {
-        toast.error(response.message || "Đăng nhập Google thất bại", {
-          position: "top-center",
-          autoClose: 3000
-        });
-        return;
-      }
-
-      if (response.success) {
-        toast.success("Đăng nhập thành công!", {
-          position: "top-center",
-          autoClose: 2000
-        });
-
-        // Close any open popups
-        setShowAccountPopup(false);
-
-        // If using login modal
-        if (onClose) {
-          onClose();
-        }
-
-        // Call any success callbacks
-        if (onLoginSuccess) {
-          onLoginSuccess();
-        }
-
-        // Update UI to reflect logged in state
-        // For a cleaner approach, just reload the page
-        window.location.reload();
-      }
+      // Note: The actual login success handling will happen after redirect back
+      // when the URL parameters are processed
     } catch (error) {
+      setIsLoading(false);
       console.error("Google Login Error:", error);
       toast.error("Đăng nhập Google thất bại. Vui lòng thử lại sau.", {
         position: "top-center",
         autoClose: 3000
       });
-    } finally {
-      // setIsLoading(false); // If you have a loading state
     }
   };
 
@@ -260,10 +231,10 @@ function SignupForm({ onClose, onShowLogin, verifiedEmail = '' }) {
               placeholder="Họ và tên"
             />
           </div>
-          
+
           {/* Replace address fields with AddressSelector */}
           <AddressSelector onAddressChange={handleAddressChange} />
-          
+
           <div className={cx('genderGroup')}>
             <label>
               <input

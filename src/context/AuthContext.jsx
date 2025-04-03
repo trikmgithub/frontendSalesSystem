@@ -1,5 +1,6 @@
 // src/context/AuthContext.jsx
 import { createContext, useState, useEffect, useContext } from 'react';
+import { processUserInfoFromUrl } from '~/utils/googleLoginUtils';
 
 // Create auth context
 export const AuthContext = createContext();
@@ -13,22 +14,22 @@ export const AuthProvider = ({ children }) => {
   const [redirectAfterLogin, setRedirectAfterLogin] = useState(null);
   const [userInfo, setUserInfo] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
-  
+
   // Create a separate function to check localStorage and get user data
   const getUserFromStorage = () => {
     try {
       const storedUser = localStorage.getItem('user');
-      
+
       if (!storedUser || storedUser === 'null') {
         return null;
       }
-      
+
       const parsed = JSON.parse(storedUser);
-      
+
       if (!parsed || !parsed._id) {
         return null;
       }
-      
+
       return parsed;
     } catch (err) {
       console.error("Error getting user from storage:", err);
@@ -36,24 +37,40 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // Load user info from localStorage on mount
+  // Load user info from localStorage and check URL parameters on mount
   useEffect(() => {
-    const loadUser = () => {
+    const loadUser = async () => {
       setIsLoading(true);
-      const userData = getUserFromStorage();
-      setUserInfo(userData);
-      setIsLoading(false);
+
+      try {
+        // First check for URL parameters (handles redirect from Google login)
+        const userDataFromUrl = await processUserInfoFromUrl();
+        if (userDataFromUrl) {
+          console.log("Found user data in URL parameters");
+          setUserInfo(userDataFromUrl);
+          setIsLoading(false);
+          return;
+        }
+
+        // Otherwise load from localStorage
+        const userData = getUserFromStorage();
+        setUserInfo(userData);
+      } catch (error) {
+        console.error("Error loading user data:", error);
+      } finally {
+        setIsLoading(false);
+      }
     };
 
     loadUser();
-    
+
     // Listen for storage changes (e.g. from other tabs)
     const handleStorageChange = (e) => {
       if (e.key === 'user') {
         loadUser();
       }
     };
-    
+
     window.addEventListener('storage', handleStorageChange);
     return () => window.removeEventListener('storage', handleStorageChange);
   }, []);
@@ -86,11 +103,11 @@ export const AuthProvider = ({ children }) => {
   // Method to handle successful login
   const handleLoginSuccess = () => {
     closeAllModals();
-    
+
     // Get fresh user data from localStorage
     const userData = getUserFromStorage();
     setUserInfo(userData);
-    
+
     // Execute callback if exists
     if (redirectAfterLogin) {
       redirectAfterLogin();
@@ -102,10 +119,10 @@ export const AuthProvider = ({ children }) => {
   const handleOtpSuccess = (email) => {
     // First set the verified email
     setVerifiedEmail(email);
-    
+
     // Then close OTP modal
     setShowOtpModal(false);
-    
+
     // Important: add a small delay before opening signup modal to ensure proper UI transition
     setTimeout(() => {
       // Finally show signup modal
@@ -120,22 +137,22 @@ export const AuthProvider = ({ children }) => {
     if (isLoading) {
       return false;
     }
-    
+
     try {
       // First check the context state
       if (userInfo && userInfo._id) {
         return true;
       }
-      
+
       // If not in context state, check localStorage directly as a fallback
       const user = JSON.parse(localStorage.getItem('user') || 'null');
       const isValid = !!(user && user._id);
-      
+
       // If we found a valid user in localStorage but not in context, update context
       if (isValid && !userInfo) {
         setUserInfo(user);
       }
-      
+
       return isValid;
     } catch (err) {
       console.error("Error in isLoggedIn check:", err);
@@ -148,11 +165,11 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem('access_token');
     localStorage.setItem('user', 'null');
     setUserInfo(null);
-    
+
     // Set cart and favorites to null string
     localStorage.setItem('cartItems', 'null');
     localStorage.setItem('favoriteItems', 'null');
-    
+
     // Redirect to homepage
     window.location.href = '/';
   };
