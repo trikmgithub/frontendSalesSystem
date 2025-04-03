@@ -20,6 +20,14 @@ function Home() {
     const [showProducts, setShowProducts] = useState(false); // State to control product display
 
     useEffect(() => {
+        // Check if user has visited before
+        const hasVisited = sessionStorage.getItem('hasVisited');
+        if (hasVisited) {
+            setShowProducts(true);
+        }
+    }, []);
+
+    useEffect(() => {
         // Only fetch items if showProducts is true or when page changes while showing products
         if (showProducts) {
             fetchItems(currentPage);
@@ -56,6 +64,7 @@ function Home() {
     // Handler to show products when buttons on landing page are clicked
     const handleShowProducts = () => {
         setShowProducts(true);
+        sessionStorage.setItem('hasVisited', 'true'); // Save flag to sessionStorage
         window.scrollTo(0, 0);
     };
 
