@@ -12,11 +12,8 @@ export const processUserInfoFromUrl = async () => {
     
     // Check if we have a query string starting with ?userinfo=
     if (!queryString || !queryString.startsWith('?userinfo=')) {
-      console.log("No userinfo parameter found in URL");
       return null;
     }
-    
-    console.log("Found userinfo in URL, processing...");
     
     // Remove the '?userinfo=' prefix to get the actual data
     const userInfoContent = queryString.substring('?userinfo='.length);
@@ -38,8 +35,6 @@ export const processUserInfoFromUrl = async () => {
         userData[key] = decodedValue;
       }
     });
-    
-    console.log("Retrieved user data from URL:", userData);
     
     // Ensure we have all the required fields
     if (!userData._id || !userData.email || !userData.access_token) {
@@ -66,11 +61,9 @@ export const processUserInfoFromUrl = async () => {
     
     // Store basic user data in localStorage immediately
     localStorage.setItem('user', JSON.stringify(basicUserObject));
-    console.log("Basic user data from URL saved to localStorage:", basicUserObject);
     
     // Fetch detailed user information using the existing userAxios service
     try {
-      console.log("Fetching detailed user information...");
       
       // Add token to localStorage temporarily to allow the service to authenticate
       localStorage.setItem('access_token', userData.access_token);
@@ -105,7 +98,6 @@ export const processUserInfoFromUrl = async () => {
           
           // Update localStorage with detailed user data
           localStorage.setItem('user', JSON.stringify(enhancedUserObject));
-          console.log("Enhanced user data saved to localStorage:", enhancedUserObject);
           
           // Clean up URL 
           const cleanUrl = window.location.pathname + 

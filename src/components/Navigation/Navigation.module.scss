@@ -307,10 +307,7 @@
         display: flex;
         align-items: center;
         justify-content: space-between;
-        /* Keeps items on separate sides */
         width: 100%;
-        flex-wrap: wrap;
-        /* Ensures proper wrapping on smaller screens */
     }
 
     .locationIcon {

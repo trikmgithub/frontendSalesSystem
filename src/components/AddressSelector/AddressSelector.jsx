@@ -1,5 +1,5 @@
 // src/components/AddressSelector/AddressSelector.jsx
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import classNames from 'classnames/bind';
 import styles from './AddressSelector.module.scss';
 import useLocationData from '~/hooks/useLocationData';
@@ -7,7 +7,7 @@ import useLocationData from '~/hooks/useLocationData';
 const cx = classNames.bind(styles);
 
 /**
- * Address selector component
+ * Address selector component with street address field
  * @param {Object} props - Component props
  * @param {function} props.onAddressChange - Callback when address changes
  * @param {string} props.initialAddress - Initial address to parse
@@ -31,6 +31,10 @@ const AddressSelector = ({
     parseAddress
   } = useLocationData();
 
+  // Add state for street address
+  const [streetAddress, setStreetAddress] = useState('');
+  const [streetAddressError, setStreetAddressError] = useState('');
+
   // Use a ref to track if initial address has been parsed
   const initialParseComplete = useRef(false);
 
@@ -39,14 +43,37 @@ const AddressSelector = ({
     if (initialAddress) {
       // Set a small timeout to ensure state is ready
       setTimeout(() => {
-        parseAddress(initialAddress);
+        // Try to extract street address from initial address
+        const parts = initialAddress.split(', ');
+        if (parts.length >= 4) {
+          // If we have 4 or more parts, the first part is likely the street address
+          setStreetAddress(parts[0]);
+          // Remove street address from initialAddress to avoid parsing issues
+          const addressWithoutStreet = parts.slice(1).join(', ');
+          parseAddress(addressWithoutStreet);
+        } else {
+          parseAddress(initialAddress);
+        }
         initialParseComplete.current = true;
       }, 10);
     }
   }, [initialAddress, parseAddress]);
 
   // Track previous values to prevent unnecessary updates
-  const prevValuesRef = useRef({ region: '', district: '', ward: '' });
+  const prevValuesRef = useRef({ 
+    streetAddress: '', 
+    region: '', 
+    district: '', 
+    ward: '' 
+  });
+
+  // Handle street address input
+  const handleStreetAddressChange = (e) => {
+    setStreetAddress(e.target.value);
+    if (e.target.value.trim()) {
+      setStreetAddressError('');
+    }
+  };
 
   // Call onAddressChange when address components change - with proper change detection
   useEffect(() => {
@@ -54,30 +81,48 @@ const AddressSelector = ({
     if (selectedRegion && selectedDistrict && selectedWard && onAddressChange) {
       const prev = prevValuesRef.current;
       // Check if anything changed before calling the callback
-      if (prev.region !== selectedRegion || 
+      if (prev.streetAddress !== streetAddress || 
+          prev.region !== selectedRegion || 
           prev.district !== selectedDistrict || 
           prev.ward !== selectedWard) {
         
         // Update the ref with current values
         prevValuesRef.current = {
+          streetAddress,
           region: selectedRegion,
           district: selectedDistrict,
           ward: selectedWard
         };
         
+        // Format the complete address with street address
+        const formattedAddress = streetAddress
+          ? `${streetAddress}, ${selectedWard}, ${selectedDistrict}, ${selectedRegion}`
+          : `${selectedWard}, ${selectedDistrict}, ${selectedRegion}`;
+        
         // Call the callback with new data
         onAddressChange({
+          streetAddress,
           region: selectedRegion,
           district: selectedDistrict,
           ward: selectedWard,
-          formattedAddress: `${selectedWard}, ${selectedDistrict}, ${selectedRegion}`
+          formattedAddress
         });
       }
     }
-  }, [selectedRegion, selectedDistrict, selectedWard, onAddressChange]);
+  }, [streetAddress, selectedRegion, selectedDistrict, selectedWard, onAddressChange]);
+
+  // Validate street address
+  const validateStreetAddress = () => {
+    if (!streetAddress.trim()) {
+      setStreetAddressError('Vui lòng nhập số nhà, tên đường');
+      return false;
+    }
+    return true;
+  };
 
   return (
     <div className={cx('addressGroup', className)}>
+      {/* Region Selector */}
       <div className={cx('selectWrapper')}>
         <select
           value={selectedRegion}
@@ -93,6 +138,7 @@ const AddressSelector = ({
         {errors.region && <span className={cx('fieldError')}>{errors.region}</span>}
       </div>
 
+      {/* District Selector */}
       <div className={cx('selectWrapper')}>
         <select
           value={selectedDistrict}
@@ -109,6 +155,7 @@ const AddressSelector = ({
         {errors.district && <span className={cx('fieldError')}>{errors.district}</span>}
       </div>
 
+      {/* Ward Selector */}
       <div className={cx('selectWrapper')}>
         {(!selectedDistrict || !locationData.wards[selectedDistrict]) ? (
           <input 
@@ -136,6 +183,21 @@ const AddressSelector = ({
           <div className={cx('selectArrow')}></div>
         )}
         {errors.ward && <span className={cx('fieldError')}>{errors.ward}</span>}
+      </div>
+      
+      {/* Street Address Input */}
+      <div className={cx('selectWrapper')}>
+        <input
+          type="text"
+          value={streetAddress}
+          onChange={handleStreetAddressChange}
+          onBlur={validateStreetAddress}
+          placeholder="Nhập số nhà, tên đường (VD: 123 - Đ.ABC)"
+          className={streetAddressError ? cx('error') : ''}
+        />
+        {streetAddressError && (
+          <span className={cx('fieldError')}>{streetAddressError}</span>
+        )}
       </div>
     </div>
   );

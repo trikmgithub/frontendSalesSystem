@@ -46,7 +46,6 @@ export const AuthProvider = ({ children }) => {
         // First check for URL parameters (handles redirect from Google login)
         const userDataFromUrl = await processUserInfoFromUrl();
         if (userDataFromUrl) {
-          console.log("Found user data in URL parameters");
           setUserInfo(userDataFromUrl);
           setIsLoading(false);
           return;
