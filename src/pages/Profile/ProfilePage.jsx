@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { User, Lock, Edit2, X, Check, Calendar } from 'lucide-react';
+import { User, Lock, Edit2, X, Check, Phone } from 'lucide-react';
 import cx from 'classnames';
 import { useNavigate } from 'react-router-dom';
 import styles from './ProfilePage.module.scss';
 import routes from '~/config/routes';
-import { updateUserAxios } from '~/services/userAxios';
+import { updateUserAxios, getPhoneAxios, updatePhoneAxios } from '~/services/userAxios';
 import ToastNotification from './ToastNotification';
 
 const ProfilePage = () => {
@@ -12,7 +12,7 @@ const ProfilePage = () => {
   const [selectedTab, setSelectedTab] = useState('profile');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [toast, setToast] = useState({ show: false, message: '', type: '' });
-  
+
   // User data state
   const [userData, setUserData] = useState({
     fullName: '',
@@ -23,9 +23,10 @@ const ProfilePage = () => {
     year: '',
     address: '',
     avatar: null,
-    userId: ''
+    userId: '',
+    phone: ''
   });
-  
+
   // Form data state (for the modal)
   const [formData, setFormData] = useState({
     fullName: '',
@@ -36,8 +37,9 @@ const ProfilePage = () => {
     address: '',
     agreeToPolicy: false
   });
-  
+
   const [isLoading, setIsLoading] = useState(false);
+  const [isUpdatingPhone, setIsUpdatingPhone] = useState(false);
   const navigate = useNavigate();
 
   // Load user data from localStorage
@@ -52,20 +54,21 @@ const ProfilePage = () => {
         address: user.address || '',
         userId: user._id || '',
         avatar: user.avatar || null,
+        phone: user.phone || '',
         day: '',
         month: '',
         year: ''
       };
-      
+
       if (user.dateOfBirth) {
         const date = new Date(user.dateOfBirth);
         newUserData.day = date.getDate().toString();
         newUserData.month = (date.getMonth() + 1).toString();
         newUserData.year = date.getFullYear().toString();
       }
-      
+
       setUserData(newUserData);
-      
+
       // Also initialize the form data
       setFormData({
         fullName: newUserData.fullName,
@@ -77,8 +80,32 @@ const ProfilePage = () => {
         agreeToPolicy: false
       });
     } else {
-      console.warn('No user data found in localStorage');
+      console.warn('Không tìm thấy dữ liệu người dùng trong localStorage');
     }
+  }, []);
+
+  // Load phone number from API
+  useEffect(() => {
+    const fetchPhone = async () => {
+      try {
+        const response = await getPhoneAxios();
+        if (response && response.error) {
+          throw new Error(response.message);
+        }
+        
+        // Check if phone property exists in the response
+        if (response && typeof response.phone !== 'undefined') {
+          setUserData((prev) => ({ ...prev, phone: response.phone }));
+        } else {
+          console.warn('Không tìm thấy số điện thoại trong phản hồi API');
+        }
+      } catch (error) {
+        console.error('Lỗi khi tải số điện thoại:', error);
+        showToast('Không thể tải số điện thoại', 'error');
+      }
+    };
+
+    fetchPhone();
   }, []);
 
   // Format the date of birth for display
@@ -116,16 +143,24 @@ const ProfilePage = () => {
     }));
   };
 
+  // Validate phone number
+  const validatePhoneNumber = (phone) => {
+    // Basic validation - phone should be numeric and have a reasonable length
+    if (!phone) return false;
+    const phoneRegex = /^\d{9,15}$/; // 9-15 digits
+    return phoneRegex.test(phone);
+  };
+
   // Submit the form data
   const handleSubmit = async (event) => {
     if (event) event.preventDefault();
-    
+
     // Check if policy is agreed to
     if (!formData.agreeToPolicy) {
       showToast('Vui lòng đồng ý với chính sách xử lý dữ liệu cá nhân', 'error');
       return;
     }
-    
+
     // Get token from localStorage
     const token = localStorage.getItem('access_token');
     if (!token) {
@@ -136,13 +171,13 @@ const ProfilePage = () => {
     // Format day and month with leading zeros
     const formattedDay = String(formData.day).padStart(2, '0');
     const formattedMonth = String(formData.month).padStart(2, '0');
-    
+
     // Only include dateOfBirth if all date parts are provided
     let dateOfBirth;
     if (formData.year && formData.month && formData.day) {
       dateOfBirth = `${formData.year}-${formattedMonth}-${formattedDay}T00:00:00.000Z`;
     }
-    
+
     // Prepare data to send
     const updateData = {
       _id: userData.userId,
@@ -152,7 +187,7 @@ const ProfilePage = () => {
       role: 'user',
       address: formData.address,
     };
-    
+
     // Only include dateOfBirth if it's valid
     if (dateOfBirth) {
       updateData.dateOfBirth = dateOfBirth;
@@ -185,24 +220,26 @@ const ProfilePage = () => {
           user.name = formData.fullName;
           user.gender = formData.gender;
           user.address = formData.address;
-          user.dateOfBirth = `${formData.year}-${formData.month}-${formData.day}`;
+          if (dateOfBirth) {
+            user.dateOfBirth = dateOfBirth;
+          }
           localStorage.setItem('user', JSON.stringify(user));
         }
       } catch (err) {
-        console.error('Error updating user in localStorage:', err);
+        console.error('Lỗi khi cập nhật người dùng trong localStorage:', err);
       }
 
       showToast('Thông tin đã được cập nhật thành công!', 'success');
       closeModal();
     } catch (error) {
       console.error('Lỗi khi cập nhật thông tin:', error);
-      
+
       // Log additional error details if available
       if (error.response) {
-        console.error('Error response data:', error.response.data);
-        console.error('Error response status:', error.response.status);
+        console.error('Dữ liệu phản hồi lỗi:', error.response.data);
+        console.error('Trạng thái phản hồi lỗi:', error.response.status);
       }
-      
+
       showToast(error.message || 'Đã xảy ra lỗi khi cập nhật thông tin. Vui lòng thử lại.', 'error');
     } finally {
       setIsLoading(false);
@@ -219,6 +256,48 @@ const ProfilePage = () => {
     setToast({ show: false, message: '', type: '' });
   };
 
+  // Handle phone number input change
+  const handlePhoneChange = (e) => {
+    // Only allow numeric input
+    const value = e.target.value.replace(/[^0-9]/g, '');
+    setUserData(prev => ({ ...prev, phone: value }));
+  };
+
+  // Update phone number
+  const updatePhone = async () => {
+    // Validate phone number before sending to API
+    if (!validatePhoneNumber(userData.phone)) {
+      showToast('Vui lòng nhập số điện thoại hợp lệ (9-15 chữ số)', 'error');
+      return;
+    }
+
+    setIsUpdatingPhone(true);
+    try {
+      const response = await updatePhoneAxios({ phone: userData.phone });
+      if (response && response.error) {
+        throw new Error(response.message || 'Không thể cập nhật số điện thoại');
+      }
+      
+      // Update localStorage
+      try {
+        const user = JSON.parse(localStorage.getItem('user'));
+        if (user) {
+          user.phone = userData.phone;
+          localStorage.setItem('user', JSON.stringify(user));
+        }
+      } catch (err) {
+        console.error('Lỗi khi cập nhật số điện thoại trong localStorage:', err);
+      }
+      
+      showToast('Cập nhật số điện thoại thành công!', 'success');
+    } catch (error) {
+      console.error('Lỗi khi cập nhật số điện thoại:', error);
+      showToast(error.message || 'Không thể cập nhật số điện thoại', 'error');
+    } finally {
+      setIsUpdatingPhone(false);
+    }
+  };
+
   return (
     <div className={cx(styles.profileContainer)}>
       {/* Toast Notification */}
@@ -229,7 +308,7 @@ const ProfilePage = () => {
           onClose={closeToast}
         />
       )}
-      
+
       {/* Sidebar */}
       <div className={cx(styles.sidebar)}>
         <div className={cx(styles.sidebarHeader)}>
@@ -237,7 +316,7 @@ const ProfilePage = () => {
             {userData.avatar ? (
               <img
                 src={userData.avatar}
-                alt="User Avatar"
+                alt="Avatar"
                 className={cx(styles.avatarImage)}
               />
             ) : (
@@ -295,7 +374,7 @@ const ProfilePage = () => {
             <div className={cx(styles.contentSection)}>
               <div className={cx(styles.profileHeader)}>
                 <h1 className={cx(styles.sectionTitle)}>Thông tin tài khoản</h1>
-                <button 
+                <button
                   className={cx(styles.editProfileButton)}
                   onClick={openModal}
                 >
@@ -312,7 +391,7 @@ const ProfilePage = () => {
                     {userData.avatar ? (
                       <img
                         src={userData.avatar}
-                        alt="User Avatar"
+                        alt="Avatar"
                         className={cx(styles.avatarImage)}
                       />
                     ) : (
@@ -332,7 +411,7 @@ const ProfilePage = () => {
                       {userData.fullName || 'Chưa cập nhật'}
                     </span>
                   </div>
-                  
+
                   <div className={cx(styles.profileField)}>
                     <span className={cx(styles.fieldLabel)}>Email</span>
                     <span className={cx(styles.fieldValue)}>
@@ -345,12 +424,12 @@ const ProfilePage = () => {
                   <div className={cx(styles.profileField)}>
                     <span className={cx(styles.fieldLabel)}>Giới tính</span>
                     <span className={cx(styles.fieldValue)}>
-                      {userData.gender === 'male' ? 'Nam' : 
-                       userData.gender === 'female' ? 'Nữ' : 
-                       'Chưa cập nhật'}
+                      {userData.gender === 'male' ? 'Nam' :
+                        userData.gender === 'female' ? 'Nữ' :
+                          'Chưa cập nhật'}
                     </span>
                   </div>
-                  
+
                   <div className={cx(styles.profileField)}>
                     <span className={cx(styles.fieldLabel)}>Ngày sinh</span>
                     <span className={cx(styles.fieldValue)}>
@@ -387,6 +466,36 @@ const ProfilePage = () => {
                 </button>
               </div>
             </div>
+
+            {/* Phone Section */}
+            <div className={cx(styles.contentSection)}>
+              <div className={cx(styles.sectionHeader)}>
+                <Phone className={cx(styles.sectionIcon)} />
+                <h2 className={cx(styles.sectionSubtitle)}>Số điện thoại</h2>
+              </div>
+
+              <div className={cx(styles.phoneSection)}>
+                <div className={cx(styles.fieldGroup)}>
+                  <label className={cx(styles.fieldLabel)}>Số điện thoại</label>
+                  <div className={cx(styles.phoneInputWrapper)}>
+                    <input
+                      type="text"
+                      className={cx(styles.textInput)}
+                      value={userData.phone || ''}
+                      onChange={handlePhoneChange}
+                      placeholder="Nhập số điện thoại"
+                    />
+                    <button
+                      className={cx(styles.updateButton)}
+                      onClick={updatePhone}
+                      disabled={isUpdatingPhone}
+                    >
+                      {isUpdatingPhone ? 'Đang cập nhật...' : 'Cập nhật'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
           </>
         )}
       </div>
@@ -401,7 +510,7 @@ const ProfilePage = () => {
                 <X size={20} />
               </button>
             </div>
-            
+
             <form className={cx(styles.modalForm)} onSubmit={handleSubmit}>
               <div className={cx(styles.formField)}>
                 <label className={cx(styles.formLabel)}>Họ và tên</label>
@@ -524,15 +633,15 @@ const ProfilePage = () => {
               </label>
 
               <div className={cx(styles.modalActions)}>
-                <button 
-                  type="button" 
+                <button
+                  type="button"
                   className={cx(styles.cancelButton)}
                   onClick={closeModal}
                 >
                   Hủy
                 </button>
-                <button 
-                  type="submit" 
+                <button
+                  type="submit"
                   className={cx(styles.updateButton)}
                   disabled={isLoading}
                 >

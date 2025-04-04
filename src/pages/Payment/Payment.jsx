@@ -7,9 +7,10 @@ import routes from '~/config/routes'
 import { CartContext } from "~/context/CartContext";
 import { useNavigate } from "react-router-dom";
 import { payosPayAxios } from "~/services/paymentAxios";
-import { updateAddressAxios, getUserByIdAxios } from "~/services/userAxios";
+import { updateAddressAxios, getUserByIdAxios, updatePhoneAxios } from "~/services/userAxios";
 import { createCartAxios } from "~/services/cartAxios";
 import AddressSelector from '~/components/AddressSelector';
+import { X } from 'lucide-react';
 
 const cx = classNames.bind(styles);
 
@@ -17,6 +18,7 @@ const Payment = () => {
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
   const [showAddressModal, setShowAddressModal] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [showPhoneModal, setShowPhoneModal] = useState(false); // Modal số điện thoại
   const [selectedPayment, setSelectedPayment] = useState('cod');
   const [tempSelectedPayment, setTempSelectedPayment] = useState('cod');
   const { cartItems, removeFromCart, clearCart } = useContext(CartContext);
@@ -30,6 +32,12 @@ const Payment = () => {
   const [userAddress, setUserAddress] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [userId, setUserId] = useState(null);
+
+  // Phone state
+  const [phone, setPhone] = useState("");
+  const [tempPhone, setTempPhone] = useState("");
+  const [isUpdatingPhone, setIsUpdatingPhone] = useState(false);
+  const [phoneError, setPhoneError] = useState("");
 
   // Address modal state (simplified with AddressSelector)
   const [addressData, setAddressData] = useState({
@@ -53,6 +61,11 @@ const Payment = () => {
           setUserId(userData._id);
         }
 
+        // Set phone number
+        if (userData && userData.phone) {
+          setPhone(userData.phone);
+        }
+
         // If user data exists in localStorage with address, use it
         if (userData && userData.address) {
           setUserAddress(userData.address);
@@ -66,6 +79,9 @@ const Payment = () => {
 
           if (response && response.data && response.data.user) {
             setUserAddress(response.data.user.address);
+            if (response.data.user.phone) {
+              setPhone(response.data.user.phone);
+            }
           }
         }
       } catch (error) {
@@ -132,7 +148,12 @@ const Payment = () => {
   // ✅ Handle All Payment Success
   const handlePayment = async () => {
     if (!userAddress) {
-      setError("Please add a delivery address before proceeding");
+      setError("Vui lòng thêm địa chỉ giao hàng trước khi tiếp tục");
+      return;
+    }
+
+    if (!phone) {
+      setError("Vui lòng cập nhật số điện thoại trước khi tiếp tục");
       return;
     }
 
@@ -174,6 +195,13 @@ const Payment = () => {
     setTempSelectedPayment(selectedPayment); // Set temporary state to current selected payment
   };
 
+  // Toggle phone update modal
+  const togglePhoneModal = () => {
+    setShowPhoneModal(!showPhoneModal);
+    setTempPhone(phone); // Initialize temp phone with current phone
+    setPhoneError("");
+  };
+
   const selectPaymentMethod = (method) => {
     setTempSelectedPayment(method); // Update temporary state
   };
@@ -181,6 +209,59 @@ const Payment = () => {
   const confirmPaymentMethod = () => {
     setSelectedPayment(tempSelectedPayment); // Update main state
     setShowPaymentModal(false); // Close modal
+  };
+
+  // Validate phone number
+  const validatePhoneNumber = (phone) => {
+    if (!phone) return false;
+    const phoneRegex = /^\d{9,15}$/; // 9-15 digits
+    return phoneRegex.test(phone);
+  };
+
+  // Handle phone number change
+  const handlePhoneChange = (e) => {
+    // Allow only digits
+    const value = e.target.value.replace(/[^0-9]/g, '');
+    setTempPhone(value);
+  };
+
+  // Update phone number
+  const updatePhone = async () => {
+    if (!validatePhoneNumber(tempPhone)) {
+      setPhoneError("Vui lòng nhập số điện thoại hợp lệ (9-15 số)");
+      return;
+    }
+
+    setIsUpdatingPhone(true);
+    setPhoneError("");
+
+    try {
+      const response = await updatePhoneAxios({ phone: tempPhone });
+      
+      if (response && response.error) {
+        throw new Error(response.message || "Không thể cập nhật số điện thoại");
+      }
+      
+      // Update localStorage
+      try {
+        const userData = JSON.parse(localStorage.getItem('user') || '{}');
+        userData.phone = tempPhone;
+        localStorage.setItem('user', JSON.stringify(userData));
+      } catch (err) {
+        console.error("Error updating localStorage:", err);
+      }
+      
+      // Update state
+      setPhone(tempPhone);
+      
+      // Close modal
+      setShowPhoneModal(false);
+    } catch (error) {
+      console.error("Error updating phone:", error);
+      setPhoneError(error.message || "Không thể cập nhật số điện thoại. Vui lòng thử lại.");
+    } finally {
+      setIsUpdatingPhone(false);
+    }
   };
 
   // Handle address changes from the AddressSelector component
@@ -317,6 +398,17 @@ const Payment = () => {
                 </div>
               </div>
 
+              {/* Phone Number Section - NEW */}
+              <div className={cx('section')}>
+                <h3>📱 Số điện thoại</h3>
+                <div className={cx('phone-box')}>
+                  <span className={cx('phone-number')}>{phone || 'Chưa có số điện thoại'}</span>
+                  <a href="#" onClick={togglePhoneModal}>
+                    {phone ? 'Thay đổi' : 'Thêm số điện thoại'}
+                  </a>
+                </div>
+              </div>
+
               {/* Payment Method */}
               <div className={cx('section')}>
                 <h3>💳 Hình thức thanh toán</h3>
@@ -377,13 +469,18 @@ const Payment = () => {
               <button
                 className={cx('order-button')}
                 onClick={handlePayment}
-                disabled={!userAddress || loading}
+                disabled={!userAddress || !phone || loading}
               >
                 {loading ? "Đang xử lý..." : "Đặt hàng"}
               </button>
               {!userAddress && (
                 <p className={cx('address-required-message')}>
                   Vui lòng thêm địa chỉ giao hàng để tiếp tục đặt hàng
+                </p>
+              )}
+              {!phone && (
+                <p className={cx('address-required-message')}>
+                  Vui lòng cập nhật số điện thoại để tiếp tục đặt hàng
                 </p>
               )}
               {error && (
@@ -428,6 +525,45 @@ const Payment = () => {
           </>
         )}
       </div>
+
+      {/* Phone Modal - NEW */}
+      {showPhoneModal && (
+        <div className={cx('modal-overlay')} onClick={togglePhoneModal}>
+          <div className={cx('phone-modal')} onClick={(e) => e.stopPropagation()}>
+            <div className={cx('modal-header')}>
+              <h3>Cập nhật số điện thoại</h3>
+              <button className={cx('close-button')} onClick={togglePhoneModal}>×</button>
+            </div>
+
+            <div className={cx('phone-form')}>
+              <div className={cx('form-group')}>
+                <label>Số điện thoại</label>
+                <input
+                  type="text"
+                  value={tempPhone}
+                  onChange={handlePhoneChange}
+                  placeholder="Nhập số điện thoại"
+                  className={cx({ 'error': phoneError })}
+                />
+                {phoneError && <div className={cx('error-message')}>{phoneError}</div>}
+              </div>
+            </div>
+
+            <div className={cx('modal-actions')}>
+              <div className={cx('modal-buttons')}>
+                <button className={cx('cancel-btn')} onClick={togglePhoneModal}>Hủy</button>
+                <button
+                  className={cx('confirm-btn')}
+                  onClick={updatePhone}
+                  disabled={isUpdatingPhone}
+                >
+                  {isUpdatingPhone ? 'Đang lưu...' : 'Cập nhật'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Address Modal - Refactored to use AddressSelector */}
       {showAddressModal && (
