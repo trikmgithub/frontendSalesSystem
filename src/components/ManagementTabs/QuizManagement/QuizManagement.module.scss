@@ -22,6 +22,42 @@
     color: #333;
   }
   
+  .tab-buttons {
+    display: flex;
+    gap: 8px;
+    margin: 0 auto;
+  }
+  
+  .tab-button {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    background-color: #f5f5f5;
+    color: #555;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+  
+    svg {
+      font-size: 14px;
+    }
+  
+    &:hover {
+      background-color: #e8e8e8;
+      color: #333;
+    }
+  
+    &.active {
+      background-color: #356e4e;
+      color: white;
+      border-color: #356e4e;
+    }
+  }
+  
   .create-button {
     display: flex;
     align-items: center;
@@ -273,6 +309,19 @@
     white-space: nowrap;
   }
   
+  // Skin type columns
+  .skin-type-column {
+    width: 150px;
+  }
+  
+  .description-column {
+    min-width: 300px;
+  }
+  
+  .recommendations-column {
+    min-width: 300px;
+  }
+  
   // Options list
   .options-list {
     list-style-type: none;
@@ -295,6 +344,21 @@
     flex: 1;
   }
   
+  .option-meta {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+  
+  .option-points {
+    padding: 2px 6px;
+    background-color: #f8f8f8;
+    border-radius: 4px;
+    color: #666;
+    font-size: 12px;
+    font-weight: 500;
+  }
+  
   .option-skin-type {
     padding: 2px 8px;
     background-color: #f0f8ff;
@@ -302,6 +366,32 @@
     color: #1890ff;
     font-size: 12px;
     font-weight: 500;
+  }
+  
+  // Recommendations list
+  .recommendations-list {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+  }
+  
+  .recommendation-item {
+    padding: 4px 0;
+    border-bottom: 1px dashed #eee;
+  
+    &:last-child {
+      border-bottom: none;
+    }
+  }
+  
+  // Truncated text
+  .truncated-text {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-height: 4.5em; // Approximately 3 lines of text
   }
   
   // Status badge
@@ -573,7 +663,7 @@
     }
   }
   
-  .add-option-button {
+  .add-option-button, .add-recommendation-button {
     display: flex;
     align-items: center;
     gap: 6px;
@@ -594,7 +684,7 @@
     }
   }
   
-  .option-form-row {
+  .option-form-row, .recommendation-form-row {
     display: flex;
     align-items: flex-start;
     margin-bottom: 12px;
@@ -615,11 +705,11 @@
     }
   }
   
-  .option-form-group {
+  .option-form-group, .recommendation-form-group {
     flex: 1;
   }
   
-  .remove-option-button {
+  .remove-option-button, .remove-recommendation-button {
     width: 28px;
     height: 28px;
     border-radius: 4px;
@@ -673,6 +763,14 @@
     display: flex;
     align-items: center;
     gap: 6px;
+  }
+  
+  // Form help text
+  .form-help-text {
+    margin-top: 5px;
+    color: #777;
+    font-size: 12px;
+    font-style: italic;
   }
   
   // Modal buttons

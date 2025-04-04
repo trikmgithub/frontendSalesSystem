@@ -41,7 +41,7 @@ const PAGE_SIZE = 10;
 function QuizManagement() {
   // Tab state for switching between Questions and Skin Types management
   const [activeTab, setActiveTab] = useState('questions');
-
+  
   // State for question list
   const [questions, setQuestions] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -65,19 +65,11 @@ function QuizManagement() {
   const [filteredQuestions, setFilteredQuestions] = useState([]);
   const [filteredSkinTypes, setFilteredSkinTypes] = useState([]);
 
-  // State for modals - Questions
+  // State for question modals and form
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [currentQuestion, setCurrentQuestion] = useState(null);
-
-  // State for modals - Skin Types
-  const [showSkinTypeCreateModal, setShowSkinTypeCreateModal] = useState(false);
-  const [showSkinTypeEditModal, setShowSkinTypeEditModal] = useState(false);
-  const [showSkinTypeDeleteModal, setShowSkinTypeDeleteModal] = useState(false);
-  const [currentSkinType, setCurrentSkinType] = useState(null);
-
-  // State for form data - Questions
   const [formData, setFormData] = useState({
     questionId: '',
     questionText: '',
@@ -85,16 +77,18 @@ function QuizManagement() {
     order: 1,
     isActive: true
   });
-
-  // State for form data - Skin Types
+  const [formErrors, setFormErrors] = useState({});
+  
+  // State for skin type modals and form
+  const [showSkinTypeCreateModal, setShowSkinTypeCreateModal] = useState(false);
+  const [showSkinTypeEditModal, setShowSkinTypeEditModal] = useState(false);
+  const [showSkinTypeDeleteModal, setShowSkinTypeDeleteModal] = useState(false);
+  const [currentSkinType, setCurrentSkinType] = useState(null);
   const [skinTypeFormData, setSkinTypeFormData] = useState({
     skinType: '',
     description: '',
     recommendations: ['']
   });
-
-  // State for form validation
-  const [formErrors, setFormErrors] = useState({});
   const [skinTypeFormErrors, setSkinTypeFormErrors] = useState({});
 
   // Use hook to disable body scroll when modal is open
@@ -173,8 +167,8 @@ function QuizManagement() {
     setFilteredQuestions(result);
     setTotalPages(Math.ceil(result.length / PAGE_SIZE));
   };
-
-  // Update filtered skin types when skin types change
+  
+  // Update filtered skin types
   const applySkinTypesFiltersAndSort = () => {
     let result = [...skinTypes];
 
@@ -323,8 +317,7 @@ function QuizManagement() {
     setCurrentPage(1);
   };
 
-  // QUESTION FORM FUNCTIONS
-  // Function to handle input change for question form
+  // Function to handle input change for form
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
     
@@ -368,24 +361,8 @@ function QuizManagement() {
     });
   };
 
-  // Generate the next question ID
-  const generateNextQuestionId = () => {
-    // Extract all existing IDs
-    const existingIds = questions
-      .map(q => q.questionId || '')
-      .filter(id => id.startsWith('Q'))
-      .map(id => parseInt(id.substring(1), 10))
-      .filter(num => !isNaN(num));
-    
-    // Find the max number
-    const maxNum = existingIds.length > 0 ? Math.max(...existingIds) : 0;
-    
-    // Return the next ID
-    return `Q${maxNum + 1}`;
-  };
-
-  // Validate question form
-  const validateQuestionForm = () => {
+  // Validate form
+  const validateForm = () => {
     const errors = {};
 
     if (!formData.questionId?.trim()) {
@@ -399,7 +376,7 @@ function QuizManagement() {
     const optionErrors = [];
     let hasOptionError = false;
 
-    formData.options?.forEach((option, index) => {
+    formData.options.forEach((option, index) => {
       const optError = {};
       
       if (!option.text?.trim()) {
@@ -432,24 +409,30 @@ function QuizManagement() {
     return Object.keys(errors).length === 0;
   };
 
-  // Function to open create question modal
-  const openCreateQuestionModal = () => {
-    const nextQuestionId = generateNextQuestionId();
+  // Function to open create modal
+  const openCreateModal = () => {
+    // Generate a new question ID (e.g., "Q10")
+    const highestId = questions
+      .map(q => q.questionId || '')
+      .filter(id => id.startsWith('Q'))
+      .map(id => parseInt(id.substring(1), 10) || 0)
+      .reduce((max, id) => Math.max(max, id), 0);
+
+    const nextId = `Q${highestId + 1}`;
     
     setFormData({
-      questionId: nextQuestionId,
+      questionId: nextId,
       questionText: '',
       options: [{ text: '', points: 1, skinType: '' }],
       order: questions.length + 1,
       isActive: true
     });
-    
     setFormErrors({});
     setShowCreateModal(true);
   };
 
-  // Function to open edit question modal
-  const openEditQuestionModal = (question) => {
+  // Function to open edit modal
+  const openEditModal = (question) => {
     setCurrentQuestion(question);
     
     setFormData({
@@ -470,15 +453,15 @@ function QuizManagement() {
     setShowEditModal(true);
   };
 
-  // Function to open delete question modal
-  const openDeleteQuestionModal = (question) => {
+  // Function to open delete modal
+  const openDeleteModal = (question) => {
     setCurrentQuestion(question);
     setShowDeleteModal(true);
   };
 
   // Function to create question
   const createQuestion = async () => {
-    if (!validateQuestionForm()) {
+    if (!validateForm()) {
       return;
     }
 
@@ -513,7 +496,7 @@ function QuizManagement() {
 
   // Function to update question
   const updateQuestion = async () => {
-    if (!validateQuestionForm()) {
+    if (!validateForm()) {
       return;
     }
 
@@ -773,7 +756,7 @@ function QuizManagement() {
         {activeTab === 'questions' && (
           <button
             className={cx('create-button')}
-            onClick={openCreateQuestionModal}
+            onClick={openCreateModal}
           >
             <FaPlus /> Add New Question
           </button>
@@ -832,7 +815,7 @@ function QuizManagement() {
               <FaQuestion className={cx('empty-icon')} />
               <p>No questions found</p>
               <button
-                onClick={openCreateQuestionModal}
+                onClick={openCreateModal}
                 className={cx('create-button')}
               >
                 <FaPlus /> Add New Question
@@ -845,16 +828,16 @@ function QuizManagement() {
                   <thead>
                     <tr>
                       <th
-                        className={cx('id-column', 'sortable')}
-                        onClick={() => handleSort('questionId')}
+                        className={cx('order-column', 'sortable')}
+                        onClick={() => handleSort('order')}
                       >
-                        ID {getSortIcon('questionId')}
+                        Order {getSortIcon('order')}
                       </th>
                       <th
                         className={cx('question-column', 'sortable')}
-                        onClick={() => handleSort('questionText')}
+                        onClick={() => handleSort('questionId')}
                       >
-                        Question {getSortIcon('questionText')}
+                        Question {getSortIcon('questionId')}
                       </th>
                       <th className={cx('options-column')}>Options</th>
                       <th className={cx('status-column')}>Status</th>
@@ -864,8 +847,11 @@ function QuizManagement() {
                   <tbody>
                     {getCurrentPageItems().map(question => (
                       <tr key={question._id} className={cx({ 'inactive-row': !question.isActive })}>
-                        <td className={cx('id-column')}>{question.questionId}</td>
-                        <td className={cx('question-column')}>{question.questionText}</td>
+                        <td className={cx('order-column')}>{question.order || '-'}</td>
+                        <td className={cx('question-column')}>
+                          <div><strong>{question.questionId}</strong></div>
+                          <div>{question.questionText}</div>
+                        </td>
                         <td className={cx('options-column')}>
                           <ul className={cx('options-list')}>
                             {question.options?.map((option, index) => (
@@ -890,14 +876,14 @@ function QuizManagement() {
                         <td className={cx('actions-column')}>
                           <button
                             className={cx('action-button', 'edit')}
-                            onClick={() => openEditQuestionModal(question)}
+                            onClick={() => openEditModal(question)}
                             title="Edit question"
                           >
                             <FaEdit />
                           </button>
                           <button
                             className={cx('action-button', 'delete')}
-                            onClick={() => openDeleteQuestionModal(question)}
+                            onClick={() => openDeleteModal(question)}
                             title="Delete question"
                           >
                             <FaTrashAlt />
@@ -942,7 +928,7 @@ function QuizManagement() {
           ) : (
             <>
               <div className={cx('table-container')}>
-                <table className={cx('skin-types-table')}>
+                <table className={cx('questions-table')}>
                   <thead>
                     <tr>
                       <th
@@ -969,9 +955,9 @@ function QuizManagement() {
                           <div className={cx('truncated-text')}>{skinType.description}</div>
                         </td>
                         <td className={cx('recommendations-column')}>
-                          <ul className={cx('recommendations-list')}>
+                          <ul className={cx('options-list')}>
                             {skinType.recommendations?.map((rec, index) => (
-                              <li key={index} className={cx('recommendation-item')}>
+                              <li key={index} className={cx('option-item')}>
                                 {rec}
                               </li>
                             )) || 'No recommendations'}
@@ -1003,7 +989,7 @@ function QuizManagement() {
         </>
       )}
 
-      {/* Pagination - Shared for both tabs */}
+      {/* Pagination */}
       {totalPages > 1 && (
         <div className={cx('pagination')}>
           <div className={cx('pagination-buttons')}>
@@ -1146,7 +1132,7 @@ function QuizManagement() {
                 {formData.options.map((option, index) => (
                   <div key={index} className={cx('option-form-row')}>
                     <div className={cx('option-form-fields')}>
-                      <div className={cx('option-form-group', 'option-text-group')}>
+                      <div className={cx('option-form-group')}>
                         <input
                           type="text"
                           placeholder="Option text"
@@ -1161,7 +1147,7 @@ function QuizManagement() {
                         )}
                       </div>
 
-                      <div className={cx('option-form-group', 'option-points-group')}>
+                      <div className={cx('option-form-group')}>
                         <input
                           type="number"
                           placeholder="Points"
@@ -1177,7 +1163,7 @@ function QuizManagement() {
                         )}
                       </div>
 
-                      <div className={cx('option-form-group', 'option-skintype-group')}>
+                      <div className={cx('option-form-group')}>
                         <select
                           value={option.skinType}
                           onChange={(e) => handleOptionChange(index, 'skinType', e.target.value)}
@@ -1188,8 +1174,8 @@ function QuizManagement() {
                             <option disabled>Loading skin types...</option>
                           ) : (
                             skinTypes.map((type, idx) => (
-                              <option key={idx} value={type.skinType}>
-                                {type.skinType}
+                              <option key={idx} value={type.skinType || type}>
+                                {type.skinType || type}
                               </option>
                             ))
                           )}
@@ -1327,7 +1313,7 @@ function QuizManagement() {
                 {formData.options.map((option, index) => (
                   <div key={index} className={cx('option-form-row')}>
                     <div className={cx('option-form-fields')}>
-                      <div className={cx('option-form-group', 'option-text-group')}>
+                      <div className={cx('option-form-group')}>
                         <input
                           type="text"
                           placeholder="Option text"
@@ -1342,7 +1328,7 @@ function QuizManagement() {
                         )}
                       </div>
 
-                      <div className={cx('option-form-group', 'option-points-group')}>
+                      <div className={cx('option-form-group')}>
                         <input
                           type="number"
                           placeholder="Points"
@@ -1358,7 +1344,7 @@ function QuizManagement() {
                         )}
                       </div>
 
-                      <div className={cx('option-form-group', 'option-skintype-group')}>
+                      <div className={cx('option-form-group')}>
                         <select
                           value={option.skinType}
                           onChange={(e) => handleOptionChange(index, 'skinType', e.target.value)}
@@ -1369,8 +1355,8 @@ function QuizManagement() {
                             <option disabled>Loading skin types...</option>
                           ) : (
                             skinTypes.map((type, idx) => (
-                              <option key={idx} value={type.skinType}>
-                                {type.skinType}
+                              <option key={idx} value={type.skinType || type}>
+                                {type.skinType || type}
                               </option>
                             ))
                           )}
@@ -1414,7 +1400,7 @@ function QuizManagement() {
         </div>
       )}
 
-      {/* Delete Question Confirmation Modal */}
+      {/* Delete Question Modal */}
       {showDeleteModal && (
         <div className={cx('modal-overlay')}>
           <div className={cx('modal', 'delete-modal')}>
@@ -1430,7 +1416,7 @@ function QuizManagement() {
             <div className={cx('modal-body')}>
               <p>Are you sure you want to delete this question?</p>
               <div className={cx('question-preview')}>
-                <div><strong>ID:</strong> {currentQuestion?.questionId}</div>
+                <div><strong>Question ID:</strong> {currentQuestion?.questionId}</div>
                 <div><strong>Question:</strong> {currentQuestion?.questionText}</div>
               </div>
               <p className={cx('delete-warning')}>
@@ -1508,21 +1494,21 @@ function QuizManagement() {
                 )}
               </div>
 
-              <div className={cx('form-group', 'recommendations-form-group')}>
-                <div className={cx('recommendations-header')}>
+              <div className={cx('form-group', 'options-form-group')}>
+                <div className={cx('options-header')}>
                   <label>Recommendations</label>
                   <button
                     type="button"
                     onClick={addRecommendation}
-                    className={cx('add-recommendation-button')}
+                    className={cx('add-option-button')}
                   >
                     <FaPlus /> Add Recommendation
                   </button>
                 </div>
 
                 {skinTypeFormData.recommendations.map((rec, index) => (
-                  <div key={index} className={cx('recommendation-form-row')}>
-                    <div className={cx('recommendation-form-group')}>
+                  <div key={index} className={cx('option-form-row')}>
+                    <div className={cx('option-form-group')}>
                       <input
                         type="text"
                         placeholder="Recommendation"
@@ -1540,7 +1526,7 @@ function QuizManagement() {
                     <button
                       type="button"
                       onClick={() => removeRecommendation(index)}
-                      className={cx('remove-recommendation-button')}
+                      className={cx('remove-option-button')}
                       disabled={skinTypeFormData.recommendations.length <= 1}
                     >
                       <FaTimes />
@@ -1616,21 +1602,21 @@ function QuizManagement() {
                 )}
               </div>
 
-              <div className={cx('form-group', 'recommendations-form-group')}>
-                <div className={cx('recommendations-header')}>
+              <div className={cx('form-group', 'options-form-group')}>
+                <div className={cx('options-header')}>
                   <label>Recommendations</label>
                   <button
                     type="button"
                     onClick={addRecommendation}
-                    className={cx('add-recommendation-button')}
+                    className={cx('add-option-button')}
                   >
                     <FaPlus /> Add Recommendation
                   </button>
                 </div>
 
                 {skinTypeFormData.recommendations.map((rec, index) => (
-                  <div key={index} className={cx('recommendation-form-row')}>
-                    <div className={cx('recommendation-form-group')}>
+                  <div key={index} className={cx('option-form-row')}>
+                    <div className={cx('option-form-group')}>
                       <input
                         type="text"
                         placeholder="Recommendation"
@@ -1648,7 +1634,7 @@ function QuizManagement() {
                     <button
                       type="button"
                       onClick={() => removeRecommendation(index)}
-                      className={cx('remove-recommendation-button')}
+                      className={cx('remove-option-button')}
                       disabled={skinTypeFormData.recommendations.length <= 1}
                     >
                       <FaTimes />
@@ -1691,7 +1677,7 @@ function QuizManagement() {
             </div>
             <div className={cx('modal-body')}>
               <p>Are you sure you want to delete this skin type?</p>
-              <div className={cx('skin-type-preview')}>
+              <div className={cx('question-preview')}>
                 <div><strong>Skin Type:</strong> {currentSkinType?.skinType}</div>
                 <div><strong>Description:</strong> {currentSkinType?.description}</div>
               </div>
