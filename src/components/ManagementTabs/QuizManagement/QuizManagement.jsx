@@ -9,10 +9,19 @@ import { getSkinTypesAxios } from '~/services/quizAxios';
 
 const cx = classNames.bind(styles);
 
+const QUIZ_ACTIVE_TAB_KEY = 'quiz_active_tab';
+
 function QuizManagement() {
-  // Tab state for switching between Questions and Skin Types management
-  const [activeTab, setActiveTab] = useState('questions');
-  
+  const [activeTab, setActiveTab] = useState(() => {
+    const savedTab = localStorage.getItem(QUIZ_ACTIVE_TAB_KEY);
+    return savedTab || 'questions';
+  });
+
+  // Save active tab to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem(QUIZ_ACTIVE_TAB_KEY, activeTab);
+  }, [activeTab]);
+
   // State for skin types (needed for questions tab)
   const [skinTypes, setSkinTypes] = useState([]);
   const [loadingSkinTypes, setLoadingSkinTypes] = useState(true);

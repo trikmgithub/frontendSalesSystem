@@ -20,15 +20,26 @@ import {
 
 const cx = classNames.bind(styles);
 
+const ADMIN_ACTIVE_TAB_KEY = 'admin_active_tab';
+
 function AdminDashboard() {
   const [userData, setUserData] = useState(null);
-  const [activeTab, setActiveTab] = useState('dashboard'); // Default to dashboard tab
+  const [activeTab, setActiveTab] = useState(() => {
+    const savedTab = localStorage.getItem(ADMIN_ACTIVE_TAB_KEY);
+    return savedTab || 'dashboard';
+  });
+
+  // Save active tab to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem(ADMIN_ACTIVE_TAB_KEY, activeTab);
+  }, [activeTab]);
 
   // Simplified logout handler - Uses logoutAxios which handles everything
   const handleLogout = async () => {
     try {
       await logoutAxios();
-      // No need for additional code - logoutAxios handles everything
+      localStorage.removeItem('admin_active_tab'); 
+      localStorage.removeItem('quiz_active_tab');
     } catch (error) {
       console.error('Logout failed:', error);
     }
