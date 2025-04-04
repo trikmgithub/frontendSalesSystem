@@ -190,6 +190,54 @@ const forgetPasswordAxios = async (passwordData) => {
     }
 };
 
+// Get phone number
+const getPhoneAxios = async () => {
+    try {
+        const token = localStorage.getItem('access_token');
+        const config = {
+            headers: {
+                Authorization: `Bearer ${token}`,
+            },
+        };
+        const res = await axiosConfig.get('users/phone', config);
+        // Return correctly structured data based on API response
+        if (res && res.data && res.data.data) {
+            return res.data.data;
+        } else if (res && res.data) {
+            return res.data;
+        } else {
+            console.warn('Unexpected response structure:', res);
+            return { phone: '' };
+        }
+    } catch (error) {
+        console.error('Error fetching phone number:', error);
+        return {
+            error: true,
+            message: error.response?.data?.message || error.message || 'Failed to fetch phone number',
+        };
+    }
+};
+
+// Update phone number
+const updatePhoneAxios = async (phoneData) => {
+    try {
+        const token = localStorage.getItem('access_token');
+        const config = {
+            headers: {
+                Authorization: `Bearer ${token}`,
+            },
+        };
+        const res = await axiosConfig.patch('users/phone', phoneData, config);
+        return res.data; // Return response data
+    } catch (error) {
+        console.error('Error updating phone number:', error);
+        return {
+            error: true,
+            message: error.response?.data?.message || error.message || 'Failed to update phone number',
+        };
+    }
+};
+
 export { 
     getUsersAxios, 
     getUserByIdAxios, 
@@ -199,5 +247,7 @@ export {
     updateAddressAxios,
     updateUserSkinTypeAxios,
     updatePasswordAxios,
-    forgetPasswordAxios  
+    forgetPasswordAxios,
+    getPhoneAxios,
+    updatePhoneAxios
 };
