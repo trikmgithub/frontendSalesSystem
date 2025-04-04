@@ -1,4 +1,4 @@
-// src/pages/Admin/AdminDashboard.jsx (Updated with Dashboard tab)
+// src/pages/Admin/AdminDashboard.jsx (Updated with Quiz Management tab)
 import React, { useState, useEffect } from 'react';
 import classNames from 'classnames/bind';
 import styles from './AdminDashboard.module.scss';
@@ -8,12 +8,14 @@ import ProductManagement from '~/components/ManagementTabs/ProductManagement/Pro
 import UserManagement from '~/components/ManagementTabs/UserManagement/UserManagement';
 import BrandManagement from '~/components/ManagementTabs/BrandManagement/BrandManagement';
 import OrderManagement from '~/components/ManagementTabs/OrderManagement/OrderManagement';
+import QuizManagement from '~/components/ManagementTabs/QuizManagement/QuizManagement';
 import { 
   FaChartBar, 
   FaBox, 
   FaUsers, 
   FaTag, 
-  FaShoppingCart 
+  FaShoppingCart,
+  FaQuestion
 } from 'react-icons/fa';
 
 const cx = classNames.bind(styles);
@@ -97,6 +99,14 @@ function AdminDashboard() {
           <FaTag />
           <span>Brand Management</span>
         </button>
+
+        <button
+          className={cx('tabButton', { active: activeTab === 'quiz' })}
+          onClick={() => setActiveTab('quiz')}
+        >
+          <FaQuestion />
+          <span>Quiz Management</span>
+        </button>
       </div>
 
       <div className={cx('adminContent')}>
@@ -114,6 +124,9 @@ function AdminDashboard() {
         
         {/* Brands Tab Content */}
         {activeTab === 'brands' && <BrandManagement />}
+        
+        {/* Quiz Tab Content */}
+        {activeTab === 'quiz' && <QuizManagement />}
       </div>
     </div>
   );
