@@ -501,55 +501,87 @@ function QuestionsTab({ skinTypes }) {
                             </thead>
                             <tbody>
                                 {getCurrentPageItems().map(question => (
-                                    <tr key={question._id} className={cx({ 'inactive-row': !question.isActive })}>
-                                        <td className={cx('order-column')}><strong>{question.questionId || '-'}</strong></td>
-                                        <td className={cx('question-column')}>
-                                            <div>{question.questionText}</div>
-                                        </td>
-                                        <td className={cx('options-column')}>
-                                            <ul className={cx('options-list')}>
-                                                {question.options?.map((option, index) => (
-                                                    <li key={index} className={cx('option-item')}>
-                                                        <span className={cx('option-text')}>{option.text}</span>
-                                                    </li>
-                                                )) || 'No options'}
-                                            </ul>
-                                        </td>
-                                        <td className={cx('point-column')}>
-                                            <ul className={cx('points-list')}>
-                                                {question.options?.map((option, index) => (
-                                                    <li key={index} className={cx('point-item')}>
-                                                        {option.points} pts
-                                                    </li>
-                                                )) || '-'}
-                                            </ul>
-                                        </td>
-                                        <td className={cx('skin-type-column')}>
-                                            <ul className={cx('skin-types-list')}>
-                                                {question.options?.map((option, index) => (
-                                                    <li key={index} className={cx('skin-type-item')}>
-                                                        {option.skinType}
-                                                    </li>
-                                                )) || '-'}
-                                            </ul>
-                                        </td>
-                                        <td className={cx('actions-column')}>
-                                            <button
-                                                className={cx('action-button', 'edit')}
-                                                onClick={() => openEditModal(question)}
-                                                title="Edit question"
-                                            >
-                                                <FaEdit />
-                                            </button>
-                                            <button
-                                                className={cx('action-button', 'delete')}
-                                                onClick={() => openDeleteModal(question)}
-                                                title="Delete question"
-                                            >
-                                                <FaTrashAlt />
-                                            </button>
-                                        </td>
-                                    </tr>
+                                    <React.Fragment key={question._id}>
+                                        {question.options && question.options.length > 0 ? (
+                                            // Render each option as a separate row to maintain alignment
+                                            question.options.map((option, index) => (
+                                                <tr key={`${question._id}-option-${index}`} className={cx('option-data-row', { 'inactive-row': !question.isActive })}>
+                                                    {/* Only show question ID and text in the first row */}
+                                                    {index === 0 ? (
+                                                        <>
+                                                            <td rowSpan={question.options.length} className={cx('order-column')}>
+                                                                <strong>{question.questionId || '-'}</strong>
+                                                            </td>
+                                                            <td rowSpan={question.options.length} className={cx('question-column')}>
+                                                                <div>{question.questionText}</div>
+                                                            </td>
+                                                        </>
+                                                    ) : (
+                                                        <></>
+                                                    )}
+                                                    <td className={cx('options-column')}>
+                                                        <div className={cx('option-item')}>{option.text}</div>
+                                                    </td>
+                                                    <td className={cx('point-column')}>
+                                                        <div className={cx('point-item')}>{option.points} pts</div>
+                                                    </td>
+                                                    <td className={cx('skin-type-column')}>
+                                                        <div className={cx('skin-type-item')}>{option.skinType}</div>
+                                                    </td>
+                                                    {/* Only show actions in the first row */}
+                                                    {index === 0 ? (
+                                                        <td rowSpan={question.options.length} className={cx('actions-column')}>
+                                                            <button
+                                                                className={cx('action-button', 'edit')}
+                                                                onClick={() => openEditModal(question)}
+                                                                title="Edit question"
+                                                            >
+                                                                <FaEdit />
+                                                            </button>
+                                                            <button
+                                                                className={cx('action-button', 'delete')}
+                                                                onClick={() => openDeleteModal(question)}
+                                                                title="Delete question"
+                                                            >
+                                                                <FaTrashAlt />
+                                                            </button>
+                                                        </td>
+                                                    ) : (
+                                                        <></>
+                                                    )}
+                                                </tr>
+                                            ))
+                                        ) : (
+                                            // Handle case with no options
+                                            <tr className={cx({ 'inactive-row': !question.isActive })}>
+                                                <td className={cx('order-column')}>
+                                                    <strong>{question.questionId || '-'}</strong>
+                                                </td>
+                                                <td className={cx('question-column')}>
+                                                    <div>{question.questionText}</div>
+                                                </td>
+                                                <td className={cx('options-column')}>No options</td>
+                                                <td className={cx('point-column')}>-</td>
+                                                <td className={cx('skin-type-column')}>-</td>
+                                                <td className={cx('actions-column')}>
+                                                    <button
+                                                        className={cx('action-button', 'edit')}
+                                                        onClick={() => openEditModal(question)}
+                                                        title="Edit question"
+                                                    >
+                                                        <FaEdit />
+                                                    </button>
+                                                    <button
+                                                        className={cx('action-button', 'delete')}
+                                                        onClick={() => openDeleteModal(question)}
+                                                        title="Delete question"
+                                                    >
+                                                        <FaTrashAlt />
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        )}
+                                    </React.Fragment>
                                 ))}
                             </tbody>
                         </table>
