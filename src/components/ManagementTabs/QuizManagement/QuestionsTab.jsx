@@ -53,9 +53,8 @@ function QuestionsTab({ skinTypes }) {
     const [formData, setFormData] = useState({
         questionId: '',
         questionText: '',
-        options: [{ text: '', points: 1, skinType: '' }],
+        options: [{ text: '', points: '', skinType: '' }],
         order: 1,
-        isActive: true
     });
     const [formErrors, setFormErrors] = useState({});
 
@@ -202,7 +201,7 @@ function QuestionsTab({ skinTypes }) {
             const newOptions = [...prev.options];
             newOptions[index] = {
                 ...newOptions[index],
-                [field]: field === 'points' ? parseInt(value, 10) || 1 : value
+                [field]: field === 'points' ? parseInt(value, 10) : value
             };
             return { ...prev, options: newOptions };
         });
@@ -212,7 +211,7 @@ function QuestionsTab({ skinTypes }) {
     const addOption = () => {
         setFormData(prev => ({
             ...prev,
-            options: [...prev.options, { text: '', points: 1, skinType: '' }]
+            options: [...prev.options, { text: '', points: '', skinType: '' }]
         }));
     };
 
@@ -257,8 +256,8 @@ function QuestionsTab({ skinTypes }) {
                 hasOptionError = true;
             }
 
-            if (isNaN(option.points) || option.points < 1) {
-                optError.points = 'Points must be a positive number';
+            if (option.points === '') {
+                optError.points = 'Please select a point value';
                 hasOptionError = true;
             }
 
@@ -291,9 +290,8 @@ function QuestionsTab({ skinTypes }) {
         setFormData({
             questionId: nextId,
             questionText: '',
-            options: [{ text: '', points: 1, skinType: '' }],
+            options: [{ text: '', points: '', skinType: '' }],
             order: questions.length + 1,
-            isActive: true
         });
         setFormErrors({});
         setShowCreateModal(true);
@@ -309,12 +307,11 @@ function QuestionsTab({ skinTypes }) {
             options: question.options?.length
                 ? question.options.map(opt => ({
                     text: opt.text || '',
-                    points: opt.points || 1,
+                    points: opt.points || '',
                     skinType: opt.skinType || ''
                 }))
-                : [{ text: '', points: 1, skinType: '' }],
+                : [{ text: '', points: '', skinType: '' }],
             order: question.order || 1,
-            isActive: question.isActive !== false
         });
 
         setFormErrors({});
@@ -346,9 +343,8 @@ function QuestionsTab({ skinTypes }) {
             setFormData({
                 questionId: '',
                 questionText: '',
-                options: [{ text: '', points: 1, skinType: '' }],
+                options: [{ text: '', points: '', skinType: '' }],
                 order: questions.length + 1,
-                isActive: true
             });
 
             setShowCreateModal(false);
@@ -381,9 +377,8 @@ function QuestionsTab({ skinTypes }) {
             setFormData({
                 questionId: '',
                 questionText: '',
-                options: [{ text: '', points: 1, skinType: '' }],
+                options: [{ text: '', points: '', skinType: '' }],
                 order: 1,
-                isActive: true
             });
 
             setShowEditModal(false);
@@ -487,11 +482,8 @@ function QuestionsTab({ skinTypes }) {
                                     >
                                         Order {getSortIcon('questionId')}
                                     </th>
-                                    <th
-                                        className={cx('question-column', 'sortable')}
-                                        onClick={() => handleSort('questionText')}
-                                    >
-                                        Question {getSortIcon('questionText')}
+                                    <th className={cx('question-column')}>
+                                        Question
                                     </th>
                                     <th className={cx('options-column')}>Options</th>
                                     <th className={cx('point-column')}>Point</th>
@@ -505,7 +497,7 @@ function QuestionsTab({ skinTypes }) {
                                         {question.options && question.options.length > 0 ? (
                                             // Render each option as a separate row to maintain alignment
                                             question.options.map((option, index) => (
-                                                <tr key={`${question._id}-option-${index}`} className={cx('option-data-row', { 'inactive-row': !question.isActive })}>
+                                                <tr key={`${question._id}-option-${index}`} className={cx('option-data-row')}>
                                                     {/* Only show question ID and text in the first row */}
                                                     {index === 0 ? (
                                                         <>
@@ -553,7 +545,7 @@ function QuestionsTab({ skinTypes }) {
                                             ))
                                         ) : (
                                             // Handle case with no options
-                                            <tr className={cx({ 'inactive-row': !question.isActive })}>
+                                            <tr className={cx('option-data-row')}>
                                                 <td className={cx('order-column')}>
                                                     <strong>{question.questionId || '-'}</strong>
                                                 </td>
@@ -703,18 +695,6 @@ function QuestionsTab({ skinTypes }) {
                                 )}
                             </div>
 
-                            <div className={cx('form-group', 'checkbox-group')}>
-                                <label className={cx('checkbox-label')}>
-                                    <input
-                                        type="checkbox"
-                                        name="isActive"
-                                        checked={formData.isActive}
-                                        onChange={handleInputChange}
-                                    />
-                                    <span>Active</span>
-                                </label>
-                            </div>
-
                             <div className={cx('form-group', 'options-form-group')}>
                                 <div className={cx('options-header')}>
                                     <label>Answer Options</label>
@@ -746,14 +726,18 @@ function QuestionsTab({ skinTypes }) {
                                             </div>
 
                                             <div className={cx('option-form-group')}>
-                                                <input
-                                                    type="number"
-                                                    placeholder="Points"
+                                                <select
                                                     value={option.points}
                                                     onChange={(e) => handleOptionChange(index, 'points', e.target.value)}
-                                                    min="1"
                                                     className={cx({ 'error-input': formErrors.options?.[index]?.points })}
-                                                />
+                                                >
+                                                    <option value="">Select Point</option>
+                                                    <option value="1">1 Point</option>
+                                                    <option value="2">2 Points</option>
+                                                    <option value="3">3 Points</option>
+                                                    <option value="4">4 Points</option>
+                                                    <option value="5">5 Points</option>
+                                                </select>
                                                 {formErrors.options?.[index]?.points && (
                                                     <div className={cx('error-message')}>
                                                         <FaExclamationTriangle /> {formErrors.options[index].points}
@@ -880,18 +864,6 @@ function QuestionsTab({ skinTypes }) {
                                 )}
                             </div>
 
-                            <div className={cx('form-group', 'checkbox-group')}>
-                                <label className={cx('checkbox-label')}>
-                                    <input
-                                        type="checkbox"
-                                        name="isActive"
-                                        checked={formData.isActive}
-                                        onChange={handleInputChange}
-                                    />
-                                    <span>Active</span>
-                                </label>
-                            </div>
-
                             <div className={cx('form-group', 'options-form-group')}>
                                 <div className={cx('options-header')}>
                                     <label>Answer Options</label>
@@ -923,14 +895,18 @@ function QuestionsTab({ skinTypes }) {
                                             </div>
 
                                             <div className={cx('option-form-group')}>
-                                                <input
-                                                    type="number"
-                                                    placeholder="Points"
+                                                <select
                                                     value={option.points}
                                                     onChange={(e) => handleOptionChange(index, 'points', e.target.value)}
-                                                    min="1"
                                                     className={cx({ 'error-input': formErrors.options?.[index]?.points })}
-                                                />
+                                                >
+                                                    <option value="">Select Point</option>
+                                                    <option value="1">1 Point</option>
+                                                    <option value="2">2 Points</option>
+                                                    <option value="3">3 Points</option>
+                                                    <option value="4">4 Points</option>
+                                                    <option value="5">5 Points</option>
+                                                </select>
                                                 {formErrors.options?.[index]?.points && (
                                                     <div className={cx('error-message')}>
                                                         <FaExclamationTriangle /> {formErrors.options[index].points}

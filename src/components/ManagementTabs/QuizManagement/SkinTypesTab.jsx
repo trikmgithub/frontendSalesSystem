@@ -78,7 +78,7 @@ function SkinTypesTab() {
     // Apply search filter
     if (searchTerm.trim()) {
       const search = searchTerm.toLowerCase().trim();
-      result = result.filter(skinType => 
+      result = result.filter(skinType =>
         skinType.skinType?.toLowerCase().includes(search) ||
         skinType.description?.toLowerCase().includes(search) ||
         skinType.recommendations?.some(rec => rec.toLowerCase().includes(search))
@@ -206,7 +206,7 @@ function SkinTypesTab() {
     if (skinTypeFormData.recommendations.length <= 1) {
       return; // Keep at least one recommendation
     }
-    
+
     setSkinTypeFormData(prev => {
       const newRecommendations = [...prev.recommendations];
       newRecommendations.splice(index, 1);
@@ -251,7 +251,7 @@ function SkinTypesTab() {
       description: '',
       recommendations: ['']
     });
-    
+
     setSkinTypeFormErrors({});
     setShowCreateModal(true);
   };
@@ -259,15 +259,15 @@ function SkinTypesTab() {
   // Function to open edit skin type modal
   const openEditSkinTypeModal = (skinType) => {
     setCurrentSkinType(skinType);
-    
+
     setSkinTypeFormData({
       skinType: skinType.skinType || '',
       description: skinType.description || '',
-      recommendations: skinType.recommendations?.length 
+      recommendations: skinType.recommendations?.length
         ? [...skinType.recommendations]
         : ['']
     });
-    
+
     setSkinTypeFormErrors({});
     setShowEditModal(true);
   };
@@ -299,7 +299,7 @@ function SkinTypesTab() {
         description: '',
         recommendations: ['']
       });
-      
+
       setShowCreateModal(false);
       fetchSkinTypes();
 
@@ -332,7 +332,7 @@ function SkinTypesTab() {
         description: '',
         recommendations: ['']
       });
-      
+
       setShowEditModal(false);
       fetchSkinTypes();
 
@@ -364,12 +364,12 @@ function SkinTypesTab() {
   return (
     <>
       {/* Hidden button for create trigger from parent */}
-      <button 
-        id="create-skin-type-btn" 
-        onClick={openCreateSkinTypeModal} 
+      <button
+        id="create-skin-type-btn"
+        onClick={openCreateSkinTypeModal}
         style={{ display: 'none' }}
       />
-      
+
       <div className={cx('tools')}>
         <form className={cx('search-form')} onSubmit={handleSearch}>
           <div className={cx('search-input-container')}>
@@ -429,11 +429,8 @@ function SkinTypesTab() {
                   >
                     Skin Type {getSortIcon('skinType')}
                   </th>
-                  <th
-                    className={cx('description-column', 'sortable')}
-                    onClick={() => handleSort('description')}
-                  >
-                    Description {getSortIcon('description')}
+                  <th className={cx('description-column')}>
+                    Description
                   </th>
                   <th className={cx('recommendations-column')}>Recommendations</th>
                   <th className={cx('actions-column')}>Actions</th>
@@ -561,7 +558,7 @@ function SkinTypesTab() {
                   Use a unique code for this skin type (like da_kho, da_dau, etc.)
                 </div>
               </div>
-              
+
               <div className={cx('form-group')}>
                 <label htmlFor="description">Description</label>
                 <textarea
@@ -669,7 +666,7 @@ function SkinTypesTab() {
                   </div>
                 )}
               </div>
-              
+
               <div className={cx('form-group')}>
                 <label htmlFor="edit-description">Description</label>
                 <textarea

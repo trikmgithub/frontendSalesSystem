@@ -37,7 +37,6 @@ const createQuestionAxios = async (questionData) => {
       })),
       // Add order as a custom property if needed
       ...(questionData.order ? { order: questionData.order } : {}),
-      ...(questionData.isActive !== undefined ? { isActive: questionData.isActive } : {})
     };
 
     const response = await axiosConfig.post('skin-quiz/questions', formattedData);
@@ -60,20 +59,21 @@ const createQuestionAxios = async (questionData) => {
  */
 const updateQuestionAxios = async (questionId, questionData) => {
   try {
-    // Format the data to match API expectations
+    // Format the data to match API expectations for PUT
     const formattedData = {
+      questionId: questionData.questionId,  // Include questionId in the body
       questionText: questionData.questionText,
       options: questionData.options.map(opt => ({
         text: opt.text,
-        points: opt.points || 1,
+        points: parseInt(opt.points) || 1,
         skinType: opt.skinType
       })),
       // Add order as a custom property if needed
       ...(questionData.order ? { order: questionData.order } : {}),
-      ...(questionData.isActive !== undefined ? { isActive: questionData.isActive } : {})
     };
-    
-    const response = await axiosConfig.patch(`skin-quiz/questions/${questionId}`, formattedData);
+
+    // Change to PUT method
+    const response = await axiosConfig.put(`skin-quiz/questions/${questionId}`, formattedData);
     return response;
   } catch (error) {
     console.error('Error updating quiz question:', error);
@@ -153,7 +153,7 @@ const createSkinTypeAxios = async (skinTypeData) => {
       description: skinTypeData.description,
       recommendations: skinTypeData.recommendations || []
     };
-    
+
     const response = await axiosConfig.post('skin-quiz/skin-types', formattedData);
     return response;
   } catch (error) {
@@ -178,7 +178,7 @@ const updateSkinTypeAxios = async (skinTypeCode, skinTypeData) => {
       description: skinTypeData.description,
       recommendations: skinTypeData.recommendations || []
     };
-    
+
     const response = await axiosConfig.patch(`skin-quiz/skin-types/${skinTypeCode}`, formattedData);
     return response;
   } catch (error) {
