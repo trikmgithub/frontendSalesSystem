@@ -196,6 +196,25 @@ const updateSkinTypeAxios = async (skinTypeCode, skinTypeData) => {
 };
 
 /**
+ * Delete a skin type
+ * @param {string} skinTypeCode - Skin type code to delete
+ * @returns {Promise} API response
+ */
+const deleteSkinTypeAxios = async (skinTypeCode) => {
+  try {
+    const response = await axiosConfig.del(`skin-quiz/skin-types/${skinTypeCode}`);
+    return response;
+  } catch (error) {
+    console.error('Error deleting skin type:', error);
+    return {
+      error: true,
+      message: error.response?.data?.message || error.message || 'Failed to delete skin type',
+      status: error.response?.status
+    };
+  }
+};
+
+/**
  * Get quiz history for a user
  * @param {string} userId - User ID
  * @returns {Promise} API response with user's quiz history
@@ -242,6 +261,7 @@ export {
   getSkinTypeDetailsAxios,
   createSkinTypeAxios,
   updateSkinTypeAxios,
+  deleteSkinTypeAxios,
   getQuizHistoryAxios,
   submitQuizAxios
 };

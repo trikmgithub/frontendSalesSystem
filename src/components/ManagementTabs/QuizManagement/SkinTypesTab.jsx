@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import classNames from 'classnames/bind';
 import styles from './QuizManagement.module.scss';
 import useDisableBodyScroll from '~/hooks/useDisableBodyScroll';
+import { toast } from 'react-toastify';
 import {
   FaEdit,
   FaTrashAlt,
@@ -23,6 +24,7 @@ import {
   getSkinTypeDetailsAxios,
   createSkinTypeAxios,
   updateSkinTypeAxios,
+  deleteSkinTypeAxios,
 } from '~/services/quizAxios';
 
 const cx = classNames.bind(styles);
@@ -302,10 +304,11 @@ function SkinTypesTab() {
 
       setShowCreateModal(false);
       fetchSkinTypes();
+      toast.success('Skin type created successfully');
 
     } catch (err) {
       console.error('Error creating skin type:', err);
-      alert(err.message || 'Failed to create skin type. Please try again.');
+      toast.error(err.message || 'Failed to create skin type. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -335,10 +338,11 @@ function SkinTypesTab() {
 
       setShowEditModal(false);
       fetchSkinTypes();
+      toast.success('Skin type updated successfully');
 
     } catch (err) {
       console.error('Error updating skin type:', err);
-      alert(err.message || 'Failed to update skin type. Please try again.');
+      toast.error(err.message || 'Failed to update skin type. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -349,13 +353,20 @@ function SkinTypesTab() {
     try {
       setLoading(true);
 
-      // We would implement this if the API supports deleting skin types
-      alert('Deleting skin types is not currently supported by the API');
+      const response = await deleteSkinTypeAxios(currentSkinType.skinType);
+
+      if (response.error) {
+        throw new Error(response.message || 'Failed to delete skin type');
+      }
+
+      // Close modal and refresh data
       setShowDeleteModal(false);
+      fetchSkinTypes();
+      toast.success('Skin type deleted successfully');
 
     } catch (err) {
       console.error('Error deleting skin type:', err);
-      alert(err.message || 'Failed to delete skin type. Please try again.');
+      toast.error(err.message || 'Failed to delete skin type. Please try again.');
     } finally {
       setLoading(false);
     }
