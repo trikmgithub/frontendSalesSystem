@@ -10,15 +10,25 @@ import { FaBox, FaShoppingCart, FaTag } from 'react-icons/fa';
 
 const cx = classNames.bind(styles);
 
+const STAFF_ACTIVE_TAB_KEY = 'staff_active_tab';
+
 function StaffPage() {
   const [userData, setUserData] = useState(null);
-  const [activeTab, setActiveTab] = useState('orders');
+  const [activeTab, setActiveTab] = useState(() => {
+    const savedTab = localStorage.getItem(STAFF_ACTIVE_TAB_KEY);
+    return savedTab || 'orders';
+  });
+
+  // Save active tab to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem(STAFF_ACTIVE_TAB_KEY, activeTab);
+  }, [activeTab]);
 
   // Simplified logout handler - Uses logoutAxios which handles everything
   const handleLogout = async () => {
     try {
       await logoutAxios();
-      // No need for additional code - logoutAxios handles everything
+      localStorage.removeItem('staff_active_tab');
     } catch (error) {
       console.error('Logout failed:', error);
     }

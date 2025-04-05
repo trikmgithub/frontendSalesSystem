@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import classNames from 'classnames/bind';
 import styles from './QuizManagement.module.scss';
 import useDisableBodyScroll from '~/hooks/useDisableBodyScroll';
+import { toast } from 'react-toastify';
 import {
   FaEdit,
   FaTrashAlt,
@@ -23,6 +24,7 @@ import {
   getSkinTypeDetailsAxios,
   createSkinTypeAxios,
   updateSkinTypeAxios,
+  deleteSkinTypeAxios,
 } from '~/services/quizAxios';
 
 const cx = classNames.bind(styles);
@@ -78,7 +80,7 @@ function SkinTypesTab() {
     // Apply search filter
     if (searchTerm.trim()) {
       const search = searchTerm.toLowerCase().trim();
-      result = result.filter(skinType => 
+      result = result.filter(skinType =>
         skinType.skinType?.toLowerCase().includes(search) ||
         skinType.description?.toLowerCase().includes(search) ||
         skinType.recommendations?.some(rec => rec.toLowerCase().includes(search))
@@ -206,7 +208,7 @@ function SkinTypesTab() {
     if (skinTypeFormData.recommendations.length <= 1) {
       return; // Keep at least one recommendation
     }
-    
+
     setSkinTypeFormData(prev => {
       const newRecommendations = [...prev.recommendations];
       newRecommendations.splice(index, 1);
@@ -251,7 +253,7 @@ function SkinTypesTab() {
       description: '',
       recommendations: ['']
     });
-    
+
     setSkinTypeFormErrors({});
     setShowCreateModal(true);
   };
@@ -259,15 +261,15 @@ function SkinTypesTab() {
   // Function to open edit skin type modal
   const openEditSkinTypeModal = (skinType) => {
     setCurrentSkinType(skinType);
-    
+
     setSkinTypeFormData({
       skinType: skinType.skinType || '',
       description: skinType.description || '',
-      recommendations: skinType.recommendations?.length 
+      recommendations: skinType.recommendations?.length
         ? [...skinType.recommendations]
         : ['']
     });
-    
+
     setSkinTypeFormErrors({});
     setShowEditModal(true);
   };
@@ -299,13 +301,14 @@ function SkinTypesTab() {
         description: '',
         recommendations: ['']
       });
-      
+
       setShowCreateModal(false);
       fetchSkinTypes();
+      toast.success('Skin type created successfully');
 
     } catch (err) {
       console.error('Error creating skin type:', err);
-      alert(err.message || 'Failed to create skin type. Please try again.');
+      toast.error(err.message || 'Failed to create skin type. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -332,13 +335,14 @@ function SkinTypesTab() {
         description: '',
         recommendations: ['']
       });
-      
+
       setShowEditModal(false);
       fetchSkinTypes();
+      toast.success('Skin type updated successfully');
 
     } catch (err) {
       console.error('Error updating skin type:', err);
-      alert(err.message || 'Failed to update skin type. Please try again.');
+      toast.error(err.message || 'Failed to update skin type. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -349,13 +353,20 @@ function SkinTypesTab() {
     try {
       setLoading(true);
 
-      // We would implement this if the API supports deleting skin types
-      alert('Deleting skin types is not currently supported by the API');
+      const response = await deleteSkinTypeAxios(currentSkinType.skinType);
+
+      if (response.error) {
+        throw new Error(response.message || 'Failed to delete skin type');
+      }
+
+      // Close modal and refresh data
       setShowDeleteModal(false);
+      fetchSkinTypes();
+      toast.success('Skin type deleted successfully');
 
     } catch (err) {
       console.error('Error deleting skin type:', err);
-      alert(err.message || 'Failed to delete skin type. Please try again.');
+      toast.error(err.message || 'Failed to delete skin type. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -364,12 +375,12 @@ function SkinTypesTab() {
   return (
     <>
       {/* Hidden button for create trigger from parent */}
-      <button 
-        id="create-skin-type-btn" 
-        onClick={openCreateSkinTypeModal} 
+      <button
+        id="create-skin-type-btn"
+        onClick={openCreateSkinTypeModal}
         style={{ display: 'none' }}
       />
-      
+
       <div className={cx('tools')}>
         <form className={cx('search-form')} onSubmit={handleSearch}>
           <div className={cx('search-input-container')}>
@@ -429,11 +440,8 @@ function SkinTypesTab() {
                   >
                     Skin Type {getSortIcon('skinType')}
                   </th>
-                  <th
-                    className={cx('description-column', 'sortable')}
-                    onClick={() => handleSort('description')}
-                  >
-                    Description {getSortIcon('description')}
+                  <th className={cx('description-column')}>
+                    Description
                   </th>
                   <th className={cx('recommendations-column')}>Recommendations</th>
                   <th className={cx('actions-column')}>Actions</th>
@@ -561,7 +569,7 @@ function SkinTypesTab() {
                   Use a unique code for this skin type (like da_kho, da_dau, etc.)
                 </div>
               </div>
-              
+
               <div className={cx('form-group')}>
                 <label htmlFor="description">Description</label>
                 <textarea
@@ -669,7 +677,7 @@ function SkinTypesTab() {
                   </div>
                 )}
               </div>
-              
+
               <div className={cx('form-group')}>
                 <label htmlFor="edit-description">Description</label>
                 <textarea

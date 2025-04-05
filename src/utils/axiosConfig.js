@@ -151,12 +151,22 @@ const del = async (url, config = {}) => {
     }
 };
 
+const put = async (url, data, config = {}) => {
+    try {
+      const response = await axiosConfig.put(url, data, config);
+      return response.data;
+    } catch (error) {
+      console.error(`Error in PUT to ${url}:`, error);
+      throw error;
+    }
+  };
+
 // Add the delete function to axiosConfig so it can be called directly
 axiosConfig.del = del;
 
 // Alias for delete since it's a reserved keyword
 const delete_ = del;
 
-export { post, get, patch, del, delete_ };
+export { post, get, put, patch, del, delete_ };
 
 export default axiosConfig;
