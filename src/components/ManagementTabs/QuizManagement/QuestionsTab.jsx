@@ -13,16 +13,14 @@ import {
     FaUndo,
     FaChevronLeft,
     FaChevronRight,
-    FaTimes,
     FaQuestion,
-    FaExclamationTriangle,
 } from 'react-icons/fa';
-import {
-    getQuestionsAxios,
-    createQuestionAxios,
-    updateQuestionAxios,
-    deleteQuestionAxios,
-} from '~/services/quizAxios';
+import { getQuestionsAxios } from '~/services/quizAxios';
+
+// Import the extracted form components
+import CreateQuestionForm from './CreateQuestionForm';
+import EditQuestionForm from './EditQuestionForm';
+import DeleteQuestionModal from './DeleteQuestionModal';
 
 const cx = classNames.bind(styles);
 const PAGE_SIZE = 10;
@@ -45,18 +43,11 @@ function QuestionsTab({ skinTypes }) {
     const [searchTerm, setSearchTerm] = useState('');
     const [filteredQuestions, setFilteredQuestions] = useState([]);
 
-    // State for question modals and form
+    // State for question modals
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [showEditModal, setShowEditModal] = useState(false);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [currentQuestion, setCurrentQuestion] = useState(null);
-    const [formData, setFormData] = useState({
-        questionId: '',
-        questionText: '',
-        options: [{ text: '', points: '', skinType: '' }],
-        order: 1,
-    });
-    const [formErrors, setFormErrors] = useState({});
 
     // Use hook to disable body scroll when modal is open
     useDisableBodyScroll(showCreateModal || showEditModal || showDeleteModal);
@@ -184,138 +175,27 @@ function QuestionsTab({ skinTypes }) {
         setCurrentPage(1);
     };
 
-    // Function to handle input change for form
-    const handleInputChange = (e) => {
-        const { name, value, type, checked } = e.target;
-
-        if (type === 'checkbox') {
-            setFormData(prev => ({ ...prev, [name]: checked }));
-        } else {
-            setFormData(prev => ({ ...prev, [name]: value }));
-        }
-    };
-
-    // Function to handle option change
-    const handleOptionChange = (index, field, value) => {
-        setFormData(prev => {
-            const newOptions = [...prev.options];
-            newOptions[index] = {
-                ...newOptions[index],
-                [field]: field === 'points' ? parseInt(value, 10) : value
-            };
-            return { ...prev, options: newOptions };
-        });
-    };
-
-    // Function to add option
-    const addOption = () => {
-        setFormData(prev => ({
-            ...prev,
-            options: [...prev.options, { text: '', points: '', skinType: '' }]
-        }));
-    };
-
-    // Function to remove option
-    const removeOption = (index) => {
-        if (formData.options.length <= 1) {
-            return; // Keep at least one option
-        }
-
-        setFormData(prev => {
-            const newOptions = [...prev.options];
-            newOptions.splice(index, 1);
-            return { ...prev, options: newOptions };
-        });
-    };
-
-    // Validate form
-    const validateForm = () => {
-        const errors = {};
-
-        if (!formData.questionId?.trim()) {
-            errors.questionId = 'Question ID is required';
-        }
-
-        if (!formData.questionText?.trim()) {
-            errors.questionText = 'Question text is required';
-        }
-
-        const optionErrors = [];
-        let hasOptionError = false;
-
-        formData.options.forEach((option, index) => {
-            const optError = {};
-
-            if (!option.text?.trim()) {
-                optError.text = 'Option text is required';
-                hasOptionError = true;
-            }
-
-            if (!option.skinType?.trim()) {
-                optError.skinType = 'Skin type is required';
-                hasOptionError = true;
-            }
-
-            if (option.points === '') {
-                optError.points = 'Please select a point value';
-                hasOptionError = true;
-            }
-
-            optionErrors[index] = optError;
-        });
-
-        if (hasOptionError) {
-            errors.options = optionErrors;
-        }
-
-        if (isNaN(formData.order) || formData.order < 1) {
-            errors.order = 'Order must be a positive number';
-        }
-
-        setFormErrors(errors);
-        return Object.keys(errors).length === 0;
-    };
-
     // Function to open create modal
     const openCreateModal = () => {
-        // Generate a new question ID (e.g., "Q10")
-        const highestId = questions
-            .map(q => q.questionId || '')
-            .filter(id => id.startsWith('Q'))
-            .map(id => parseInt(id.substring(1), 10) || 0)
-            .reduce((max, id) => Math.max(max, id), 0);
-
-        const nextId = `Q${highestId + 1}`;
-
-        setFormData({
-            questionId: nextId,
-            questionText: '',
-            options: [{ text: '', points: '', skinType: '' }],
-            order: questions.length + 1,
-        });
-        setFormErrors({});
         setShowCreateModal(true);
+    };
+
+    // Function to handle create success
+    const handleCreateSuccess = () => {
+        setShowCreateModal(false);
+        fetchQuestions();
     };
 
     // Function to open edit modal
     const openEditModal = (question) => {
         setCurrentQuestion(question);
-
-        setFormData({
-            questionId: question.questionId || '',
-            questionText: question.questionText || '',
-            options: question.options?.length
-                ? question.options.map(opt => ({
-                    text: opt.text || '',
-                    points: opt.points || '',
-                    skinType: opt.skinType || ''
-                }))
-                : [{ text: '', points: '', skinType: '' }],
-            order: question.order || 1,
-        });
-
-        setFormErrors({});
         setShowEditModal(true);
+    };
+
+    // Function to handle edit success
+    const handleEditSuccess = () => {
+        setShowEditModal(false);
+        fetchQuestions();
     };
 
     // Function to open delete modal
@@ -324,94 +204,10 @@ function QuestionsTab({ skinTypes }) {
         setShowDeleteModal(true);
     };
 
-    // Function to create question
-    const createQuestion = async () => {
-        if (!validateForm()) {
-            return;
-        }
-
-        try {
-            setLoading(true);
-
-            const response = await createQuestionAxios(formData);
-
-            if (response.error) {
-                throw new Error(response.message || 'Failed to create question');
-            }
-
-            // Reset form and close modal
-            setFormData({
-                questionId: '',
-                questionText: '',
-                options: [{ text: '', points: '', skinType: '' }],
-                order: questions.length + 1,
-            });
-
-            setShowCreateModal(false);
-            fetchQuestions();
-
-        } catch (err) {
-            console.error('Error creating question:', err);
-            alert(err.message || 'Failed to create question. Please try again.');
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    // Function to update question
-    const updateQuestion = async () => {
-        if (!validateForm()) {
-            return;
-        }
-
-        try {
-            setLoading(true);
-
-            const response = await updateQuestionAxios(currentQuestion._id, formData);
-
-            if (response.error) {
-                throw new Error(response.message || 'Failed to update question');
-            }
-
-            // Reset form and close modal
-            setFormData({
-                questionId: '',
-                questionText: '',
-                options: [{ text: '', points: '', skinType: '' }],
-                order: 1,
-            });
-
-            setShowEditModal(false);
-            fetchQuestions();
-
-        } catch (err) {
-            console.error('Error updating question:', err);
-            alert(err.message || 'Failed to update question. Please try again.');
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    // Function to delete question
-    const deleteQuestion = async () => {
-        try {
-            setLoading(true);
-
-            const response = await deleteQuestionAxios(currentQuestion._id);
-
-            if (response.error) {
-                throw new Error(response.message || 'Failed to delete question');
-            }
-
-            setShowDeleteModal(false);
-            fetchQuestions();
-
-        } catch (err) {
-            console.error('Error deleting question:', err);
-            alert(err.message || 'Failed to delete question. Please try again.');
-        } finally {
-            setLoading(false);
-        }
+    // Function to handle delete success
+    const handleDeleteSuccess = () => {
+        setShowDeleteModal(false);
+        fetchQuestions();
     };
 
     return (
@@ -629,383 +425,30 @@ function QuestionsTab({ skinTypes }) {
                 </div>
             )}
 
-            {/* Create Question Modal */}
+            {/* Render forms as needed */}
             {showCreateModal && (
-                <div className={cx('modal-overlay')}>
-                    <div className={cx('modal')}>
-                        <div className={cx('modal-header')}>
-                            <h3>Create New Question</h3>
-                            <button
-                                className={cx('close-button')}
-                                onClick={() => setShowCreateModal(false)}
-                            >
-                                <FaTimes />
-                            </button>
-                        </div>
-                        <div className={cx('modal-body')}>
-                            <div className={cx('form-group')}>
-                                <label htmlFor="questionId">Question ID</label>
-                                <input
-                                    type="text"
-                                    id="questionId"
-                                    name="questionId"
-                                    value={formData.questionId}
-                                    onChange={handleInputChange}
-                                    className={cx({ 'error-input': formErrors.questionId })}
-                                />
-                                {formErrors.questionId && (
-                                    <div className={cx('error-message')}>
-                                        <FaExclamationTriangle /> {formErrors.questionId}
-                                    </div>
-                                )}
-                            </div>
-
-                            <div className={cx('form-group')}>
-                                <label htmlFor="questionText">Question Text</label>
-                                <input
-                                    type="text"
-                                    id="questionText"
-                                    name="questionText"
-                                    value={formData.questionText}
-                                    onChange={handleInputChange}
-                                    className={cx({ 'error-input': formErrors.questionText })}
-                                />
-                                {formErrors.questionText && (
-                                    <div className={cx('error-message')}>
-                                        <FaExclamationTriangle /> {formErrors.questionText}
-                                    </div>
-                                )}
-                            </div>
-
-                            <div className={cx('form-group')}>
-                                <label htmlFor="order">Question Order</label>
-                                <input
-                                    type="number"
-                                    id="order"
-                                    name="order"
-                                    value={formData.order}
-                                    onChange={handleInputChange}
-                                    min="1"
-                                    className={cx({ 'error-input': formErrors.order })}
-                                />
-                                {formErrors.order && (
-                                    <div className={cx('error-message')}>
-                                        <FaExclamationTriangle /> {formErrors.order}
-                                    </div>
-                                )}
-                            </div>
-
-                            <div className={cx('form-group', 'options-form-group')}>
-                                <div className={cx('options-header')}>
-                                    <label>Answer Options</label>
-                                    <button
-                                        type="button"
-                                        onClick={addOption}
-                                        className={cx('add-option-button')}
-                                    >
-                                        <FaPlus /> Add Option
-                                    </button>
-                                </div>
-
-                                {formData.options.map((option, index) => (
-                                    <div key={index} className={cx('option-form-row')}>
-                                        <div className={cx('option-form-fields')}>
-                                            <div className={cx('option-form-group')}>
-                                                <input
-                                                    type="text"
-                                                    placeholder="Option text"
-                                                    value={option.text}
-                                                    onChange={(e) => handleOptionChange(index, 'text', e.target.value)}
-                                                    className={cx({ 'error-input': formErrors.options?.[index]?.text })}
-                                                />
-                                                {formErrors.options?.[index]?.text && (
-                                                    <div className={cx('error-message')}>
-                                                        <FaExclamationTriangle /> {formErrors.options[index].text}
-                                                    </div>
-                                                )}
-                                            </div>
-
-                                            <div className={cx('option-form-group')}>
-                                                <select
-                                                    value={option.points}
-                                                    onChange={(e) => handleOptionChange(index, 'points', e.target.value)}
-                                                    className={cx({ 'error-input': formErrors.options?.[index]?.points })}
-                                                >
-                                                    <option value="">Select Point</option>
-                                                    <option value="1">1 Point</option>
-                                                    <option value="2">2 Points</option>
-                                                    <option value="3">3 Points</option>
-                                                    <option value="4">4 Points</option>
-                                                    <option value="5">5 Points</option>
-                                                </select>
-                                                {formErrors.options?.[index]?.points && (
-                                                    <div className={cx('error-message')}>
-                                                        <FaExclamationTriangle /> {formErrors.options[index].points}
-                                                    </div>
-                                                )}
-                                            </div>
-
-                                            <div className={cx('option-form-group')}>
-                                                <select
-                                                    value={option.skinType}
-                                                    onChange={(e) => handleOptionChange(index, 'skinType', e.target.value)}
-                                                    className={cx({ 'error-input': formErrors.options?.[index]?.skinType })}
-                                                >
-                                                    <option value="">Select Skin Type</option>
-                                                    {skinTypes.map((type, idx) => (
-                                                        <option key={idx} value={type.skinType || type}>
-                                                            {type.skinType || type}
-                                                        </option>
-                                                    ))}
-                                                </select>
-                                                {formErrors.options?.[index]?.skinType && (
-                                                    <div className={cx('error-message')}>
-                                                        <FaExclamationTriangle /> {formErrors.options[index].skinType}
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </div>
-
-                                        <button
-                                            type="button"
-                                            onClick={() => removeOption(index)}
-                                            className={cx('remove-option-button')}
-                                            disabled={formData.options.length <= 1}
-                                        >
-                                            <FaTimes />
-                                        </button>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                        <div className={cx('modal-footer')}>
-                            <button
-                                className={cx('cancel-button')}
-                                onClick={() => setShowCreateModal(false)}
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                className={cx('submit-button')}
-                                onClick={createQuestion}
-                                disabled={loading}
-                            >
-                                {loading ? 'Creating...' : 'Create Question'}
-                            </button>
-                        </div>
-                    </div>
-                </div>
+                <CreateQuestionForm 
+                    skinTypes={skinTypes}
+                    onClose={() => setShowCreateModal(false)}
+                    onSuccess={handleCreateSuccess}
+                />
             )}
 
-            {/* Edit Question Modal */}
-            {showEditModal && (
-                <div className={cx('modal-overlay')}>
-                    <div className={cx('modal')}>
-                        <div className={cx('modal-header')}>
-                            <h3>Edit Question</h3>
-                            <button
-                                className={cx('close-button')}
-                                onClick={() => setShowEditModal(false)}
-                            >
-                                <FaTimes />
-                            </button>
-                        </div>
-                        <div className={cx('modal-body')}>
-                            <div className={cx('form-group')}>
-                                <label htmlFor="edit-questionId">Question ID</label>
-                                <input
-                                    type="text"
-                                    id="edit-questionId"
-                                    name="questionId"
-                                    value={formData.questionId}
-                                    onChange={handleInputChange}
-                                    className={cx({ 'error-input': formErrors.questionId })}
-                                    readOnly // Question ID should not be editable
-                                />
-                                {formErrors.questionId && (
-                                    <div className={cx('error-message')}>
-                                        <FaExclamationTriangle /> {formErrors.questionId}
-                                    </div>
-                                )}
-                            </div>
-
-                            <div className={cx('form-group')}>
-                                <label htmlFor="edit-questionText">Question Text</label>
-                                <input
-                                    type="text"
-                                    id="edit-questionText"
-                                    name="questionText"
-                                    value={formData.questionText}
-                                    onChange={handleInputChange}
-                                    className={cx({ 'error-input': formErrors.questionText })}
-                                />
-                                {formErrors.questionText && (
-                                    <div className={cx('error-message')}>
-                                        <FaExclamationTriangle /> {formErrors.questionText}
-                                    </div>
-                                )}
-                            </div>
-
-                            <div className={cx('form-group')}>
-                                <label htmlFor="edit-order">Question Order</label>
-                                <input
-                                    type="number"
-                                    id="edit-order"
-                                    name="order"
-                                    value={formData.order}
-                                    onChange={handleInputChange}
-                                    min="1"
-                                    className={cx({ 'error-input': formErrors.order })}
-                                />
-                                {formErrors.order && (
-                                    <div className={cx('error-message')}>
-                                        <FaExclamationTriangle /> {formErrors.order}
-                                    </div>
-                                )}
-                            </div>
-
-                            <div className={cx('form-group', 'options-form-group')}>
-                                <div className={cx('options-header')}>
-                                    <label>Answer Options</label>
-                                    <button
-                                        type="button"
-                                        onClick={addOption}
-                                        className={cx('add-option-button')}
-                                    >
-                                        <FaPlus /> Add Option
-                                    </button>
-                                </div>
-
-                                {formData.options.map((option, index) => (
-                                    <div key={index} className={cx('option-form-row')}>
-                                        <div className={cx('option-form-fields')}>
-                                            <div className={cx('option-form-group')}>
-                                                <input
-                                                    type="text"
-                                                    placeholder="Option text"
-                                                    value={option.text}
-                                                    onChange={(e) => handleOptionChange(index, 'text', e.target.value)}
-                                                    className={cx({ 'error-input': formErrors.options?.[index]?.text })}
-                                                />
-                                                {formErrors.options?.[index]?.text && (
-                                                    <div className={cx('error-message')}>
-                                                        <FaExclamationTriangle /> {formErrors.options[index].text}
-                                                    </div>
-                                                )}
-                                            </div>
-
-                                            <div className={cx('option-form-group')}>
-                                                <select
-                                                    value={option.points}
-                                                    onChange={(e) => handleOptionChange(index, 'points', e.target.value)}
-                                                    className={cx({ 'error-input': formErrors.options?.[index]?.points })}
-                                                >
-                                                    <option value="">Select Point</option>
-                                                    <option value="1">1 Point</option>
-                                                    <option value="2">2 Points</option>
-                                                    <option value="3">3 Points</option>
-                                                    <option value="4">4 Points</option>
-                                                    <option value="5">5 Points</option>
-                                                </select>
-                                                {formErrors.options?.[index]?.points && (
-                                                    <div className={cx('error-message')}>
-                                                        <FaExclamationTriangle /> {formErrors.options[index].points}
-                                                    </div>
-                                                )}
-                                            </div>
-
-                                            <div className={cx('option-form-group')}>
-                                                <select
-                                                    value={option.skinType}
-                                                    onChange={(e) => handleOptionChange(index, 'skinType', e.target.value)}
-                                                    className={cx({ 'error-input': formErrors.options?.[index]?.skinType })}
-                                                >
-                                                    <option value="">Select Skin Type</option>
-                                                    {skinTypes.map((type, idx) => (
-                                                        <option key={idx} value={type.skinType || type}>
-                                                            {type.skinType || type}
-                                                        </option>
-                                                    ))}
-                                                </select>
-                                                {formErrors.options?.[index]?.skinType && (
-                                                    <div className={cx('error-message')}>
-                                                        <FaExclamationTriangle /> {formErrors.options[index].skinType}
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </div>
-
-                                        <button
-                                            type="button"
-                                            onClick={() => removeOption(index)}
-                                            className={cx('remove-option-button')}
-                                            disabled={formData.options.length <= 1}
-                                        >
-                                            <FaTimes />
-                                        </button>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                        <div className={cx('modal-footer')}>
-                            <button
-                                className={cx('cancel-button')}
-                                onClick={() => setShowEditModal(false)}
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                className={cx('submit-button')}
-                                onClick={updateQuestion}
-                                disabled={loading}
-                            >
-                                {loading ? 'Saving...' : 'Save Changes'}
-                            </button>
-                        </div>
-                    </div>
-                </div>
+            {showEditModal && currentQuestion && (
+                <EditQuestionForm 
+                    skinTypes={skinTypes}
+                    question={currentQuestion}
+                    onClose={() => setShowEditModal(false)}
+                    onSuccess={handleEditSuccess}
+                />
             )}
 
-            {/* Delete Question Modal */}
-            {showDeleteModal && (
-                <div className={cx('modal-overlay')}>
-                    <div className={cx('modal', 'delete-modal')}>
-                        <div className={cx('modal-header')}>
-                            <h3>Confirm Deletion</h3>
-                            <button
-                                className={cx('close-button')}
-                                onClick={() => setShowDeleteModal(false)}
-                            >
-                                <FaTimes />
-                            </button>
-                        </div>
-                        <div className={cx('modal-body')}>
-                            <p>Are you sure you want to delete this question?</p>
-                            <div className={cx('question-preview')}>
-                                <div><strong>Question ID:</strong> {currentQuestion?.questionId}</div>
-                                <div><strong>Question:</strong> {currentQuestion?.questionText}</div>
-                            </div>
-                            <p className={cx('delete-warning')}>
-                                <FaExclamationTriangle /> This action cannot be undone.
-                            </p>
-                        </div>
-                        <div className={cx('modal-footer')}>
-                            <button
-                                className={cx('cancel-button')}
-                                onClick={() => setShowDeleteModal(false)}
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                className={cx('delete-button')}
-                                onClick={deleteQuestion}
-                                disabled={loading}
-                            >
-                                {loading ? 'Deleting...' : 'Delete Question'}
-                            </button>
-                        </div>
-                    </div>
-                </div>
+            {showDeleteModal && currentQuestion && (
+                <DeleteQuestionModal
+                    question={currentQuestion}
+                    onClose={() => setShowDeleteModal(false)}
+                    onSuccess={handleDeleteSuccess}
+                />
             )}
         </>
     );
