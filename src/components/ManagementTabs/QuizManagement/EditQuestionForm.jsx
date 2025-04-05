@@ -13,6 +13,7 @@ function EditQuestionForm({ skinTypes, question, onClose, onSuccess }) {
     questionText: '',
     options: [{ text: '', points: '', skinType: '' }],
     order: 1,
+    isActive: true,
   });
   const [formErrors, setFormErrors] = useState({});
 
@@ -30,6 +31,7 @@ function EditQuestionForm({ skinTypes, question, onClose, onSuccess }) {
             }))
           : [{ text: '', points: '', skinType: '' }],
         order: question.order || 1,
+        isActive: question.isActive !== undefined ? question.isActive : true,
       });
     }
   }, [question]);
@@ -216,6 +218,26 @@ function EditQuestionForm({ skinTypes, question, onClose, onSuccess }) {
                 <FaExclamationTriangle /> {formErrors.order}
               </div>
             )}
+          </div>
+          
+          <div className={cx('form-group', 'toggle-group')}>
+            <div className={cx('toggle-container')}>
+              <label className={cx('toggle-label')}>Question Status</label>
+              <div className={cx('toggle-switch-container')}>
+                <div 
+                  className={cx('toggle-switch', { 'toggle-active': formData.isActive })}
+                  onClick={() => setFormData(prev => ({ ...prev, isActive: !prev.isActive }))}
+                >
+                  <div className={cx('toggle-switch-handle')}></div>
+                </div>
+                <span className={cx('toggle-status', formData.isActive ? 'active' : 'inactive')}>
+                  {formData.isActive ? 'Active' : 'Inactive'}
+                </span>
+              </div>
+            </div>
+            <div className={cx('form-help-text')}>
+              Active questions will be shown to users in the skin quiz
+            </div>
           </div>
 
           <div className={cx('form-group', 'options-form-group')}>

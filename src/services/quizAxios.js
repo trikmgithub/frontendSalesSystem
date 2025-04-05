@@ -21,7 +21,7 @@ const getQuestionsAxios = async () => {
 
 /**
  * Create a new quiz question
- * @param {Object} questionData - Question data including questionId, questionText and options
+ * @param {Object} questionData - Question data including questionId, questionText, options, and isActive
  * @returns {Promise} API response
  */
 const createQuestionAxios = async (questionData) => {
@@ -35,6 +35,8 @@ const createQuestionAxios = async (questionData) => {
         points: opt.points || 1,
         skinType: opt.skinType
       })),
+      // Include isActive field
+      isActive: questionData.isActive !== undefined ? questionData.isActive : true,
       // Add order as a custom property if needed
       ...(questionData.order ? { order: questionData.order } : {}),
     };
@@ -54,7 +56,7 @@ const createQuestionAxios = async (questionData) => {
 /**
  * Update an existing quiz question
  * @param {string} questionId - ID of the question to update
- * @param {Object} questionData - Updated question data
+ * @param {Object} questionData - Updated question data including isActive status
  * @returns {Promise} API response
  */
 const updateQuestionAxios = async (questionId, questionData) => {
@@ -68,6 +70,8 @@ const updateQuestionAxios = async (questionId, questionData) => {
         points: parseInt(opt.points) || 1,
         skinType: opt.skinType
       })),
+      // Include isActive field
+      isActive: questionData.isActive !== undefined ? questionData.isActive : true,
       // Add order as a custom property if needed
       ...(questionData.order ? { order: questionData.order } : {}),
     };
