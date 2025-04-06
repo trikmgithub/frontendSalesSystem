@@ -116,32 +116,29 @@ const QuizResult = () => {
   useEffect(() => {
     const fetchSkinTypeDetails = async () => {
       if (!userSkinType || skinTypeLoading) {
-        return; // Wait until we have the skin type
+        return; // Chỉ gọi API khi userSkinType đã sẵn sàng và không còn loading
       }
-      
+
       try {
-        // The API expects skin type codes like 'da_dau', not 'oily'
-        // Make sure we're using the right format for the API call
         let apiSkinType = userSkinType;
-        
-        // If the skinType is in English format (e.g., 'oily'), convert it to the API format
+
+        // Chuyển đổi skinType từ tiếng Anh sang mã API nếu cần
         if (englishToCodeMapping[apiSkinType.toLowerCase()]) {
           apiSkinType = englishToCodeMapping[apiSkinType.toLowerCase()];
         }
-        
+
         console.log('Fetching skin type details for:', apiSkinType);
         const response = await getSkinTypeDetailsAxios(apiSkinType);
-        
+
         if (response.error) {
           console.error('API error:', response.message);
           setError(response.message || 'Failed to fetch skin type details');
           setSkinData({
-            skinType: apiSkinType, // Use the converted code
+            skinType: apiSkinType,
             description: 'Unable to load skin type description.',
             recommendations: []
           });
         } else {
-          // Extract skin type details from the response
           const details = response.data;
           console.log('Skin type details received:', details);
           setSkinData({
@@ -163,51 +160,61 @@ const QuizResult = () => {
     };
 
     fetchSkinTypeDetails();
-  }, [userSkinType, skinTypeLoading, englishToCodeMapping]);
+  }, [userSkinType]);
 
   // Fetch product recommendations using getSkinProductsAxios
   useEffect(() => {
+    let isMounted = true; // Cờ để kiểm tra component có còn được mount không
+
     const fetchSkinProducts = async () => {
       if (!skinData.skinType) {
-        return; // Wait until we have skin data with skinType
+        return; // Chỉ gọi API khi skinType đã sẵn sàng
       }
-      
+
       setLoading(true);
-      
+
       try {
-        // For product API, we need to use the Vietnamese skin type name
         let skinTypeForProductAPI = skinData.skinType;
-        
-        // Check if it's a code like 'da_dau' and convert to Vietnamese name
+
+        // Chuyển đổi mã loại da nếu cần
         if (skinTypeMapping[skinData.skinType.toLowerCase()]) {
           skinTypeForProductAPI = skinTypeMapping[skinData.skinType.toLowerCase()];
         }
-        
+
         console.log('Fetching products for skin type:', skinTypeForProductAPI);
         const response = await getSkinProductsAxios(skinTypeForProductAPI);
-        
-        if (response.error) {
-          console.error('Product API error:', response.message);
-          setError(response.message || 'Failed to fetch products');
-          setSkinProducts([]);
-        } else {
-          // Extract products from the response
-          const products = response.data || [];
-          console.log(`Found ${products.length} products for skin type:`, skinTypeForProductAPI);
-          setSkinProducts(products);
-          setError(null);
+
+        if (isMounted) {
+          if (response.error) {
+            console.error('Product API error:', response.message);
+            setError(response.message || 'Failed to fetch products');
+            setSkinProducts([]);
+          } else {
+            const products = response.data || [];
+            console.log(`Found ${products.length} products for skin type:`, skinTypeForProductAPI);
+            setSkinProducts(products);
+            setError(null);
+          }
         }
       } catch (err) {
-        console.error('Error fetching skin products:', err);
-        setError('Could not load products for your skin type');
-        setSkinProducts([]);
+        if (isMounted) {
+          console.error('Error fetching skin products:', err);
+          setError('Could not load products for your skin type');
+          setSkinProducts([]);
+        }
       } finally {
-        setLoading(false);
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     };
 
     fetchSkinProducts();
-  }, [skinData.title, skinTypeMapping]);
+
+    return () => {
+      isMounted = false; // Cleanup khi component bị unmount
+    };
+  }, [skinData.skinType]); // Chỉ gọi lại khi skinType thay đổi
 
   useEffect(() => {
     // Check if user came from direct navigation (from header)
