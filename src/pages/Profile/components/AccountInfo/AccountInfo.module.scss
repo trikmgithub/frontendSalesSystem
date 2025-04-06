@@ -1,0 +1,84 @@
+// src/pages/Profile/components/AccountInfo/AccountInfo.module.scss
+@use "sass:color";
+@use '../../styles/variables.scss' as v;
+
+.profileHeader {
+  display: flex;
+  align-items: center;
+  gap: v.$spacing-lg;
+  padding: v.$spacing-lg;
+  background-color: v.$gray-100;
+  border-radius: v.$border-radius-md;
+  margin-bottom: v.$spacing-lg;
+  
+  @include v.responsive(mobile) {
+    flex-direction: column;
+    text-align: center;
+  }
+}
+
+.profileHeaderInfo {
+  flex: 1;
+}
+
+.profileName {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: v.$text-dark;
+  margin: 0 0 v.$spacing-xs 0;
+}
+
+.profileEmail {
+  font-size: 0.9375rem;
+  color: v.$text-light;
+  margin: 0;
+}
+
+.editButton {
+  display: flex;
+  align-items: center;
+  gap: v.$spacing-sm;
+  font-weight: 500;
+}
+
+.infoGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: v.$spacing-lg;
+  margin-top: v.$spacing-md;
+  
+  @include v.responsive(mobile) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.infoItem {
+  &.fullWidth {
+    grid-column: 1 / -1;
+  }
+}
+
+.infoLabel {
+  display: flex;
+  align-items: center;
+  gap: v.$spacing-sm;
+  margin-bottom: v.$spacing-sm;
+  font-size: 0.875rem;
+  color: v.$text-light;
+  font-weight: 500;
+  
+  svg {
+    color: v.$primary-color;
+  }
+}
+
+.infoValue {
+  font-size: 1rem;
+  color: v.$text-dark;
+  padding: v.$spacing-md;
+  background-color: v.$gray-100;
+  border-radius: v.$border-radius-sm;
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+}

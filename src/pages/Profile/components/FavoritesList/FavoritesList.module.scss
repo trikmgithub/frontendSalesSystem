@@ -1,0 +1,170 @@
+// src/pages/Profile/components/FavoritesList/FavoritesList.module.scss
+@use "sass:color";
+@use '../../styles/variables.scss' as v;
+
+.favoritesList {
+  display: flex;
+  flex-direction: column;
+  gap: v.$spacing-md;
+}
+
+.favoriteItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: v.$spacing-md;
+  border-radius: v.$border-radius-md;
+  background-color: white;
+  box-shadow: v.$shadow-sm;
+  transition: all v.$transition-normal;
+  
+  &:hover {
+    box-shadow: v.$shadow-md;
+  }
+  
+  &.removing {
+    opacity: 0.5;
+    transform: translateX(10px);
+    background-color: rgba(v.$danger-color, 0.05);
+  }
+  
+  @include v.responsive(mobile) {
+    flex-direction: column;
+    align-items: stretch;
+    gap: v.$spacing-md;
+  }
+}
+
+.favoriteInfo {
+  display: flex;
+  align-items: center;
+  gap: v.$spacing-md;
+  flex: 1;
+  
+  @include v.responsive(mobile) {
+    width: 100%;
+  }
+}
+
+.productImage {
+  width: 80px;
+  height: 80px;
+  flex-shrink: 0;
+  border-radius: v.$border-radius-sm;
+  overflow: hidden;
+  border: 1px solid v.$border-color;
+  
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    transition: transform v.$transition-normal;
+    
+    &:hover {
+      transform: scale(1.05);
+    }
+  }
+}
+
+.productDetails {
+  flex: 1;
+  min-width: 0; // For text-overflow to work
+}
+
+.productBrand {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: v.$primary-color;
+  text-transform: uppercase;
+  margin-bottom: v.$spacing-xs;
+}
+
+.productName {
+  font-size: 1rem;
+  font-weight: 500;
+  margin: 0 0 v.$spacing-sm 0;
+  
+  a {
+    color: v.$text-dark;
+    text-decoration: none;
+    transition: color v.$transition-normal;
+    
+    &:hover {
+      color: v.$primary-color;
+      text-decoration: underline;
+    }
+  }
+}
+
+.productPrice {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: v.$primary-color;
+}
+
+.favoriteActions {
+  display: flex;
+  gap: v.$spacing-md;
+  
+  @include v.responsive(mobile) {
+    width: 100%;
+    
+    .button {
+      flex: 1;
+    }
+  }
+}
+
+.addToCart {
+  position: relative;
+  overflow: hidden;
+  
+  &.animating {
+    background-color: v.$success-color;
+    
+    .successIcon {
+      animation: scaleIn 0.3s ease;
+    }
+  }
+}
+
+.animationCircle {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 5px;
+  height: 5px;
+  background-color: rgba(255, 255, 255, 0.8);
+  border-radius: 50%;
+  animation: ripple 0.8s linear forwards;
+  pointer-events: none;
+}
+
+@keyframes scaleIn {
+  0% {
+    transform: scale(0);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.5);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes ripple {
+  0% {
+    width: 0;
+    height: 0;
+    opacity: 1;
+  }
+  100% {
+    width: 500px;
+    height: 500px;
+    opacity: 0;
+  }
+}

@@ -1,0 +1,110 @@
+// src/pages/Profile/components/PhoneSection/PhoneSection.module.scss
+@use "sass:color";
+@use '../../styles/variables.scss' as v;
+
+.headerWithIcon {
+  display: flex;
+  align-items: center;
+  gap: v.$spacing-sm;
+}
+
+.headerIcon {
+  color: v.$primary-color;
+}
+
+.phoneContainer {
+  padding: v.$spacing-md 0;
+}
+
+.phoneDisplay {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  
+  @include v.responsive(mobile) {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: v.$spacing-md;
+  }
+}
+
+.phoneInfo {
+  display: flex;
+  align-items: center;
+  gap: v.$spacing-md;
+}
+
+.phoneIcon {
+  background-color: rgba(v.$primary-color, 0.1);
+  color: v.$primary-color;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.phoneText {
+  flex: 1;
+}
+
+.phoneLabel {
+  font-size: 1rem;
+  font-weight: 500;
+  color: v.$text-dark;
+  margin: 0 0 v.$spacing-xs 0;
+}
+
+.phoneValue {
+  font-size: 0.875rem;
+  color: v.$text-light;
+  margin: 0;
+}
+
+.phoneEditForm {
+  width: 100%;
+}
+
+.hasError {
+  .formInput {
+    border-color: v.$danger-color;
+    
+    &:focus {
+      border-color: v.$danger-color;
+      box-shadow: 0 0 0 1px rgba(v.$danger-color, 0.2);
+    }
+  }
+}
+
+.errorMessage {
+  color: v.$danger-color;
+  font-size: 0.8125rem;
+  margin: v.$spacing-xs 0 0 0;
+}
+
+.actionButtons {
+  display: flex;
+  justify-content: flex-end;
+  gap: v.$spacing-md;
+  margin-top: v.$spacing-md;
+  
+  @include v.responsive(mobile) {
+    width: 100%;
+    
+    .button {
+      flex: 1;
+    }
+  }
+}
+
+.spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  border-top-color: #fff;
+  animation: spin 1s linear infinite;
+  margin-right: v.$spacing-sm;
+}

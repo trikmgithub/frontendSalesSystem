@@ -1,0 +1,178 @@
+// src/pages/Profile/components/common/EditProfileModal/EditProfileModal.module.scss
+@use "sass:color";
+@use '../../../styles/variables.scss' as v;
+
+.formSection {
+  display: flex;
+  gap: v.$spacing-md;
+  padding: v.$spacing-lg 0;
+  border-bottom: 1px solid v.$border-color;
+  
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.sectionIcon {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  background-color: rgba(v.$primary-color, 0.1);
+  color: v.$primary-color;
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  padding: v.$spacing-sm;
+  flex-shrink: 0;
+}
+
+.sectionContent {
+  flex: 1;
+}
+
+.sectionTitle {
+  font-size: 1rem;
+  font-weight: 600;
+  color: v.$text-dark;
+  margin: 0 0 v.$spacing-sm 0;
+}
+
+.sectionDescription {
+  font-size: 0.875rem;
+  color: v.$text-light;
+  margin: 0 0 v.$spacing-md 0;
+}
+
+.radioGroup {
+  display: flex;
+  gap: v.$spacing-lg;
+  margin-top: v.$spacing-sm;
+}
+
+.radioLabel {
+  display: flex;
+  align-items: center;
+  gap: v.$spacing-sm;
+  cursor: pointer;
+  user-select: none;
+  
+  span {
+    font-size: 0.9375rem;
+    color: v.$text-medium;
+  }
+}
+
+.radioInput {
+  position: absolute;
+  opacity: 0;
+  height: 0;
+  width: 0;
+}
+
+.customRadio {
+  width: 20px;
+  height: 20px;
+  border: 2px solid v.$gray-400;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all v.$transition-normal;
+  
+  &.checked {
+    border-color: v.$primary-color;
+    background-color: v.$primary-color;
+    color: white;
+  }
+}
+
+.dateSelects {
+  display: flex;
+  gap: v.$spacing-md;
+  
+  @include v.responsive(mobile) {
+    flex-direction: column;
+  }
+}
+
+.dateSelect {
+  flex: 1;
+  
+  select {
+    width: 100%;
+  }
+}
+
+.agreement {
+  margin-top: v.$spacing-lg;
+}
+
+.checkboxLabel {
+  display: flex;
+  align-items: flex-start;
+  gap: v.$spacing-sm;
+  cursor: pointer;
+  user-select: none;
+  
+  span {
+    font-size: 0.875rem;
+    color: v.$text-medium;
+    line-height: 1.4;
+  }
+}
+
+.checkboxInput {
+  position: absolute;
+  opacity: 0;
+  height: 0;
+  width: 0;
+}
+
+.customCheckbox {
+  width: 18px;
+  height: 18px;
+  border: 2px solid v.$gray-400;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all v.$transition-normal;
+  flex-shrink: 0;
+  margin-top: 2px;
+  
+  &.checked {
+    border-color: v.$primary-color;
+    background-color: v.$primary-color;
+    color: white;
+  }
+}
+
+.policyLink {
+  color: v.$primary-color;
+  text-decoration: none;
+  
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.inputHelp {
+  font-size: 0.8125rem;
+  color: v.$text-light;
+  margin: v.$spacing-xs 0 0 0;
+}
+
+.disabled {
+  background-color: v.$gray-100;
+  color: v.$gray-600;
+  cursor: not-allowed;
+}
+
+.modalFooter {
+  display: flex;
+  justify-content: flex-end;
+  gap: v.$spacing-md;
+  margin-top: v.$spacing-lg;
+  padding-top: v.$spacing-lg;
+  border-top: 1px solid v.$border-color;
+}

@@ -1,0 +1,160 @@
+// src/pages/Profile/components/Sidebar/Sidebar.module.scss
+@use "sass:color";
+@use '../../styles/variables.scss' as v;
+
+.sidebar {
+  width: v.$sidebar-width;
+  background-color: white;
+  border-radius: v.$border-radius-md;
+  box-shadow: v.$shadow-sm;
+  padding: v.$spacing-lg;
+  position: sticky;
+  top: v.$spacing-lg;
+  height: fit-content;
+  display: flex;
+  flex-direction: column;
+  gap: v.$spacing-lg;
+
+  @include v.responsive(tablet) {
+    width: 100%;
+    position: relative;
+    top: 0;
+  }
+}
+
+.userInfo {
+  display: flex;
+  align-items: center;
+  gap: v.$spacing-md;
+}
+
+.avatar {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background-color: v.$gray-200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  flex-shrink: 0;
+  border: 2px solid v.$primary-color;
+  box-shadow: 0 0 0 4px rgba(v.$primary-color, 0.1);
+
+  .avatarImage {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .avatarIcon {
+    color: v.$gray-500;
+  }
+}
+
+.userDetails {
+  overflow: hidden;
+}
+
+.greeting {
+  font-size: 1rem;
+  font-weight: 600;
+  color: v.$text-dark;
+  margin: 0 0 v.$spacing-xs 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.editProfile {
+  @include v.button-reset;
+  font-size: 0.875rem;
+  color: v.$primary-color;
+  text-decoration: none;
+  
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.divider {
+  height: 1px;
+  width: 100%;
+  background-color: v.$border-color;
+  margin: 0;
+}
+
+.navigation {
+  display: flex;
+  flex-direction: column;
+  gap: v.$spacing-sm;
+}
+
+.navTitle {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: v.$primary-color;
+  margin: 0 0 v.$spacing-sm 0;
+  padding-left: v.$spacing-sm;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.navItem {
+  @include v.button-reset;
+  @include v.flex(row, flex-start, center);
+  gap: v.$spacing-md;
+  padding: v.$spacing-md;
+  border-radius: v.$border-radius-sm;
+  transition: all v.$transition-normal;
+  color: v.$text-medium;
+  
+  svg {
+    color: v.$text-medium;
+    transition: color v.$transition-normal;
+  }
+  
+  &:hover {
+    background-color: rgba(v.$primary-color, 0.05);
+    color: v.$primary-color;
+    
+    svg {
+      color: v.$primary-color;
+    }
+  }
+  
+  &.active {
+    background-color: rgba(v.$primary-color, 0.1);
+    color: v.$primary-color;
+    font-weight: 600;
+    
+    svg {
+      color: v.$primary-color;
+    }
+  }
+}
+
+.sidebarFooter {
+  margin-top: auto;
+  padding-top: v.$spacing-lg;
+  border-top: 1px solid v.$border-color;
+}
+
+.logoutButton {
+  @include v.button-reset;
+  @include v.flex(row, flex-start, center);
+  width: 100%;
+  gap: v.$spacing-md;
+  padding: v.$spacing-md;
+  border-radius: v.$border-radius-sm;
+  color: v.$danger-color;
+  transition: all v.$transition-normal;
+  
+  svg {
+    color: v.$danger-color;
+  }
+  
+  &:hover {
+    background-color: rgba(v.$danger-color, 0.05);
+  }
+}

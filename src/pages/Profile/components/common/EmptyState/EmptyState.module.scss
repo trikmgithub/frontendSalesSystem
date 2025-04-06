@@ -1,0 +1,36 @@
+// src/pages/Profile/components/common/EmptyState/EmptyState.module.scss
+@use "sass:color";
+@use '../../../styles/variables.scss' as v;
+
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: v.$spacing-xxl v.$spacing-lg;
+}
+
+.emptyIcon {
+  color: v.$gray-400;
+  margin-bottom: v.$spacing-lg;
+  
+  svg {
+    width: 64px;
+    height: 64px;
+  }
+}
+
+.emptyTitle {
+  font-size: 1.125rem;
+  font-weight: 500;
+  color: v.$text-dark;
+  margin: 0 0 v.$spacing-sm 0;
+}
+
+.emptyMessage {
+  font-size: 0.9375rem;
+  color: v.$text-light;
+  margin: 0 0 v.$spacing-lg 0;
+  max-width: 400px;
+}

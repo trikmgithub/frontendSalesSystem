@@ -1,0 +1,311 @@
+// src/pages/Profile/components/OrderList/OrderList.module.scss
+@use "sass:color";
+@use '../../styles/variables.scss' as v;
+
+.orderListContainer {
+  display: flex;
+  flex-direction: column;
+  gap: v.$spacing-lg;
+}
+
+.filterContainer {
+  display: flex;
+  align-items: center;
+  gap: v.$spacing-md;
+  padding: v.$spacing-md;
+  background-color: v.$gray-100;
+  border-radius: v.$border-radius-sm;
+}
+
+.filterLabel {
+  font-weight: 500;
+  color: v.$text-dark;
+  font-size: 0.9375rem;
+}
+
+.filterSelect {
+  padding: v.$spacing-sm v.$spacing-md;
+  border: 1px solid v.$border-color;
+  border-radius: v.$border-radius-sm;
+  background-color: white;
+  color: v.$text-dark;
+  font-size: 0.9375rem;
+  min-width: 180px;
+  
+  &:focus {
+    outline: none;
+    border-color: v.$primary-color;
+  }
+}
+
+.orderTable {
+  margin-bottom: 0;
+  
+  th {
+    font-weight: 600;
+    padding: v.$spacing-md;
+    
+    &.idColumn {
+      width: 15%;
+    }
+    
+    &.dateColumn {
+      width: 30%;
+    }
+    
+    &.statusColumn {
+      width: 20%;
+    }
+    
+    &.amountColumn {
+      width: 25%;
+    }
+    
+    &.actionColumn {
+      width: 10%;
+      text-align: center;
+    }
+  }
+}
+
+.ordersList {
+  display: flex;
+  flex-direction: column;
+  gap: v.$spacing-md;
+}
+
+.orderItem {
+  background-color: white;
+  border-radius: v.$border-radius-md;
+  box-shadow: v.$shadow-sm;
+  overflow: hidden;
+  
+  &.expanded {
+    box-shadow: v.$shadow-md;
+  }
+}
+
+.orderHeader {
+  display: flex;
+  align-items: center;
+  padding: v.$spacing-lg;
+  cursor: pointer;
+  transition: background-color v.$transition-normal;
+  
+  &:hover {
+    background-color: v.$gray-100;
+  }
+  
+  @include v.responsive(mobile) {
+    flex-wrap: wrap;
+    gap: v.$spacing-sm;
+  }
+}
+
+.orderColumn {
+  padding: 0 v.$spacing-sm;
+  
+  @include v.responsive(mobile) {
+    padding: v.$spacing-xs;
+  }
+  
+  &.idColumn {
+    width: 15%;
+    font-weight: 600;
+    color: v.$primary-color;
+    
+    @include v.responsive(mobile) {
+      width: 60%;
+      order: 1;
+    }
+  }
+  
+  &.dateColumn {
+    width: 30%;
+    display: flex;
+    align-items: center;
+    gap: v.$spacing-sm;
+    color: v.$text-medium;
+    
+    @include v.responsive(mobile) {
+      width: 100%;
+      order: 3;
+    }
+  }
+  
+  &.statusColumn {
+    width: 20%;
+    
+    @include v.responsive(mobile) {
+      width: 40%;
+      order: 2;
+      text-align: right;
+    }
+  }
+  
+  &.amountColumn {
+    width: 25%;
+    text-align: right;
+    font-weight: 600;
+    color: v.$text-dark;
+    
+    @include v.responsive(mobile) {
+      width: 60%;
+      order: 4;
+    }
+  }
+  
+  &.actionColumn {
+    width: 10%;
+    display: flex;
+    justify-content: center;
+    color: v.$gray-500;
+    
+    @include v.responsive(mobile) {
+      width: 40%;
+      order: 5;
+      justify-content: flex-end;
+    }
+  }
+}
+
+.expandIcon {
+  transition: transform v.$transition-normal;
+  
+  .expanded & {
+    transform: rotate(180deg);
+  }
+}
+
+.columnIcon {
+  color: v.$primary-color;
+}
+
+.orderDetails {
+  padding: v.$spacing-lg;
+  border-top: 1px solid v.$border-color;
+  background-color: v.$gray-50;
+}
+
+.orderInfo {
+  margin-bottom: v.$spacing-lg;
+}
+
+.orderInfoItem {
+  display: flex;
+  align-items: center;
+  gap: v.$spacing-md;
+  margin-bottom: v.$spacing-sm;
+  flex-wrap: wrap;
+  
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.infoLabel {
+  font-weight: 500;
+  color: v.$text-medium;
+  min-width: 150px;
+}
+
+.infoValue {
+  color: v.$text-dark;
+}
+
+.detailsTitle {
+  font-size: 1rem;
+  font-weight: 600;
+  color: v.$text-dark;
+  margin: 0 0 v.$spacing-md 0;
+}
+
+.itemsTable {
+  width: 100%;
+  
+  th, td {
+    padding: v.$spacing-sm v.$spacing-md;
+    text-align: left;
+    
+    &:last-child {
+      text-align: right;
+    }
+  }
+  
+  th {
+    background-color: v.$gray-100;
+    font-weight: 500;
+    color: v.$text-medium;
+  }
+  
+  tr:nth-child(even) {
+    background-color: v.$gray-50;
+  }
+  
+  @include v.responsive(mobile) {
+    th, td {
+      padding: v.$spacing-xs;
+      font-size: 0.875rem;
+    }
+  }
+}
+
+.noItemsMessage {
+  color: v.$text-light;
+  font-style: italic;
+  margin: 0;
+}
+
+.orderSummary {
+  margin-top: v.$spacing-lg;
+  padding-top: v.$spacing-lg;
+  border-top: 1px solid v.$border-color;
+}
+
+.summaryRow {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: v.$spacing-md;
+  margin-bottom: v.$spacing-sm;
+  
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.summaryLabel {
+  font-weight: 500;
+  color: v.$text-medium;
+}
+
+.summaryValue {
+  font-weight: 600;
+  color: v.$primary-color;
+  font-size: 1.125rem;
+}
+
+.loadingContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: v.$spacing-xxl 0;
+  
+  p {
+    margin-top: v.$spacing-md;
+    color: v.$text-medium;
+  }
+}
+
+.errorContainer {
+  padding: v.$spacing-lg;
+  background-color: rgba(v.$danger-color, 0.1);
+  border-left: 4px solid v.$danger-color;
+  border-radius: v.$border-radius-sm;
+  
+  .errorMessage {
+    color: v.$danger-color;
+    margin: 0;
+  }
+}
