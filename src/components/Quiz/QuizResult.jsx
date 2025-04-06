@@ -4,6 +4,7 @@ import styles from './QuizResult.module.scss';
 import classNames from 'classnames/bind';
 import config from '~/config';
 import { getSkinProductsAxios } from '~/services/itemAxios';
+import { getSkinTypesAxios, getSkinTypeDetailsAxios } from '~/services/quizAxios';
 import { CartContext } from '~/context/CartContext';
 import { FavoritesContext } from '~/context/FavoritesContext';
 import { useAuth } from '~/context/AuthContext';
@@ -12,139 +13,187 @@ import { FaHeart, FaShoppingCart } from 'react-icons/fa';
 
 const cx = classNames.bind(styles);
 
-const skinTypeData = {
-  oily: {
-    title: 'Da Dầu',
-    description: 'Làn da của bạn có xu hướng tiết nhiều dầu, đặc biệt là ở vùng chữ T (trán, mũi, cằm). Các lỗ chân lông có thể to và dễ bị tắc nghẽn, gây ra mụn đầu đen và mụn trứng cá.',
-    recommendations: [
-      'Sử dụng sữa rửa mặt dịu nhẹ, có khả năng kiểm soát dầu',
-      'Tránh các sản phẩm chứa dầu và chọn các sản phẩm ghi "không gây bít lỗ chân lông" (non-comedogenic)',
-      'Sử dụng toner không cồn để cân bằng độ pH',
-      'Dùng kem dưỡng ẩm dạng gel hoặc dạng nước nhẹ',
-      'Đắp mặt nạ đất sét 1-2 lần/tuần'
-    ],
-    products: [
-      {
-        name: 'Sữa Rửa Mặt Làm Sạch Sâu',
-        description: 'Giúp loại bỏ bã nhờn và tạp chất mà không làm khô da'
-      },
-      {
-        name: 'Toner Cân Bằng Dầu',
-        description: 'Kiểm soát dầu và se khít lỗ chân lông'
-      },
-      {
-        name: 'Serum Kiểm Soát Dầu',
-        description: 'Giảm tiết dầu và ngăn ngừa mụn'
-      }
-    ]
-  },
-  combination: {
-    title: 'Da Hỗn Hợp',
-    description: 'Da của bạn có những vùng dầu (thường là vùng chữ T) và những vùng thường hoặc khô (má và viền mặt). Đây là loại da phổ biến nhất.',
-    recommendations: [
-      'Sử dụng các sản phẩm làm sạch dịu nhẹ cho toàn bộ khuôn mặt',
-      'Áp dụng các sản phẩm kiểm soát dầu chỉ ở vùng chữ T',
-      'Dưỡng ẩm nhiều hơn ở các vùng khô',
-      'Sử dụng các sản phẩm khác nhau cho các vùng da khác nhau',
-      'Đắp mặt nạ đất sét ở vùng chữ T và mặt nạ dưỡng ẩm ở vùng má'
-    ],
-    products: [
-      {
-        name: 'Sữa Rửa Mặt Cân Bằng',
-        description: 'Làm sạch nhẹ nhàng mà không làm mất cân bằng độ ẩm'
-      },
-      {
-        name: 'Toner Không Cồn',
-        description: 'Cân bằng và làm dịu da sau khi rửa mặt'
-      },
-      {
-        name: 'Kem Dưỡng Ẩm Da Hỗn Hợp',
-        description: 'Cung cấp độ ẩm phù hợp cho cả vùng dầu và vùng khô'
-      }
-    ]
-  },
-  normal: {
-    title: 'Da Thường',
-    description: 'Bạn có làn da cân bằng, không quá dầu cũng không quá khô. Lỗ chân lông nhỏ, và da của bạn có vẻ khỏe mạnh với ít khuyết điểm.',
-    recommendations: [
-      'Duy trì thói quen chăm sóc da đơn giản và nhất quán',
-      'Sử dụng sữa rửa mặt dịu nhẹ hai lần mỗi ngày',
-      'Áp dụng kem dưỡng ẩm phù hợp với mùa',
-      'Không quên chống nắng mỗi ngày',
-      'Sử dụng mặt nạ dưỡng ẩm hoặc làm sáng da 1-2 lần/tuần'
-    ],
-    products: [
-      {
-        name: 'Sữa Rửa Mặt Dịu Nhẹ',
-        description: 'Làm sạch nhẹ nhàng mà không làm mất cân bằng da'
-      },
-      {
-        name: 'Serum Dưỡng Ẩm',
-        description: 'Duy trì độ ẩm và giúp da luôn tươi trẻ'
-      },
-      {
-        name: 'Kem Chống Nắng SPF 50',
-        description: 'Bảo vệ da khỏi tác hại của tia UV'
-      }
-    ]
-  },
-  dry: {
-    title: 'Da Khô',
-    description: 'Da của bạn thường cảm thấy căng, thô ráp hoặc bong tróc. Bạn có thể thấy những vết nhăn mịn xuất hiện sớm hơn những người có loại da khác.',
-    recommendations: [
-      'Sử dụng sữa rửa mặt không có xà phòng, không có chất tẩy rửa mạnh',
-      'Tránh tắm nước nóng vì nó có thể làm mất đi dầu tự nhiên của da',
-      'Dùng kem dưỡng ẩm giàu dưỡng chất ngay sau khi rửa mặt',
-      'Sử dụng serum chứa Hyaluronic Acid để giữ nước',
-      'Đắp mặt nạ dưỡng ẩm 2-3 lần/tuần'
-    ],
-    products: [
-      {
-        name: 'Sữa Rửa Mặt Dưỡng Ẩm',
-        description: 'Làm sạch mà không làm mất đi dầu tự nhiên của da'
-      },
-      {
-        name: 'Serum Hyaluronic Acid',
-        description: 'Cung cấp và khóa ẩm sâu'
-      },
-      {
-        name: 'Kem Dưỡng Giàu Dưỡng Chất',
-        description: 'Nuôi dưỡng và khôi phục hàng rào bảo vệ da'
-      }
-    ]
-  }
-};
-
 const QuizResult = () => {
-  const { skinType } = useParams();
+  const { skinType: skinTypeParam } = useParams();
   const location = useLocation();
   const { points, answers } = location.state || { points: 0, answers: {} };
   const [skinProducts, setSkinProducts] = useState([]);
+  const [skinData, setSkinData] = useState({
+    skinType: '',
+    description: '',
+    recommendations: []
+  });
   const [loading, setLoading] = useState(true);
+  const [skinTypeLoading, setSkinTypeLoading] = useState(true);
   const [error, setError] = useState(null);
   const { addToCart } = useContext(CartContext);
   const { addToFavorites, removeFromFavorites, isInFavorites } = useContext(FavoritesContext);
-  const { isLoggedIn, openLogin } = useAuth();
+  const { isLoggedIn, openLogin, user } = useAuth();
   const [animatingItems, setAnimatingItems] = useState({});
   const [favoriteAnimations, setFavoriteAnimations] = useState({});
   const [showScoreSection, setShowScoreSection] = useState(true);
+  const [userSkinType, setUserSkinType] = useState(null);
 
-  const skinData = skinTypeData[skinType] || skinTypeData.normal;
+  // Mapping for displaying Vietnamese skin type names
+  // Mapping from database skinType codes to Vietnamese display names
+  const skinTypeMapping = {
+    'da_dau': 'Da Dầu',
+    'da_hon_hop': 'Da Hỗn Hợp',
+    'da_thuong': 'Da Thường',
+    'da_kho': 'Da Khô',
+    'da_nhay_cam': 'Da Nhạy Cảm'
+  };
 
+  // Reverse mapping from English to Vietnamese skin type codes
+  const englishToCodeMapping = {
+    'oily': 'da_dau',
+    'combination': 'da_hon_hop',
+    'normal': 'da_thuong',
+    'dry': 'da_kho',
+    'sensitive': 'da_nhay_cam'
+  };
+
+  // First, fetch all skin types to identify the user's skin type
+  useEffect(() => {
+    const fetchSkinTypes = async () => {
+      setSkinTypeLoading(true);
+      try {
+        // If we have a skin type from URL params (quiz result), use it directly
+        if (skinTypeParam) {
+          console.log('Using skin type from URL params:', skinTypeParam);
+          setUserSkinType(skinTypeParam);
+          setSkinTypeLoading(false);
+          return;
+        }
+        
+        // Otherwise, get skin types from API and match with user profile
+        const response = await getSkinTypesAxios();
+        
+        if (response.error) {
+          console.error('Error fetching skin types:', response.message);
+          // Fall back to default if API fails
+          setUserSkinType('normal');
+        } else {
+          console.log('Skin types retrieved:', response.data);
+          
+          // If user is logged in and has a skin type in profile
+          if (isLoggedIn() && user && user.skin) {
+            console.log('User has skin type in profile:', user.skin);
+            
+            // Find the matching skin type code from the list
+            const skinTypes = response.data || [];
+            const matchedType = skinTypes.find(type => 
+              type.skinType?.toLowerCase() === user.skin.toLowerCase() || 
+              type.title?.toLowerCase() === user.skin.toLowerCase()
+            );
+            
+            if (matchedType) {
+              console.log('Matched to skin type:', matchedType.skinType);
+              setUserSkinType(matchedType.skinType);
+            } else {
+              // If no match found, default to normal
+              console.log('No match found, defaulting to normal');
+              setUserSkinType('normal');
+            }
+          } else {
+            // Default to normal if user has no skin type
+            console.log('User has no skin type, defaulting to normal');
+            setUserSkinType('normal');
+          }
+        }
+      } catch (err) {
+        console.error('Error in skin type fetch:', err);
+        setUserSkinType('normal'); // Default fallback
+      } finally {
+        setSkinTypeLoading(false);
+      }
+    };
+
+    fetchSkinTypes();
+  }, [skinTypeParam, isLoggedIn, user]);
+
+  // Then, fetch skin type details once we have the user's skin type
+  useEffect(() => {
+    const fetchSkinTypeDetails = async () => {
+      if (!userSkinType || skinTypeLoading) {
+        return; // Wait until we have the skin type
+      }
+      
+      try {
+        // The API expects skin type codes like 'da_dau', not 'oily'
+        // Make sure we're using the right format for the API call
+        let apiSkinType = userSkinType;
+        
+        // If the skinType is in English format (e.g., 'oily'), convert it to the API format
+        if (englishToCodeMapping[apiSkinType.toLowerCase()]) {
+          apiSkinType = englishToCodeMapping[apiSkinType.toLowerCase()];
+        }
+        
+        console.log('Fetching skin type details for:', apiSkinType);
+        const response = await getSkinTypeDetailsAxios(apiSkinType);
+        
+        if (response.error) {
+          console.error('API error:', response.message);
+          setError(response.message || 'Failed to fetch skin type details');
+          setSkinData({
+            skinType: apiSkinType, // Use the converted code
+            description: 'Unable to load skin type description.',
+            recommendations: []
+          });
+        } else {
+          // Extract skin type details from the response
+          const details = response.data;
+          console.log('Skin type details received:', details);
+          setSkinData({
+            skinType: details.skinType || apiSkinType,
+            description: details.description || '',
+            recommendations: details.recommendations || []
+          });
+          setError(null);
+        }
+      } catch (err) {
+        console.error('Error fetching skin type details:', err);
+        setError('Could not load skin type details');
+        setSkinData({
+          skinType: userSkinType,
+          description: 'Unable to load skin type description.',
+          recommendations: []
+        });
+      }
+    };
+
+    fetchSkinTypeDetails();
+  }, [userSkinType, skinTypeLoading, englishToCodeMapping]);
+
+  // Fetch product recommendations using getSkinProductsAxios
   useEffect(() => {
     const fetchSkinProducts = async () => {
+      if (!skinData.skinType) {
+        return; // Wait until we have skin data with skinType
+      }
+      
       setLoading(true);
+      
       try {
-        // Use the Vietnamese skin type name for the API call
-        const response = await getSkinProductsAxios(skinData.title);
-
+        // For product API, we need to use the Vietnamese skin type name
+        let skinTypeForProductAPI = skinData.skinType;
+        
+        // Check if it's a code like 'da_dau' and convert to Vietnamese name
+        if (skinTypeMapping[skinData.skinType.toLowerCase()]) {
+          skinTypeForProductAPI = skinTypeMapping[skinData.skinType.toLowerCase()];
+        }
+        
+        console.log('Fetching products for skin type:', skinTypeForProductAPI);
+        const response = await getSkinProductsAxios(skinTypeForProductAPI);
+        
         if (response.error) {
+          console.error('Product API error:', response.message);
           setError(response.message || 'Failed to fetch products');
           setSkinProducts([]);
         } else {
           // Extract products from the response
-          // The API returns products directly in the data array, not in a nested result property
           const products = response.data || [];
+          console.log(`Found ${products.length} products for skin type:`, skinTypeForProductAPI);
           setSkinProducts(products);
           setError(null);
         }
@@ -158,7 +207,7 @@ const QuizResult = () => {
     };
 
     fetchSkinProducts();
-  }, [skinType, skinData.title]);
+  }, [skinData.title, skinTypeMapping]);
 
   useEffect(() => {
     // Check if user came from direct navigation (from header)
@@ -277,6 +326,19 @@ const QuizResult = () => {
     return null;
   };
 
+  // Helper function to get display name for skin type
+  const getSkinTypeDisplayName = (skinType) => {
+    if (!skinType) return 'Không xác định';
+    
+    // Check if it's already a display name
+    if (Object.values(skinTypeMapping).includes(skinType)) {
+      return skinType;
+    }
+    
+    // Check if it's a code we can map
+    return skinTypeMapping[skinType.toLowerCase()] || 'Không xác định';
+  };
+
   return (
     <div className={cx('result-container')}>
       <div className={cx('result-header')}>
@@ -293,19 +355,39 @@ const QuizResult = () => {
         </Link>
       </div>
 
-      <div className={cx('skin-type-section')}>
-        <h2>Loại da của bạn: <span className={cx('skin-type')}>{skinData.title}</span></h2>
-        <p className={cx('description')}>{skinData.description}</p>
-      </div>
+      {/* Show loading indicator while fetching skin type */}
+      {skinTypeLoading && (
+        <div className={cx('loading-container')}>
+          <div className={cx('loading-spinner')}></div>
+          <p>Đang tải thông tin loại da...</p>
+        </div>
+      )}
 
-      <div className={cx('recommendations-section')}>
-        <h3>Khuyến nghị chăm sóc da:</h3>
-        <ul className={cx('recommendations-list')}>
-          {skinData.recommendations.map((rec, index) => (
-            <li key={index}>{rec}</li>
-          ))}
-        </ul>
-      </div>
+      {!skinTypeLoading && (
+        <>
+          <div className={cx('skin-type-section')}>
+            <h2>
+              Loại da của bạn: <span className={cx('skin-type')}>
+                {getSkinTypeDisplayName(skinData.skinType)}
+              </span>
+            </h2>
+            <p className={cx('description')}>{skinData.description}</p>
+          </div>
+
+          <div className={cx('recommendations-section')}>
+            <h3>Khuyến nghị chăm sóc da:</h3>
+            {skinData.recommendations && skinData.recommendations.length > 0 ? (
+              <ul className={cx('recommendations-list')}>
+                {skinData.recommendations.map((rec, index) => (
+                  <li key={index}>{rec}</li>
+                ))}
+              </ul>
+            ) : (
+              <p>Không có khuyến nghị nào cho loại da này.</p>
+            )}
+          </div>
+        </>
+      )}
 
       {/* Product recommendations from API */}
       <div className={cx('recommended-products-section')}>
