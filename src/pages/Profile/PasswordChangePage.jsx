@@ -1,14 +1,17 @@
 // src/pages/Profile/PasswordChangePage.jsx
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import classNames from 'classnames/bind';
 import styles from './styles/ProfileShared.module.scss';
 import Sidebar from './components/Sidebar/Sidebar';
 import PasswordChange from './components/PasswordChange/PasswordChange';
 import Toast from './components/common/Toast/Toast';
+import routes from '~/config/routes';
 
 const cx = classNames.bind(styles);
 
 const PasswordChangePage = () => {
+  const navigate = useNavigate();
   const [selectedTab, setSelectedTab] = useState('profile');
   const [toast, setToast] = useState({ show: false, message: '', type: '' });
   const [email, setEmail] = useState('');
@@ -63,6 +66,11 @@ const PasswordChangePage = () => {
   const closeToast = () => {
     setToast({ show: false, message: '', type: '' });
   };
+  
+  // Handle cancel button click
+  const handleCancel = () => {
+    navigate(routes.profile);
+  };
 
   return (
     <div className={cx('pageContainer')}>
@@ -87,6 +95,7 @@ const PasswordChangePage = () => {
           email={email} 
           onSuccess={handleSuccess}
           onError={handleError}
+          onCancel={handleCancel}
         />
       </div>
     </div>

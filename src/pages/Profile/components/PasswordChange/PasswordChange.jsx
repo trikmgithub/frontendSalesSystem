@@ -8,7 +8,7 @@ import { updatePasswordAxios } from '~/services/userAxios';
 
 const cx = classNames.bind({ ...styles, ...sharedStyles });
 
-const PasswordChange = ({ email, onSuccess, onError }) => {
+const PasswordChange = ({ email, onSuccess, onError, onCancel }) => {
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -212,6 +212,14 @@ const PasswordChange = ({ email, onSuccess, onError }) => {
         </div>
         
         <div className={cx('formActions')}>
+          <button
+            type="button"
+            className={cx('button', 'secondary')}
+            onClick={onCancel}
+            disabled={isLoading}
+          >
+            Huỷ
+          </button>
           <button
             type="submit"
             className={cx('button', 'primary')}

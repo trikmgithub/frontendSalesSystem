@@ -2,6 +2,91 @@
 @use "sass:color";
 @use '../../../styles/variables.scss' as v;
 
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(v.$gray-900, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: v.$z-modal;
+  padding: v.$spacing-md;
+  overflow-y: auto;
+}
+
+.modalContent {
+  background-color: white;
+  border-radius: v.$border-radius-md;
+  box-shadow: v.$shadow-lg;
+  width: 100%;
+  max-width: 600px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  animation: modalFadeIn 0.3s ease;
+  position: relative;
+  margin: auto;
+  overflow: hidden; /* Ensures child scrolling doesn't leak out */
+
+  @include v.responsive(mobile) {
+    max-height: 85vh;
+    margin: v.$spacing-lg auto;
+  }
+}
+
+.modalHeader {
+  padding: v.$spacing-lg;
+  border-bottom: 1px solid v.$border-color;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-shrink: 0;
+
+  h3 {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: v.$text-dark;
+  }
+  
+  .plainCloseButton {
+    all: unset;
+    cursor: pointer;
+    color: #888;
+    display: inline-flex;
+    padding: 0;
+    margin: 0;
+    height: 18px;
+    width: 18px;
+    align-items: center;
+    justify-content: center;
+    background-color: transparent !important;
+    
+    &:hover {
+      color: #333;
+    }
+  }
+}
+
+.modalBody {
+  padding: v.$spacing-lg;
+  overflow-y: auto;
+  flex: 1;
+  
+  /* Hide scrollbar for all browsers while keeping functionality */
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
+  
+  &::-webkit-scrollbar {
+    display: none; /* Chrome, Safari and Opera */
+    width: 0;
+    background: transparent;
+  }
+}
+
 .formSection {
   display: flex;
   gap: v.$spacing-md;
@@ -10,6 +95,11 @@
   
   &:last-child {
     border-bottom: none;
+  }
+  
+  @include v.responsive(mobile) {
+    flex-direction: column;
+    gap: v.$spacing-sm;
   }
 }
 
@@ -35,12 +125,79 @@
   font-weight: 600;
   color: v.$text-dark;
   margin: 0 0 v.$spacing-sm 0;
+  
+  .requiredMark {
+    color: v.$danger-color;
+    margin-left: 2px;
+  }
 }
 
 .sectionDescription {
   font-size: 0.875rem;
   color: v.$text-light;
   margin: 0 0 v.$spacing-md 0;
+}
+
+.formGroup {
+  margin-bottom: v.$spacing-md;
+  
+  &.hasError {
+    .formInput, 
+    .formSelect {
+      border-color: v.$danger-color;
+    }
+  }
+}
+
+.formLabel {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: v.$text-medium;
+  margin-bottom: v.$spacing-xs;
+  
+  .requiredMark {
+    color: v.$danger-color;
+    margin-left: 2px;
+  }
+}
+
+.formInput {
+  width: 100%;
+  padding: v.$spacing-md;
+  border: 1px solid v.$border-color;
+  border-radius: v.$border-radius-sm;
+  font-size: 0.9375rem;
+  transition: all v.$transition-normal;
+  background-color: white;
+  
+  &:focus {
+    border-color: v.$primary-color;
+    outline: none;
+    box-shadow: 0 0 0 1px rgba(v.$primary-color, 0.1);
+  }
+  
+  &.disabled {
+    background-color: v.$gray-100;
+    cursor: not-allowed;
+    color: v.$gray-600;
+  }
+}
+
+.inputWithIcon {
+  position: relative;
+  
+  .inputIcon {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: v.$gray-500;
+  }
+  
+  .formInput {
+    padding-left: 38px;
+  }
 }
 
 .radioGroup {
@@ -90,6 +247,12 @@
   display: flex;
   gap: v.$spacing-md;
   
+  &.hasError {
+    select {
+      border-color: v.$danger-color;
+    }
+  }
+  
   @include v.responsive(mobile) {
     flex-direction: column;
   }
@@ -103,8 +266,38 @@
   }
 }
 
+// Address selector styles
+.addressContainer {
+  margin-top: v.$spacing-sm;
+  
+  &.hasError {
+    :global(.addressGroup select),
+    :global(.addressGroup input) {
+      border-color: v.$danger-color;
+    }
+  }
+}
+
+.addressSelector {
+  margin-bottom: v.$spacing-sm;
+}
+
+.errorMessage {
+  display: block;
+  color: v.$danger-color;
+  font-size: 0.75rem;
+  margin-top: 4px;
+}
+
 .agreement {
   margin-top: v.$spacing-lg;
+  margin-bottom: v.$spacing-lg;
+  
+  &.hasError {
+    .customCheckbox {
+      border-color: v.$danger-color;
+    }
+  }
 }
 
 .checkboxLabel {
@@ -162,12 +355,6 @@
   margin: v.$spacing-xs 0 0 0;
 }
 
-.disabled {
-  background-color: v.$gray-100;
-  color: v.$gray-600;
-  cursor: not-allowed;
-}
-
 .modalFooter {
   display: flex;
   justify-content: flex-end;
@@ -175,4 +362,32 @@
   margin-top: v.$spacing-lg;
   padding-top: v.$spacing-lg;
   border-top: 1px solid v.$border-color;
+  padding-bottom: v.$spacing-md;
+  flex-shrink: 0;
+}
+
+.spinner {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  border-top-color: white;
+  animation: spin 1s linear infinite;
+  margin-right: v.$spacing-sm;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes modalFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }

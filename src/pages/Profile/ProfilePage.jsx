@@ -18,7 +18,7 @@ const ProfilePage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isUpdatingPhone, setIsUpdatingPhone] = useState(false);
   const [toast, setToast] = useState({ show: false, message: '', type: '' });
-  
+
   // User data state
   const [userData, setUserData] = useState({
     fullName: '',
@@ -72,7 +72,7 @@ const ProfilePage = () => {
         if (response && response.error) {
           throw new Error(response.message);
         }
-        
+
         // Check if phone property exists in the response
         if (response && typeof response.phone !== 'undefined') {
           setUserData((prev) => ({ ...prev, phone: response.phone }));
@@ -110,51 +110,46 @@ const ProfilePage = () => {
 
   // Handle form submission
   const handleSubmit = async (formData) => {
-    // Check if policy is agreed to
-    if (!formData.agreeToPolicy) {
-      showToast('Vui lòng đồng ý với chính sách xử lý dữ liệu cá nhân', 'error');
-      return;
-    }
-
-    // Get token from localStorage
-    const token = localStorage.getItem('access_token');
-    if (!token) {
-      showToast('Bạn chưa đăng nhập. Vui lòng đăng nhập để tiếp tục.', 'error');
-      return;
-    }
-
-    // Format day and month with leading zeros
-    const formattedDay = String(formData.day).padStart(2, '0');
-    const formattedMonth = String(formData.month).padStart(2, '0');
-
-    // Only include dateOfBirth if all date parts are provided
-    let dateOfBirth;
-    if (formData.year && formData.month && formData.day) {
-      dateOfBirth = `${formData.year}-${formattedMonth}-${formattedDay}T00:00:00.000Z`;
-    }
-
-    // Prepare data to send
-    const updateData = {
-      _id: userData.userId,
-      email: userData.email,
-      name: formData.fullName,
-      gender: formData.gender,
-      role: 'user',
-      address: formData.address,
-    };
-
-    // Only include dateOfBirth if it's valid
-    if (dateOfBirth) {
-      updateData.dateOfBirth = dateOfBirth;
-    }
-
-    setIsLoading(true);
-
     try {
+      setIsLoading(true);
+
+      // Get token from localStorage
+      const token = localStorage.getItem('access_token');
+      if (!token) {
+        showToast('Bạn chưa đăng nhập. Vui lòng đăng nhập để tiếp tục.', 'error');
+        return;
+      }
+
+      // Format day and month with leading zeros if they exist
+      const formattedDay = formData.day ? String(formData.day).padStart(2, '0') : '';
+      const formattedMonth = formData.month ? String(formData.month).padStart(2, '0') : '';
+
+      // Only include dateOfBirth if all date parts are provided
+      let dateOfBirth;
+      if (formData.year && formData.month && formData.day) {
+        dateOfBirth = `${formData.year}-${formattedMonth}-${formattedDay}T00:00:00.000Z`;
+      }
+
+      // Prepare data to send to the API
+      const updateData = {
+        _id: userData.userId,
+        email: userData.email,
+        name: formData.fullName,
+        gender: formData.gender,
+        role: 'user',
+        address: formData.address, // This now comes from AddressSelector
+      };
+
+      // Only include dateOfBirth if it's valid
+      if (dateOfBirth) {
+        updateData.dateOfBirth = dateOfBirth;
+      }
+
       // Call API through userAxios
       const response = await updateUserAxios(updateData);
+
       if (response.error) {
-        throw new Error(response.message);
+        throw new Error(response.message || 'Không thể cập nhật thông tin người dùng');
       }
 
       // Update userData state with new values
@@ -175,9 +170,11 @@ const ProfilePage = () => {
           user.name = formData.fullName;
           user.gender = formData.gender;
           user.address = formData.address;
+
           if (dateOfBirth) {
             user.dateOfBirth = dateOfBirth;
           }
+
           localStorage.setItem('user', JSON.stringify(user));
         }
       } catch (err) {
@@ -189,13 +186,11 @@ const ProfilePage = () => {
     } catch (error) {
       console.error('Lỗi khi cập nhật thông tin:', error);
 
-      // Log additional error details if available
-      if (error.response) {
-        console.error('Dữ liệu phản hồi lỗi:', error.response.data);
-        console.error('Trạng thái phản hồi lỗi:', error.response.status);
-      }
-
-      showToast(error.message || 'Đã xảy ra lỗi khi cập nhật thông tin. Vui lòng thử lại.', 'error');
+      // Display a more user-friendly error message
+      showToast(
+        error.message || 'Đã xảy ra lỗi khi cập nhật thông tin. Vui lòng thử lại.',
+        'error'
+      );
     } finally {
       setIsLoading(false);
     }
@@ -209,10 +204,10 @@ const ProfilePage = () => {
       if (response && response.error) {
         throw new Error(response.message || 'Không thể cập nhật số điện thoại');
       }
-      
+
       // Update userData state
       setUserData(prev => ({ ...prev, phone }));
-      
+
       // Update localStorage
       try {
         const user = JSON.parse(localStorage.getItem('user'));
@@ -223,7 +218,7 @@ const ProfilePage = () => {
       } catch (err) {
         console.error('Lỗi khi cập nhật số điện thoại trong localStorage:', err);
       }
-      
+
       showToast('Cập nhật số điện thoại thành công!', 'success');
     } catch (error) {
       console.error('Lỗi khi cập nhật số điện thoại:', error);
@@ -243,34 +238,34 @@ const ProfilePage = () => {
           onClose={closeToast}
         />
       )}
-      
+
       {/* Sidebar */}
-      <Sidebar 
-        selectedTab={selectedTab} 
-        userInfo={userData} 
+      <Sidebar
+        selectedTab={selectedTab}
+        userInfo={userData}
       />
-      
+
       {/* Main Content */}
       <div className={cx('mainContent')}>
         {/* Account Information */}
-        <AccountInfo 
-          userData={userData} 
-          onEditClick={openModal} 
+        <AccountInfo
+          userData={userData}
+          onEditClick={openModal}
         />
-        
+
         {/* Security Section */}
         <SecuritySection />
-        
+
         {/* Phone Section */}
-        <PhoneSection 
-          phone={userData.phone} 
-          onUpdatePhone={handleUpdatePhone} 
-          isUpdating={isUpdatingPhone} 
+        <PhoneSection
+          phone={userData.phone}
+          onUpdatePhone={handleUpdatePhone}
+          isUpdating={isUpdatingPhone}
         />
       </div>
-      
+
       {/* Edit Profile Modal */}
-      <EditProfileModal 
+      <EditProfileModal
         isOpen={isModalOpen}
         onClose={closeModal}
         userData={userData}
