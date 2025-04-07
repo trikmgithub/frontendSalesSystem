@@ -25,12 +25,12 @@ const SkinQuiz = () => {
     'da_thuong': 'Da Thường',
     'da_kho': 'Da Khô'
   };
-  
+
   // English route keys mapping
   const routeKeysMap = {
     'da_dau': 'oily',
     'da_hon_hop': 'combination',
-    'da_thuong': 'normal', 
+    'da_thuong': 'normal',
     'da_kho': 'dry'
   };
 
@@ -40,7 +40,7 @@ const SkinQuiz = () => {
       setLoading(true);
       try {
         const response = await getQuestionsAxios();
-        
+
         if (response.error) {
           setError(response.message || 'Không thể tải câu hỏi.');
         } else if (response.data && Array.isArray(response.data)) {
@@ -53,7 +53,7 @@ const SkinQuiz = () => {
             // Nếu không có order, sắp xếp theo questionId
             return a.questionId.localeCompare(b.questionId);
           });
-          
+
           // Khởi tạo đối tượng answers rỗng với các questionId
           const initialAnswers = {};
           sortedQuestions.forEach(question => {
@@ -63,7 +63,7 @@ const SkinQuiz = () => {
               index: -1 // -1 có nghĩa là chưa chọn
             };
           });
-          
+
           setQuestions(sortedQuestions);
           setAnswers(initialAnswers); // Khởi tạo state answers ngay từ đầu
           console.log('Loaded questions:', sortedQuestions);
@@ -90,7 +90,7 @@ const SkinQuiz = () => {
         index: optionIndex
       }
     }));
-    
+
     console.log(`Selected ${option.skinType || option.value} (index: ${optionIndex}) for question ${questionId}`);
   };
 
@@ -98,9 +98,9 @@ const SkinQuiz = () => {
   const getUnansweredQuestions = () => {
     return questions.filter(q => {
       // Một câu hỏi chưa được trả lời nếu không có giá trị hoặc index là -1
-      return !answers[q.questionId] || 
-             answers[q.questionId].value === null || 
-             answers[q.questionId].index === -1;
+      return !answers[q.questionId] ||
+        answers[q.questionId].value === null ||
+        answers[q.questionId].index === -1;
     });
   };
 
@@ -110,7 +110,7 @@ const SkinQuiz = () => {
 
     // Kiểm tra đã trả lời tất cả câu hỏi chưa
     const unansweredQuestions = getUnansweredQuestions();
-    
+
     if (unansweredQuestions.length > 0) {
       const missingQuestionIds = unansweredQuestions.map(q => q.questionId).join(', ');
       alert(`Vui lòng trả lời tất cả các câu hỏi trước khi gửi kết quả. Câu hỏi còn thiếu: ${missingQuestionIds}`);
@@ -130,10 +130,11 @@ const SkinQuiz = () => {
       const apiAnswers = {};
       Object.keys(answers).forEach(questionId => {
         if (answers[questionId].value !== null) {
-          apiAnswers[questionId] = answers[questionId].value;
+          // Convert to a numerical index + 1 (since the API expects 1-based indices)
+          apiAnswers[questionId] = answers[questionId].index + 1;
         }
       });
-      
+
       // Lấy userId từ context hoặc localStorage
       const userId = getUserId();
       if (!userId) {
@@ -141,28 +142,29 @@ const SkinQuiz = () => {
         setSubmitting(false);
         return;
       }
-      
+
       console.log('Submitting quiz with userId:', userId);
       console.log('Answers:', apiAnswers);
-      
+
       // Gửi dữ liệu lên server với userId đúng định dạng
-      const response = await submitQuizAxios({ 
+      const response = await submitQuizAxios({
         userId,
-        answers: apiAnswers 
+        answers: apiAnswers
       });
-      
+
       if (response.error) {
         console.error('Failed to submit quiz:', response.message);
         alert(`Đã xảy ra lỗi khi gửi kết quả: ${response.message || 'Vui lòng thử lại sau.'}`);
         setSubmitting(false);
         return;
       }
-      
+
       // Nếu gửi thành công và có kết quả trả về
-      if (response.data && response.data.skinType) {
-        const resultSkinType = response.data.skinType;
+      if (response.data && response.data.quizResult) {
+        const resultData = response.data;
+        const resultSkinType = resultData.quizResult.determinedSkinType;
         console.log('Server determined skin type:', resultSkinType);
-        
+
         // Cập nhật loại da cho người dùng
         try {
           const updateResponse = await updateUserSkinTypeAxios(resultSkinType);
@@ -174,15 +176,18 @@ const SkinQuiz = () => {
         } catch (error) {
           console.error('Error updating user skin type:', error);
         }
-        
+
         // Chuyển hướng đến trang kết quả
         const routeKey = routeKeysMap[resultSkinType] || 'normal'; // Fallback to normal
         const resultPath = config.routes.skinQuizResult.replace(':skinType', routeKey);
-        
-        navigate(resultPath, { 
-          state: { 
-            skinType: skinTypesMap[resultSkinType] || 'Da Thường',
-            result: response.data
+
+        navigate(resultPath, {
+          state: {
+            points: resultData.quizResult.scorePercentage,
+            skinType: resultSkinType, // Pass the actual skin type code
+            skinTypeInfo: resultData.skinTypeInfo, // Pass the detailed skin type info
+            fromQuiz: true, // Flag to indicate this came from quiz
+            answers: apiAnswers // Pass the answers for potential display in results
           }
         });
       } else {
@@ -197,7 +202,6 @@ const SkinQuiz = () => {
     }
   };
 
-  // Lấy userId từ context hoặc localStorage
   const getUserId = () => {
     // 1. Thử lấy từ context
     if (user && user._id) {
@@ -214,24 +218,25 @@ const SkinQuiz = () => {
       console.error('Error parsing user data from localStorage:', e);
     }
 
-    // 3. Fallback - nếu không có userId, điều này sẽ gây lỗi API nhưng đã kiểm tra đăng nhập trước đó
-    return localStorage.getItem('userId') || '';
+    // If no userId found, show an error
+    alert('Không thể xác định ID người dùng. Vui lòng đăng nhập lại.');
+    return null; // Return null instead of empty string to prevent API calls with invalid ID
   };
 
   // Debug helper
   const debugAnswers = () => {
-    const answeredCount = Object.keys(answers).filter(key => 
+    const answeredCount = Object.keys(answers).filter(key =>
       answers[key] && answers[key].value !== null && answers[key].index !== -1
     ).length;
     const unansweredQuestions = getUnansweredQuestions();
     const userId = getUserId();
-    
+
     console.log('Current state:');
     console.log('- User ID:', userId);
     console.log('- Questions:', questions);
     console.log('- Current answers:', answers);
     console.log('- Unanswered questions:', unansweredQuestions);
-    
+
     // Hiển thị thông tin debug chi tiết
     const debugInfo = Object.entries(answers)
       .filter(([_, answerData]) => answerData.value !== null && answerData.index !== -1)
@@ -239,7 +244,7 @@ const SkinQuiz = () => {
         const question = questions.find(q => q.questionId === qId);
         return `${qId}: Option #${answerData.index} (${answerData.value}) - ${question?.options[answerData.index]?.text || 'Unknown'}`;
       }).join('\n');
-    
+
     alert(`User ID: ${userId || 'Không tìm thấy'}\nĐã trả lời: ${answeredCount}/${questions.length}\n\nChi tiết:\n${debugInfo || 'Chưa có câu trả lời'}\n\nCòn thiếu: ${unansweredQuestions.map(q => q.questionId).join(', ') || 'Không có'}`);
   };
 
@@ -264,7 +269,7 @@ const SkinQuiz = () => {
         <div className={cx('error')}>
           <h2>Đã xảy ra lỗi</h2>
           <p>{error}</p>
-          <button 
+          <button
             className={cx('retry-button')}
             onClick={() => window.location.reload()}
           >
@@ -313,9 +318,9 @@ const SkinQuiz = () => {
               {question.options.map((option, optIndex) => {
                 // Xác định giá trị cho option
                 const optionValue = option.skinType || option.value || `option-${optIndex}`;
-                
+
                 return (
-                  <div 
+                  <div
                     key={`${question.questionId}-option-${optIndex}`}
                     className={cx('option-row')}
                   >
