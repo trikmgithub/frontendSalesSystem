@@ -1,242 +1,356 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styles from './SkinQuiz.module.scss';
 import classNames from 'classnames/bind';
 import config from '~/config';
 import { useAuth } from '~/context/AuthContext';
+import { getQuestionsAxios, submitQuizAxios } from '~/services/quizAxios';
 import { updateUserSkinTypeAxios } from '~/services/userAxios';
 
 const cx = classNames.bind(styles);
 
 const SkinQuiz = () => {
   const navigate = useNavigate();
-  const [currentAnswers, setCurrentAnswers] = useState({});
-  const { isLoggedIn } = useAuth();
+  const { isLoggedIn, user } = useAuth();
+  const [questions, setQuestions] = useState([]);
+  const [answers, setAnswers] = useState({});
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
 
   // Skin type mapping
   const skinTypesMap = {
-    oily: 'Da Dầu',
-    combination: 'Da Hỗn Hợp',
-    normal: 'Da Thường',
-    dry: 'Da Khô'
+    'da_dau': 'Da Dầu',
+    'da_hon_hop': 'Da Hỗn Hợp',
+    'da_thuong': 'Da Thường',
+    'da_kho': 'Da Khô'
+  };
+  
+  // English route keys mapping
+  const routeKeysMap = {
+    'da_dau': 'oily',
+    'da_hon_hop': 'combination',
+    'da_thuong': 'normal', 
+    'da_kho': 'dry'
   };
 
-  const questions = [
-    {
-      id: 'q1',
-      question: 'Da của bạn thường trông ra sao vào buổi chiều?',
-      description: 'Hãy có nhớ lại làn da của bạn có cảm giác ra sao sau thời gian nghỉ trưa. Bạn có phải dặm lại phấn phủ ít nhất một lần trong ngày để làm giảm tối thiểu sự bóng nhờn? Bạn có cần sử dụng kem dưỡng ẩm trên những vùng da khô? Hay bạn có cần dùng tới cây che khuyết điểm hay gel trị mụn để làm giảm những tì vết trên da?',
-      options: [
-        { value: 'q1_1', label: 'Trán, mũi và cằm bị bóng dầu nhưng phần còn lại trên mặt lại bình thường hoặc khô', points: 1 },
-        { value: 'q1_2', label: 'Da của tôi không bị bóng, khá khô và có cảm giác căng ở một số khu vực.', points: 5 },
-        { value: 'q1_3', label: 'Toàn bộ khuôn mặt tôi bị bóng, có cảm giác nhờn dầu và dễ bị mụn đầu đen và mụn trứng cá', points: 2 },
-        { value: 'q1_4', label: 'Da của tôi mềm mại và thấy dễ chịu khi chạm vào', points: 3 },
-        { value: 'q1_5', label: 'Da của tôi bị khô và tôi có thể nhận thấy một số nếp nhăn', points: 4 }
-      ]
-    },
-    {
-      id: 'q2',
-      question: 'Vùng trán của bạn trông như thế nào?',
-      description: 'Hãy nhìn vào gương và chỉ nhận xét riêng về khu vực này trên khuôn mặt.',
-      options: [
-        { value: 'q2_1', label: 'Da khá phẳng mịn, với một vài nếp nhăn nhẹ.', points: 4 },
-        { value: 'q2_2', label: 'Tôi nhận thấy một vài vết bong tróc dọc theo đường chân tóc, lông mày và giữa hai bên lông mày.', points: 2 },
-        { value: 'q2_3', label: 'Da bóng nhờn và không được mịn. Có những nốt mụn nhỏ và một số mụn đầu đen.', points: 1 },
-        { value: 'q2_4', label: 'Da mịn và láng mượt. Không có dấu hiệu bong tróc.', points: 3 },
-        { value: 'q2_5', label: 'Điều đầu tiên tôi nhận thấy là các nếp nhăn', points: 5 }
-      ]
-    },
-    {
-      id: 'q3',
-      question: 'Hãy mô tả phần má và vùng dưới mắt của bạn.',
-      description: 'Hãy nhìn vào gương và chỉ nhận xét riêng về khu vực này trên khuôn mặt.',
-      options: [
-        { value: 'q3_1', label: 'Hầu như không có vết nhăn dễ thấy nào. Chỉ có một số vùng da khô có thể nhìn ra.', points: 2 },
-        { value: 'q3_2', label: 'Da bị kích ứng và khô. Có cảm giác da bị căng.', points: 5 },
-        { value: 'q3_3', label: 'Lỗ chân lông nở rộng và có khuyết điểm dưới dạng mụn đầu đen hay đốm mụn trắng.', points: 1 },
-        { value: 'q3_4', label: 'Da nhẵn mịn với lỗ chân lông se khít', points: 3 },
-        { value: 'q3_5', label: 'Có các nếp nhăn rõ rệt. Da khá khô.', points: 4 }
-      ]
-    },
-    {
-      id: 'q4',
-      question: 'Da của bạn có dễ gặp phải các vấn đề về thẩm, hay đỏ rát không?',
-      description: '',
-      options: [
-        { value: 'q4_1', label: 'Có, nhưng chỉ ở vùng chữ T (trán, mũi và cằm)', points: 2 },
-        { value: 'q4_2', label: 'Da tôi hơi đỏ, có chút tấy, và có chỗ không đồng đều về độ ẩm.', points: 5 },
-        { value: 'q4_3', label: 'Có. Tôi thường gặp phải các vấn đề trên.', points: 1 },
-        { value: 'q4_4', label: 'Đôi khi.', points: 4 },
-        { value: 'q4_5', label: 'Hầu như không bao giờ.', points: 3 }
-      ]
-    },
-    {
-      id: 'q5',
-      question: 'Hiện giờ điều gì là quan trọng nhất với bạn khi lựa chọn một sản phẩm chăm sóc da?',
-      description: '',
-      options: [
-        { value: 'q5_1', label: 'Giúp làm sạch sâu và kiểm soát dầu nhờn', points: 2 },
-        { value: 'q5_2', label: 'Cung cấp độ ẩm sâu và làm dịu da', points: 5 },
-        { value: 'q5_3', label: 'Điều trị mụn và ngăn ngừa mụn mới', points: 1 },
-        { value: 'q5_4', label: 'Duy trì độ ẩm cân bằng và bảo vệ da', points: 3 },
-        { value: 'q5_5', label: 'Chống lão hóa và làm mờ nếp nhăn', points: 4 }
-      ]
-    },
-    {
-      id: 'q6',
-      question: 'Da của bạn có dễ hình thành các vết hằn và nếp nhăn?',
-      description: '',
-      options: [
-        { value: 'q6_1', label: 'Tôi bị một vài vết hằn do da khô.', points: 4 },
-        { value: 'q6_2', label: 'Có. Tôi bị các nếp nhăn quanh vùng mắt và/hoặc ở khóe miệng.', points: 2 },
-        { value: 'q6_3', label: 'Không, tôi hầu như không có nếp nhăn.', points: 1 },
-        { value: 'q6_4', label: 'Không hằn, da của tôi lão hóa tương đối chậm', points: 3 }
-      ]
-    },
-    {
-      id: 'q7',
-      question: 'Da mặt bạn đã thay đổi ra sao trong 5 năm trở lại đây?',
-      description: '',
-      options: [
-        { value: 'q7_1', label: 'Da tôi bị bóng dầu nhiều hơn ở vùng chữ T (trán, mũi và cằm).', points: 2 },
-        { value: 'q7_2', label: 'Da tôi dễ bong tróc hơn và thường cảm thấy căng.', points: 5 },
-        { value: 'q7_3', label: 'Da có nhiều khuyết điểm hơn so với trước đây.', points: 1 },
-        { value: 'q7_4', label: 'Da tôi vẫn ở tình trạng tốt và dễ dàng chăm sóc.', points: 3 },
-        { value: 'q7_5', label: 'Da tôi có vẻ mỏng đi và kém đàn hồi hơn, và thêm các nếp nhăn và vết hằn.', points: 4 }
-      ]
-    },
-    {
-      id: 'q8',
-      question: 'Giới tính của bạn là',
-      description: '',
-      options: [
-        { value: 'q8_1', label: 'Nam', points: 3 },
-        { value: 'q8_2', label: 'Nữ', points: 3 }
-      ]
-    },
-    {
-      id: 'q9',
-      question: 'Độ tuổi của bạn là',
-      description: '',
-      options: [
-        { value: 'q9_1', label: 'Dưới 25', points: 1 },
-        { value: 'q9_2', label: 'Từ 25 tới 40', points: 3 },
-        { value: 'q9_3', label: 'Từ 40 tới 50', points: 4 },
-        { value: 'q9_4', label: 'Trên 50', points: 5 }
-      ]
-    }
-  ];
-
-  const handleOptionSelect = (questionId, option) => {
-    setCurrentAnswers({
-      ...currentAnswers,
-      [questionId]: option.value
-    });
-  };
-
-  const calculateResult = async () => {
-    let points = 0;
-    
-    // Calculate points from all answers
-    Object.keys(currentAnswers).forEach(questionId => {
-      const question = questions.find(q => q.id === questionId);
-      const selectedOption = question.options.find(opt => opt.value === currentAnswers[questionId]);
-      if (selectedOption) {
-        points += selectedOption.points;
-      }
-    });
-    
-    // Determine skin type based on total points (English keys for routing)
-    let skinTypeKey = '';
-    if (points <= 18) {
-      skinTypeKey = 'oily';
-    } else if (points <= 27) {
-      skinTypeKey = 'combination';
-    } else if (points <= 36) {
-      skinTypeKey = 'normal';
-    } else {
-      skinTypeKey = 'dry';
-    }
-    
-    // Get the Vietnamese skin type for API update
-    const vietnameseSkinType = skinTypesMap[skinTypeKey];
-    
-    // Update user's skin type in the database if user is logged in
-    if (isLoggedIn()) {
+  // Lấy danh sách câu hỏi từ API khi component được mount
+  useEffect(() => {
+    const fetchQuestions = async () => {
+      setLoading(true);
       try {
-        // Send the Vietnamese skin type to the API
-        const response = await updateUserSkinTypeAxios(vietnameseSkinType);
+        const response = await getQuestionsAxios();
+        
         if (response.error) {
-          console.error('Failed to update skin type:', response.message);
+          setError(response.message || 'Không thể tải câu hỏi.');
+        } else if (response.data && Array.isArray(response.data)) {
+          // Sắp xếp câu hỏi theo ID nếu có
+          const sortedQuestions = [...response.data].sort((a, b) => {
+            // Nếu có trường order thì sắp xếp theo order
+            if (a.order !== undefined && b.order !== undefined) {
+              return a.order - b.order;
+            }
+            // Nếu không có order, sắp xếp theo questionId
+            return a.questionId.localeCompare(b.questionId);
+          });
+          
+          // Khởi tạo đối tượng answers rỗng với các questionId
+          const initialAnswers = {};
+          sortedQuestions.forEach(question => {
+            // Mỗi câu trả lời ban đầu là null, đảm bảo luôn có giá trị xác định
+            initialAnswers[question.questionId] = {
+              value: null,
+              index: -1 // -1 có nghĩa là chưa chọn
+            };
+          });
+          
+          setQuestions(sortedQuestions);
+          setAnswers(initialAnswers); // Khởi tạo state answers ngay từ đầu
+          console.log('Loaded questions:', sortedQuestions);
         } else {
-          console.log('Successfully updated skin type to:', vietnameseSkinType);
+          setError('Định dạng dữ liệu không hợp lệ.');
         }
-      } catch (error) {
-        console.error('Error updating skin type:', error);
+      } catch (err) {
+        console.error('Error fetching questions:', err);
+        setError('Đã xảy ra lỗi khi tải câu hỏi.');
+      } finally {
+        setLoading(false);
       }
-    }
+    };
+
+    fetchQuestions();
+  }, []);
+
+  // Xử lý khi người dùng chọn một tùy chọn
+  const handleSelectOption = (questionId, option, optionIndex) => {
+    setAnswers(prevAnswers => ({
+      ...prevAnswers,
+      [questionId]: {
+        value: option.skinType || option.value,
+        index: optionIndex
+      }
+    }));
     
-    // Navigate to results page with state data
-    const resultPath = config.routes.skinQuizResult.replace(':skinType', skinTypeKey);
-    navigate(resultPath, { state: { points, answers: currentAnswers, skinType: vietnameseSkinType } });
+    console.log(`Selected ${option.skinType || option.value} (index: ${optionIndex}) for question ${questionId}`);
   };
 
-  const allQuestionsAnswered = questions.length === Object.keys(currentAnswers).length;
+  // Kiểm tra xem đã trả lời đủ câu hỏi chưa
+  const getUnansweredQuestions = () => {
+    return questions.filter(q => {
+      // Một câu hỏi chưa được trả lời nếu không có giá trị hoặc index là -1
+      return !answers[q.questionId] || 
+             answers[q.questionId].value === null || 
+             answers[q.questionId].index === -1;
+    });
+  };
+
+  // Tính toán kết quả và gửi dữ liệu lên server
+  const calculateResult = async () => {
+    if (submitting) return; // Tránh gửi nhiều lần
+
+    // Kiểm tra đã trả lời tất cả câu hỏi chưa
+    const unansweredQuestions = getUnansweredQuestions();
+    
+    if (unansweredQuestions.length > 0) {
+      const missingQuestionIds = unansweredQuestions.map(q => q.questionId).join(', ');
+      alert(`Vui lòng trả lời tất cả các câu hỏi trước khi gửi kết quả. Câu hỏi còn thiếu: ${missingQuestionIds}`);
+      return;
+    }
+
+    // Kiểm tra đăng nhập
+    if (!isLoggedIn()) {
+      alert('Bạn cần đăng nhập để gửi kết quả.');
+      return;
+    }
+
+    setSubmitting(true);
+
+    try {
+      // Chuyển đổi định dạng câu trả lời để phù hợp với API
+      const apiAnswers = {};
+      Object.keys(answers).forEach(questionId => {
+        if (answers[questionId].value !== null) {
+          apiAnswers[questionId] = answers[questionId].value;
+        }
+      });
+      
+      // Lấy userId từ context hoặc localStorage
+      const userId = getUserId();
+      if (!userId) {
+        alert('Không thể xác định ID người dùng. Vui lòng đăng nhập lại.');
+        setSubmitting(false);
+        return;
+      }
+      
+      console.log('Submitting quiz with userId:', userId);
+      console.log('Answers:', apiAnswers);
+      
+      // Gửi dữ liệu lên server với userId đúng định dạng
+      const response = await submitQuizAxios({ 
+        userId,
+        answers: apiAnswers 
+      });
+      
+      if (response.error) {
+        console.error('Failed to submit quiz:', response.message);
+        alert(`Đã xảy ra lỗi khi gửi kết quả: ${response.message || 'Vui lòng thử lại sau.'}`);
+        setSubmitting(false);
+        return;
+      }
+      
+      // Nếu gửi thành công và có kết quả trả về
+      if (response.data && response.data.skinType) {
+        const resultSkinType = response.data.skinType;
+        console.log('Server determined skin type:', resultSkinType);
+        
+        // Cập nhật loại da cho người dùng
+        try {
+          const updateResponse = await updateUserSkinTypeAxios(resultSkinType);
+          if (updateResponse.error) {
+            console.error('Failed to update user skin type:', updateResponse.message);
+          } else {
+            console.log('Successfully updated user skin type:', resultSkinType);
+          }
+        } catch (error) {
+          console.error('Error updating user skin type:', error);
+        }
+        
+        // Chuyển hướng đến trang kết quả
+        const routeKey = routeKeysMap[resultSkinType] || 'normal'; // Fallback to normal
+        const resultPath = config.routes.skinQuizResult.replace(':skinType', routeKey);
+        
+        navigate(resultPath, { 
+          state: { 
+            skinType: skinTypesMap[resultSkinType] || 'Da Thường',
+            result: response.data
+          }
+        });
+      } else {
+        // Nếu không có kết quả rõ ràng từ server
+        alert('Không thể xác định loại da từ kết quả. Vui lòng thử lại sau.');
+      }
+    } catch (error) {
+      console.error('Error during quiz submission:', error);
+      alert('Đã xảy ra lỗi khi gửi kết quả. Vui lòng thử lại sau.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  // Lấy userId từ context hoặc localStorage
+  const getUserId = () => {
+    // 1. Thử lấy từ context
+    if (user && user._id) {
+      return user._id;
+    }
+
+    // 2. Thử lấy từ localStorage
+    try {
+      const userData = JSON.parse(localStorage.getItem('user') || '{}');
+      if (userData && userData._id) {
+        return userData._id;
+      }
+    } catch (e) {
+      console.error('Error parsing user data from localStorage:', e);
+    }
+
+    // 3. Fallback - nếu không có userId, điều này sẽ gây lỗi API nhưng đã kiểm tra đăng nhập trước đó
+    return localStorage.getItem('userId') || '';
+  };
+
+  // Debug helper
+  const debugAnswers = () => {
+    const answeredCount = Object.keys(answers).filter(key => 
+      answers[key] && answers[key].value !== null && answers[key].index !== -1
+    ).length;
+    const unansweredQuestions = getUnansweredQuestions();
+    const userId = getUserId();
+    
+    console.log('Current state:');
+    console.log('- User ID:', userId);
+    console.log('- Questions:', questions);
+    console.log('- Current answers:', answers);
+    console.log('- Unanswered questions:', unansweredQuestions);
+    
+    // Hiển thị thông tin debug chi tiết
+    const debugInfo = Object.entries(answers)
+      .filter(([_, answerData]) => answerData.value !== null && answerData.index !== -1)
+      .map(([qId, answerData]) => {
+        const question = questions.find(q => q.questionId === qId);
+        return `${qId}: Option #${answerData.index} (${answerData.value}) - ${question?.options[answerData.index]?.text || 'Unknown'}`;
+      }).join('\n');
+    
+    alert(`User ID: ${userId || 'Không tìm thấy'}\nĐã trả lời: ${answeredCount}/${questions.length}\n\nChi tiết:\n${debugInfo || 'Chưa có câu trả lời'}\n\nCòn thiếu: ${unansweredQuestions.map(q => q.questionId).join(', ') || 'Không có'}`);
+  };
+
+  // Kiểm tra xem một tùy chọn có được chọn không, dựa trên index
+  const isOptionSelected = (questionId, optionIndex) => {
+    return answers[questionId] && answers[questionId].index === optionIndex;
+  };
+
+  // Hiển thị màn hình loading
+  if (loading) {
+    return (
+      <div className={cx('loading-container')}>
+        <div className={cx('loading')}>Đang tải câu hỏi...</div>
+      </div>
+    );
+  }
+
+  // Hiển thị màn hình lỗi
+  if (error) {
+    return (
+      <div className={cx('error-container')}>
+        <div className={cx('error')}>
+          <h2>Đã xảy ra lỗi</h2>
+          <p>{error}</p>
+          <button 
+            className={cx('retry-button')}
+            onClick={() => window.location.reload()}
+          >
+            Thử lại
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Kiểm tra xem đã trả lời tất cả câu hỏi chưa để kích hoạt nút Submit
+  const allQuestionsAnswered = questions.length > 0 && getUnansweredQuestions().length === 0;
 
   return (
     <div className={cx('quiz-container')}>
+      {/* Header phần giới thiệu */}
       <div className={cx('quiz-header')}>
         <h1>BÀI KIỂM TRA LOẠI DA & CÁCH CHĂM SÓC</h1>
         <p>
-          Mỗi người chúng ta đều có một cơ địa và làn da khác nhau. Để có cách chăm sóc da đúng đắn, 
-          điều quan trọng là bạn cần phải thấu hiểu làn da. Beauty Skin hân hạnh mang đến bài trắc nghiệm nhỏ để 
+          Mỗi người chúng ta đều có một cơ địa và làn da khác nhau. Để có cách chăm sóc da đúng đắn,
+          điều quan trọng là bạn cần phải thấu hiểu làn da. Beauty Skin hân hạnh mang đến bài trắc nghiệm nhỏ để
           bạn có thể tự kiểm tra loại da và tình trạng da của mình.
         </p>
         <p>
-          Hãy trả lời 9 câu hỏi trong bài trắc nghiệm dưới đây để hiểu hơn về làn da của mình, 
+          Hãy trả lời {questions.length} câu hỏi trong bài trắc nghiệm dưới đây để hiểu hơn về làn da của mình,
           từ đó biết được cách thức chăm da nào sẽ phù hợp với bạn.
         </p>
+        {!isLoggedIn() && (
+          <div className={cx('login-warning')}>
+            <p>⚠️ Bạn cần đăng nhập để lưu kết quả bài kiểm tra. <a href={config.routes.login}>Đăng nhập ngay</a></p>
+          </div>
+        )}
       </div>
 
+      {/* Danh sách câu hỏi */}
       <div className={cx('quiz-questions')}>
         {questions.map((question, index) => (
-          <div key={question.id} className={cx('question-container')}>
+          <div key={question._id || question.questionId} className={cx('question-container')}>
             <h3 className={cx('question-title')}>
-              Q{index + 1}: {question.question}
+              Q{index + 1}: {question.questionText}
             </h3>
             {question.description && (
               <p className={cx('question-description')}>{question.description}</p>
             )}
             <div className={cx('options-container')}>
-              {question.options.map((option) => (
-                <div key={option.value} className={cx('option-row')}>
-                  <label className={cx('option-label')}>
-                    <input
-                      type="radio"
-                      name={question.id}
-                      value={option.value}
-                      checked={currentAnswers[question.id] === option.value}
-                      onChange={() => handleOptionSelect(question.id, option)}
-                      className={cx('option-input')}
-                    />
-                    <div className={cx('radio-custom')}></div>
-                    <span className={cx('option-text')}>{option.label}</span>
-                  </label>
-                  <span className={cx('option-points')}>{option.points} point</span>
-                </div>
-              ))}
+              {question.options.map((option, optIndex) => {
+                // Xác định giá trị cho option
+                const optionValue = option.skinType || option.value || `option-${optIndex}`;
+                
+                return (
+                  <div 
+                    key={`${question.questionId}-option-${optIndex}`}
+                    className={cx('option-row')}
+                  >
+                    <label className={cx('option-label')}>
+                      <input
+                        type="radio"
+                        name={`question-${question.questionId}`}
+                        value={optionValue}
+                        checked={isOptionSelected(question.questionId, optIndex)}
+                        onChange={() => handleSelectOption(question.questionId, option, optIndex)}
+                        className={cx('option-input')}
+                      />
+                      <div className={cx('radio-custom')}></div>
+                      <span className={cx('option-text')}>{option.text}</span>
+                    </label>
+                    {option.points !== undefined && (
+                      <span className={cx('option-points')}>{option.points} point</span>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </div>
         ))}
       </div>
 
+      {/* Nút gửi kết quả */}
       <div className={cx('submit-container')}>
         <button
-          className={cx('submit-button', { disabled: !allQuestionsAnswered })}
-          disabled={!allQuestionsAnswered}
+          type="button"
+          className={cx('submit-button', { disabled: !allQuestionsAnswered || !isLoggedIn() })}
+          disabled={submitting || !allQuestionsAnswered || !isLoggedIn()}
           onClick={calculateResult}
         >
-          SUBMIT AND SEE YOUR RESULT
+          {submitting ? 'ĐANG GỬI...' : 'GỬI KẾT QUẢ'}
         </button>
       </div>
     </div>
