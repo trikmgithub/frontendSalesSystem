@@ -1,0 +1,61 @@
+// src/pages/Profile/components/SecuritySection/SecuritySection.module.scss
+@use "sass:color";
+@use '../../styles/variables.scss' as v;
+
+.headerWithIcon {
+  display: flex;
+  align-items: center;
+  gap: v.$spacing-sm;
+}
+
+.headerIcon {
+  color: v.$primary-color;
+}
+
+.securityItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: v.$spacing-md 0;
+  
+  @include v.responsive(mobile) {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: v.$spacing-md;
+  }
+}
+
+.securityInfo {
+  display: flex;
+  align-items: center;
+  gap: v.$spacing-md;
+}
+
+.securityIcon {
+  background-color: rgba(v.$primary-color, 0.1);
+  color: v.$primary-color;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.securityText {
+  flex: 1;
+}
+
+.securityTitle {
+  font-size: 1rem;
+  font-weight: 500;
+  color: v.$text-dark;
+  margin: 0 0 v.$spacing-xs 0;
+}
+
+.securityDescription {
+  font-size: 0.875rem;
+  color: v.$text-light;
+  margin: 0;
+}

@@ -211,11 +211,19 @@ const Payment = () => {
     setShowPaymentModal(false); // Close modal
   };
 
-  // Validate phone number
+  // Validate phone number - updated for 10 digits
   const validatePhoneNumber = (phone) => {
-    if (!phone) return false;
-    const phoneRegex = /^\d{9,15}$/; // 9-15 digits
-    return phoneRegex.test(phone);
+    if (!phone) {
+      return { isValid: false, message: 'Vui lòng nhập số điện thoại' };
+    }
+    
+    // Check for exactly 10 digits
+    const phoneRegex = /^\d{10}$/;
+    if (!phoneRegex.test(phone)) {
+      return { isValid: false, message: 'Vui lòng nhập số điện thoại đúng 10 chữ số' };
+    }
+    
+    return { isValid: true, message: '' };
   };
 
   // Handle phone number change
@@ -223,17 +231,19 @@ const Payment = () => {
     // Allow only digits
     const value = e.target.value.replace(/[^0-9]/g, '');
     setTempPhone(value);
+    setPhoneError(''); // Clear error when typing
   };
 
   // Update phone number
   const updatePhone = async () => {
-    if (!validatePhoneNumber(tempPhone)) {
-      setPhoneError("Vui lòng nhập số điện thoại hợp lệ (9-15 số)");
+    const validation = validatePhoneNumber(tempPhone);
+    if (!validation.isValid) {
+      setPhoneError(validation.message);
       return;
     }
 
     setIsUpdatingPhone(true);
-    setPhoneError("");
+    setPhoneError('');
 
     try {
       const response = await updatePhoneAxios({ phone: tempPhone });
@@ -542,8 +552,9 @@ const Payment = () => {
                   type="text"
                   value={tempPhone}
                   onChange={handlePhoneChange}
-                  placeholder="Nhập số điện thoại"
+                  placeholder="Nhập số điện thoại 10 chữ số"
                   className={cx({ 'error': phoneError })}
+                  maxLength={10}
                 />
                 {phoneError && <div className={cx('error-message')}>{phoneError}</div>}
               </div>

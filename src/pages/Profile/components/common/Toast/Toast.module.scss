@@ -1,0 +1,87 @@
+// src/pages/Profile/components/common/Toast/Toast.module.scss
+@use "sass:color";
+@use '../../../styles/variables.scss' as v;
+
+.toast {
+  position: fixed;
+  top: v.$spacing-lg;
+  right: v.$spacing-lg;
+  display: flex;
+  align-items: center;
+  background-color: white;
+  border-radius: v.$border-radius-md;
+  box-shadow: v.$shadow-md;
+  padding: v.$spacing-md v.$spacing-lg;
+  max-width: 400px;
+  z-index: v.$z-toast;
+  animation: slideIn 0.3s ease;
+  
+  &.success {
+    border-left: 4px solid v.$success-color;
+    .icon {
+      color: v.$success-color;
+    }
+  }
+  
+  &.error {
+    border-left: 4px solid v.$danger-color;
+    .icon {
+      color: v.$danger-color;
+    }
+  }
+  
+  &.info {
+    border-left: 4px solid v.$info-color;
+    .icon {
+      color: v.$info-color;
+    }
+  }
+
+  @include v.responsive(mobile) {
+    left: v.$spacing-md;
+    right: v.$spacing-md;
+    max-width: calc(100% - #{v.$spacing-md * 2});
+  }
+}
+
+.icon {
+  margin-right: v.$spacing-md;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.message {
+  flex: 1;
+  margin: 0;
+  font-size: 0.9375rem;
+  color: v.$text-dark;
+  padding-right: v.$spacing-md;
+}
+
+.closeButton {
+  @include v.button-reset;
+  color: v.$gray-600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: v.$spacing-xs;
+  border-radius: 50%;
+  transition: all v.$transition-normal;
+  
+  &:hover {
+    background-color: v.$gray-200;
+    color: v.$gray-800;
+  }
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}

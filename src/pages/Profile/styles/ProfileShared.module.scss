@@ -1,0 +1,441 @@
+// src/pages/Profile/styles/ProfileShared.module.scss
+@use "sass:color";
+@use './variables.scss' as v;
+
+// Common layout classes
+.pageContainer {
+  @include v.flex(row, flex-start, flex-start);
+  gap: v.$spacing-lg;
+  padding: v.$spacing-lg;
+  min-height: 100vh;
+  background-color: v.$primary-bg;
+
+  @include v.responsive(tablet) {
+    @include v.flex(column, flex-start, stretch);
+    padding: v.$spacing-md;
+  }
+}
+
+.mainContent {
+  flex: 1;
+  max-width: v.$content-max-width;
+  @include v.flex(column, flex-start, stretch);
+  gap: v.$spacing-lg;
+
+  @include v.responsive(tablet) {
+    width: 100%;
+  }
+}
+
+// Card classes
+.card {
+  @include v.card;
+  overflow: hidden;
+  margin-bottom: v.$spacing-lg;
+}
+
+.cardHeader {
+  @include v.flex(row, space-between, center);
+  margin-bottom: v.$spacing-lg;
+  padding-bottom: v.$spacing-md;
+  border-bottom: 1px solid v.$border-color;
+
+  h2 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: v.$text-dark;
+    margin: 0;
+  }
+}
+
+.cardBody {
+  @include v.flex(column, flex-start, stretch);
+  gap: v.$spacing-md;
+}
+
+.cardSection {
+  @include v.flex(row, space-between, center);
+  padding: v.$spacing-md 0;
+  border-bottom: 1px solid v.$border-color;
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.sectionTitle {
+  @include v.flex(row, flex-start, center);
+  gap: v.$spacing-sm;
+  font-weight: 500;
+  color: v.$text-dark;
+
+  svg {
+    color: v.$primary-color;
+  }
+}
+
+// Avatar classes
+.avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  overflow: hidden;
+  background-color: v.$gray-200;
+  @include v.flex(row, center, center);
+
+  &.large {
+    width: 100px;
+    height: 100px;
+  }
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  svg {
+    color: v.$gray-600;
+    width: 50%;
+    height: 50%;
+  }
+}
+
+// Form classes
+.formGroup {
+  @include v.flex(column, flex-start, stretch);
+  gap: v.$spacing-sm;
+  margin-bottom: v.$spacing-md;
+  width: 100%;
+}
+
+.formLabel {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: v.$text-medium;
+}
+
+.formInput {
+  width: 100%;
+  padding: v.$spacing-md;
+  border: 1px solid v.$border-color;
+  border-radius: v.$border-radius-sm;
+  font-size: 0.9375rem;
+  @include v.transition;
+
+  &:focus {
+    border-color: v.$primary-color;
+    outline: none;
+  }
+
+  &:disabled {
+    background-color: v.$gray-100;
+    cursor: not-allowed;
+    color: v.$gray-600;
+  }
+}
+
+.inputGroup {
+  @include v.flex(row, flex-start, center);
+  gap: v.$spacing-sm;
+}
+
+// Button classes
+.button {
+  padding: v.$spacing-md v.$spacing-xl;
+  border-radius: v.$border-radius-sm;
+  font-weight: 500;
+  font-size: 0.9375rem;
+  cursor: pointer;
+  @include v.transition;
+  @include v.focus-outline;
+
+  &.primary {
+    background-color: v.$primary-color;
+    color: v.$text-white;
+    border: none;
+
+    &:hover {
+      background-color: v.$primary-dark;
+    }
+
+    &:disabled {
+      background-color: v.$gray-400;
+      cursor: not-allowed;
+    }
+  }
+
+  &.secondary {
+    background-color: transparent;
+    color: v.$primary-color;
+    border: 1px solid v.$primary-color;
+
+    &:hover {
+      background-color: rgba(v.$primary-color, 0.05);
+    }
+  }
+
+  &.text {
+    background-color: transparent;
+    color: v.$primary-color;
+    border: none;
+    padding: v.$spacing-sm;
+
+    &:hover {
+      background-color: rgba(v.$primary-color, 0.05);
+    }
+  }
+
+  &.danger {
+    background-color: transparent;
+    color: v.$danger-color;
+    border: 1px solid v.$danger-color;
+
+    &:hover {
+      background-color: rgba(v.$danger-color, 0.05);
+    }
+  }
+
+  &.small {
+    padding: v.$spacing-sm v.$spacing-md;
+    font-size: 0.875rem;
+  }
+
+  &.large {
+    padding: v.$spacing-lg v.$spacing-xl;
+    font-size: 1rem;
+  }
+
+  &.fullWidth {
+    width: 100%;
+  }
+}
+
+// Status badge classes
+.badge {
+  display: inline-block;
+  padding: v.$spacing-xs v.$spacing-sm;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+
+  &.pending {
+    background-color: rgba(v.$warning-color, 0.1);
+    color: color.adjust(v.$warning-color, $lightness: -20%);
+    border: 1px solid rgba(v.$warning-color, 0.2);
+  }
+
+  &.done {
+    background-color: rgba(v.$success-color, 0.1);
+    color: color.adjust(v.$success-color, $lightness: -10%);
+    border: 1px solid rgba(v.$success-color, 0.2);
+  }
+
+  &.cancelled {
+    background-color: rgba(v.$danger-color, 0.1);
+    color: color.adjust(v.$danger-color, $lightness: -10%);
+    border: 1px solid rgba(v.$danger-color, 0.2);
+  }
+}
+
+// Modal styles
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(v.$gray-900, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: v.$z-modal;
+  padding: v.$spacing-md;
+}
+
+.modalContent {
+  background-color: white;
+  border-radius: v.$border-radius-md;
+  box-shadow: v.$shadow-lg;
+  width: 100%;
+  max-width: 600px;
+  max-height: 90vh;
+  overflow-y: auto;
+  overflow-x: hidden;
+  animation: modalFadeIn 0.3s ease;
+
+  @include v.responsive(mobile) {
+    max-height: 85vh;
+  }
+}
+
+.modalHeader {
+  @include v.flex(row, space-between, center);
+  padding: v.$spacing-lg;
+  border-bottom: 1px solid v.$border-color;
+
+  h3 {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: v.$text-dark;
+  }
+}
+
+.modalBody {
+  padding: v.$spacing-lg;
+}
+
+.modalFooter {
+  @include v.flex(row, flex-end, center);
+  gap: v.$spacing-md;
+  padding: v.$spacing-lg;
+  border-top: 1px solid v.$border-color;
+}
+
+// Animation keyframes
+@keyframes modalFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes spinIn {
+  0% {
+    transform: rotate(0deg);
+    opacity: 0;
+  }
+  100% {
+    transform: rotate(360deg);
+    opacity: 1;
+  }
+}
+
+// Loading indicator
+.spinner {
+  width: 24px;
+  height: 24px;
+  border: 3px solid rgba(v.$primary-color, 0.1);
+  border-radius: 50%;
+  border-top-color: v.$primary-color;
+  animation: spin 1s linear infinite;
+  margin: 0 auto;
+
+  &.medium {
+    width: 32px;
+    height: 32px;
+  }
+
+  &.large {
+    width: 48px;
+    height: 48px;
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+// Empty state
+.emptyState {
+  @include v.flex(column, center, center);
+  padding: v.$spacing-xxl v.$spacing-lg;
+  text-align: center;
+
+  svg {
+    color: v.$gray-400;
+    margin-bottom: v.$spacing-lg;
+    width: 64px;
+    height: 64px;
+  }
+
+  h3 {
+    font-size: 1.125rem;
+    font-weight: 500;
+    color: v.$text-medium;
+    margin-bottom: v.$spacing-md;
+  }
+
+  p {
+    color: v.$text-light;
+    margin-bottom: v.$spacing-lg;
+    max-width: 400px;
+  }
+}
+
+// Responsive table styles
+.tableContainer {
+  width: 100%;
+  overflow-x: auto;
+  margin-bottom: v.$spacing-lg;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  border-spacing: 0;
+
+  th {
+    background-color: v.$gray-100;
+    padding: v.$spacing-md;
+    text-align: left;
+    font-weight: 500;
+    color: v.$text-medium;
+    border-bottom: 1px solid v.$border-color;
+  }
+
+  td {
+    padding: v.$spacing-md;
+    border-bottom: 1px solid v.$border-color;
+    color: v.$text-dark;
+  }
+
+  tr:last-child td {
+    border-bottom: none;
+  }
+}
+
+// Sortable column
+.sortableColumn {
+  cursor: pointer;
+  @include v.flex(row, flex-start, center);
+  gap: v.$spacing-xs;
+
+  &:hover {
+    color: v.$primary-color;
+  }
+}
+
+// Responsive grid
+.grid {
+  display: grid;
+  gap: v.$spacing-lg;
+
+  &.cols2 {
+    grid-template-columns: repeat(2, 1fr);
+
+    @include v.responsive(mobile) {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  &.cols3 {
+    grid-template-columns: repeat(3, 1fr);
+
+    @include v.responsive(tablet) {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    @include v.responsive(mobile) {
+      grid-template-columns: 1fr;
+    }
+  }
+}

@@ -1,197 +1,99 @@
+// src/pages/Profile/Favorites.jsx
 import React, { useState, useContext, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
 import classNames from 'classnames/bind';
-import styles from './Favorites.module.scss';
-import { User, ShoppingCart, X, Check } from 'lucide-react';
+import styles from './styles/ProfileShared.module.scss';
+import Sidebar from './components/Sidebar/Sidebar';
+import FavoritesList from './components/FavoritesList/FavoritesList';
+import Toast from './components/common/Toast/Toast';
 import { FavoritesContext } from '~/context/FavoritesContext';
 import { CartContext } from '~/context/CartContext';
-import routes from '~/config/routes';
 
 const cx = classNames.bind(styles);
 
 const Favorites = () => {
-    const { favoriteItems, removeFromFavorites } = useContext(FavoritesContext);
-    const { addToCart } = useContext(CartContext);
-    const navigate = useNavigate();
-    const [selectedTab, setSelectedTab] = useState('favorites');
-    const [cartAnimations, setCartAnimations] = useState({});
-    const [removeAnimations, setRemoveAnimations] = useState({});
-
-    const formatPrice = (price) => {
-        return new Intl.NumberFormat('vi-VN').format(price) + ' đ';
-    };
-
-    const handleAddToCart = (item) => {
-        // Set animation state
-        setCartAnimations(prev => ({
-            ...prev,
-            [item._id]: true
-        }));
-        
-        // Add item to cart
-        addToCart(item);
-        
-        // Reset animation after it completes
-        setTimeout(() => {
-            setCartAnimations(prev => ({
-                ...prev,
-                [item._id]: false
-            }));
-        }, 1000);
-    };
-    
-    const handleRemoveFromFavorites = (itemId) => {
-        // Set animation state
-        setRemoveAnimations(prev => ({
-            ...prev,
-            [itemId]: true
-        }));
-        
-        // Remove after animation completes
-        setTimeout(() => {
-            removeFromFavorites(itemId);
-        }, 300);
-    };
-
-    return (
-        <div className={cx('profile-container')}>
-            {/* Sidebar */}
-            <div className={cx('sidebar')}>
-                <div className={cx('sidebar-header')}>
-                    <div className={cx('avatar-placeholder')}>
-                        <User size={32} className={cx('avatar-icon')} />
-                    </div>
-                    <div className={cx('user-info')}>
-                        <h2 className={cx('user-greeting')}>Chào (K18 HCM)</h2>
-                        <p className={cx('edit-account')}>Chỉnh sửa tài khoản</p>
-                    </div>
-                </div>
-                
-                <div className={cx('navigation')}>
-                    <button 
-                        className={cx('nav-item', { active: selectedTab === 'profile' })}
-                        onClick={() => {
-                            setSelectedTab('profile');
-                            navigate(routes.profile);
-                        }}
-                    >
-                        Thông tin tài khoản
-                    </button>
-                    
-                    <button 
-                        className={cx('nav-item', { active: selectedTab === 'orders' })}
-                        onClick={() => {
-                            setSelectedTab('orders');
-                            navigate(routes.ordersPage);
-                        }}
-                    >
-                        Đơn hàng của tôi
-                    </button>
-                    
-                    <button 
-                        className={cx('nav-item', { active: selectedTab === 'favorites' })}
-                        onClick={() => {
-                            setSelectedTab('favorites');
-                            navigate(routes.favorites);
-                        }}
-                    >
-                        Danh sách yêu thích
-                    </button>
-                </div>
-            </div>
-
-            {/* Main Content */}
-            <div className={cx('main-content')}>
-                <div className={cx('content-section')}>
-                    <h1 className={cx('section-title')}>Danh sách yêu thích</h1>
-                    
-                    {favoriteItems.length === 0 ? (
-                        // Empty Favorites View
-                        <div className={cx('empty-state')}>
-                            <div className={cx('empty-icon')}></div>
-                            <p className={cx('empty-text')}>Bạn chưa có sản phẩm yêu thích nào</p>
-                            <button 
-                                className={cx('continue-shopping-btn')}
-                                onClick={() => navigate(routes.home)}
-                            >
-                                Tiếp tục mua sắm
-                            </button>
-                        </div>
-                    ) : (
-                        // Favorites with Items
-                        <div className={cx('favorites-list')}>
-                            {favoriteItems.map((item) => (
-                                <div 
-                                    key={item._id} 
-                                    className={cx('favorite-item', {
-                                        'removing': removeAnimations[item._id]
-                                    })}
-                                >
-                                    <div className={cx('product-image-container')}>
-                                        <img 
-                                            src={item.imageUrls && item.imageUrls[0] ? item.imageUrls[0] : 'placeholder.jpg'} 
-                                            alt={item.name} 
-                                            className={cx('product-image')}
-                                            onError={(e) => {
-                                                e.target.onerror = null;
-                                                e.target.src = 'https://via.placeholder.com/80';
-                                            }}
-                                        />
-                                    </div>
-                                    
-                                    <div className={cx('product-info')}>
-                                        <div className={cx('brand-name')}>{item.brand?.name || 'BRAND'}</div>
-                                        <div className={cx('product-name')}>
-                                            <Link to={`/product/${item._id}`}>{item.name}</Link>
-                                        </div>
-                                        <div className={cx('product-price')}>
-                                            {formatPrice(item.price)}
-                                        </div>
-                                    </div>
-                                    
-                                    <div className={cx('product-actions')}>
-                                        <button 
-                                            onClick={() => handleAddToCart(item)}
-                                            className={cx('add-to-cart-button', {
-                                                'animating': cartAnimations[item._id]
-                                            })}
-                                            disabled={!item.stock || cartAnimations[item._id]}
-                                        >
-                                            {cartAnimations[item._id] ? (
-                                                <>
-                                                    <Check size={16} className={cx('success-icon')} />
-                                                    <span>Đã thêm</span>
-                                                </>
-                                            ) : (
-                                                <>
-                                                    <ShoppingCart size={16} />
-                                                    <span>Thêm vào giỏ</span>
-                                                </>
-                                            )}
-                                            
-                                            {cartAnimations[item._id] && (
-                                                <span className={cx('animation-circle')}></span>
-                                            )}
-                                        </button>
-                                        
-                                        <button 
-                                            onClick={() => handleRemoveFromFavorites(item._id)} 
-                                            className={cx('remove-button', {
-                                                'removing': removeAnimations[item._id]
-                                            })}
-                                        >
-                                            <X size={16} />
-                                            <span>Xóa</span>
-                                        </button>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    )}
-                </div>
-            </div>
+  const { favoriteItems, removeFromFavorites } = useContext(FavoritesContext);
+  const { addToCart } = useContext(CartContext);
+  const [selectedTab, setSelectedTab] = useState('favorites');
+  const [toast, setToast] = useState({ show: false, message: '', type: '' });
+  const [userData, setUserData] = useState({
+    fullName: '',
+    email: '',
+    avatar: null
+  });
+  
+  // Load user data from localStorage
+  useEffect(() => {
+    try {
+      const user = JSON.parse(localStorage.getItem('user'));
+      if (user) {
+        setUserData({
+          fullName: user.name || '',
+          email: user.email || '',
+          avatar: user.avatar || null
+        });
+      }
+    } catch (error) {
+      console.error('Error loading user data:', error);
+    }
+  }, []);
+  
+  // Show toast notification
+  const showToast = (message, type) => {
+    setToast({ show: true, message, type });
+  };
+  
+  // Close toast notification
+  const closeToast = () => {
+    setToast({ show: false, message: '', type: '' });
+  };
+  
+  // Handle add to cart
+  const handleAddToCart = (item) => {
+    addToCart(item);
+    showToast(`Đã thêm "${item.name}" vào giỏ hàng`, 'success');
+  };
+  
+  // Handle remove from favorites
+  const handleRemoveFromFavorites = (itemId) => {
+    removeFromFavorites(itemId);
+    showToast('Đã xóa sản phẩm khỏi danh sách yêu thích', 'info');
+  };
+  
+  return (
+    <div className={cx('pageContainer')}>
+      {/* Toast Notification */}
+      {toast.show && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={closeToast}
+        />
+      )}
+      
+      {/* Sidebar */}
+      <Sidebar 
+        selectedTab={selectedTab} 
+        userInfo={userData} 
+      />
+      
+      {/* Main Content */}
+      <div className={cx('mainContent')}>
+        <div className={cx('card')}>
+          <div className={cx('cardHeader')}>
+            <h2>Danh sách yêu thích</h2>
+          </div>
+          
+          <div className={cx('cardBody')}>
+            <FavoritesList 
+              favoriteItems={favoriteItems}
+              onAddToCart={handleAddToCart}
+              onRemoveFromFavorites={handleRemoveFromFavorites}
+            />
+          </div>
         </div>
-    );
+      </div>
+    </div>
+  );
 };
 
 export default Favorites;
