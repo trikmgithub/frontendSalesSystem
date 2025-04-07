@@ -159,46 +159,7 @@ const SupportPage = () => {
         <div className={styles.container}>
           <div className={`${styles.main_footer} ${styles.width_common}`}>
             <div className={`${styles.row} ${styles.space_bottom_20}`}>
-              <div className={`${styles.col_lg_4} ${styles.col_md_4} ${styles.col_sm_12}`}>
-                <div
-                  className={`fb_page ${styles.fb_page}`}
-                  data-href="https://www.facebook.com/Hasaki.vn/"
-                  data-small-header="true"
-                  data-adapt-container-width="true"
-                  data-hide-cover="false"
-                  data-show-facepile="true"
-                >
-                  <span style={{ verticalAlign: 'bottom', width: '340px', height: '70px' }}>
-                    <iframe name="f106fb37d8d83b56f" width="1000px" height="1000px" data-testid="fb:page Facebook Social Plugin" title="fb:page Facebook Social Plugin" frameBorder="0" allowTransparency="true" allowFullScreen="true" scrolling="no" allow="encrypted-media" src="https://www.facebook.com/v2.9/plugins/page.php?adapt_container_width=true&amp;app_id=1028207553936734&amp;channel=https%3A%2F%2Fstaticxx.facebook.com%2Fx%2Fconnect%2Fxd_arbiter%2F%3Fversion%3D46%23cb%3Dfd3a8a214bfab3c1d%26domain%3Dhotro.hasaki.vn%26is_canvas%3Dfalse%26origin%3Dhttps%253A%252F%252Fhotro.hasaki.vn%252Ff9828894e0010d3e2%26relation%3Dparent.parent&amp;container_width=340&amp;hide_cover=false&amp;href=https%3A%2F%2Fwww.facebook.com%2FHasaki.vn%2F&amp;locale=vi_VN&amp;sdk=joey&amp;show_facepile=true&amp;small_header=true" style={{ border: 'none', visibility: 'visible', width: '340px', height: '70px' }}></iframe>
-                  </span>
-                </div>
-
-                <script>
-                  {`(function(d, s, id) {
-                      var js, fjs = d.getElementsByTagName(s)[0];
-                      if (d.getElementById(id)) return;
-                      js = d.createElement(s);
-                      js.id = id;
-                      js.async = true;
-                      js.src = "//connect.facebook.net/vi_VN/sdk.js#xfbml=1&version=v2.9&appId=1028207553936734";
-                      fjs.parentNode.insertBefore(js, fjs);
-                  }(document, 'script', 'facebook-jssdk'));`}
-                </script>
-                <script defer src="https://wsc.hasaki.vn/plugin_chat/live/ecomInit.js" onLoad="initModuleChat()"></script>
-                <div className={styles.block_chat_fb}>
-                  <a href="javascript:;" className={styles.btn_close_chat}><FaTimes className={styles.icon_close} /></a>
-                  <div id="hsk-chat-root" style={{ position: 'fixed', right: '40px', bottom: '25px', width: '85px', zIndex: 100 }}>
-                    <div id="main_chat_container" className={styles._container_uysnc_16} style={{ transform: 'translateX(100vw)', aspectRatio: '5 / 4' }}></div>
-                    <img className={styles._icon_1lugr_47} src="https://wsc.hasaki.vn/assets/customer_icons/appIcon.svg" width="60px" height="60px" alt="" />
-                  </div>
-                  <div className={`${styles.fb_page} ${styles.fb_iframe_widget}`} data-href="https://www.facebook.com/Hasaki.vn/" data-tabs="messages" data-width="270px" data-height="320" data-small-header="true" data-adapt-container-width="true" data-hide-cover="false" show-facepile="true" fb-xfbml-state="rendered" fb-iframe-plugin-query="adapt_container_width=true&amp;app_id=1028207553936734&amp;container_width=230&amp;height=320&amp;hide_cover=false&amp;href=https%3A%2F%2Fwww.facebook.com%2FHasaki.vn%2F&amp;locale=vi_VN&amp;sdk=joey&amp;show_facepile=true&amp;small_header=true&amp;tabs=messages&amp;width=270px">
-                    <span style={{ verticalAlign: 'bottom', width: '230px', height: '320px' }}>
-                      <iframe name="f3c2e2cff21f9ed4a" height="320px" data-testid="fb:page Facebook Social Plugin" title="fb:page Facebook Social Plugin" frameBorder="0" allowTransparency="true" allowFullScreen="true" scrolling="no" allow="encrypted-media" src="https://www.facebook.com/v2.9/plugins/page.php?adapt_container_width=true&amp;app_id=1028207553936734&amp;channel=https%3A%2F%2Fstaticxx.facebook.com%2Fx%2Fconnect%2Fxd_arbiter%2F%3Fversion%3D46%23cb%3Df4531a895a1b930ff%26domain%3Dhotro.hasaki.vn%26is_canvas%3Dfalse%26origin%3Dhttps%253A%252F%252Fhotro.hasaki.vn%252Ff9828894e0010d3e2%26relation%3Dparent.parent&amp;container_width=230&amp;height=320&amp;hide_cover=false&amp;href=https%3A%2F%2Fwww.facebook.com%2FHasaki.vn%2F&amp;locale=vi_VN&amp;sdk=joey&amp;show_facepile=true&amp;small_header=true&amp;tabs=messages&amp;width=270px" style={{ border: 'none', visibility: 'visible', width: '230px', height: '320px' }}></iframe>
-                    </span>
-                  </div>
-                </div>
-
-              </div>
+              
               <div className={`${styles.col_lg_8} ${styles.col_md_8} ${styles.col_sm_12}`}>
                 <div className={styles.row}>
                   <div className={`${styles.col_lg_4} ${styles.col_md_4} ${styles.col_sm_4}`}>

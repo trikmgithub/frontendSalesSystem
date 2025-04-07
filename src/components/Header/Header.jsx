@@ -120,48 +120,8 @@ function Header() {
         }
     };
 
-    const handleSkinQuizClick = async () => {
-        // Only proceed if user is logged in
-        if (!isLoggedIn()) {
-            // If not logged in, show login popup
-            openLogin(() => {
-                // After login, check if user has taken the quiz and navigate accordingly
-                checkQuizStatusAndNavigate();
-            });
-            return;
-        }
-
-        // If logged in, check quiz status and navigate
-        checkQuizStatusAndNavigate();
-    };
-
-    const checkQuizStatusAndNavigate = async () => {
-        try {
-            // Show loading state (optional)
-            // You could add a loading state here if desired
-
-            // Check if user has taken the quiz
-            const response = await checkUserSkinTypeAxios();
-
-            if (response.hasTakenQuiz) {
-                // User has taken the quiz before, navigate directly to results
-                console.log('User has taken quiz before, navigating to results');
-                navigate(`/skin-quiz/results/${response.skinType}`, {
-                    state: {
-                        fromDirectNavigation: true,
-                        skinType: response.skinType
-                    }
-                });
-            } else {
-                // User hasn't taken the quiz, navigate to quiz page
-                console.log('User has not taken quiz, navigating to quiz page');
-                navigate('/skin-quiz');
-            }
-        } catch (error) {
-            console.error('Error checking quiz status:', error);
-            // If any error occurs, default to navigating to the quiz page
-            navigate('/skin-quiz');
-        }
+    const handleSkinQuizClick = () => {
+        navigate('/skin-quiz'); // Chuyển trực tiếp đến trang skin-quiz
     };
 
     // Client-side search functionality

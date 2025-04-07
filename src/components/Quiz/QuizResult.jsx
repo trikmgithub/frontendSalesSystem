@@ -3,8 +3,8 @@ import { useParams, useLocation, Link } from 'react-router-dom';
 import styles from './QuizResult.module.scss';
 import classNames from 'classnames/bind';
 import config from '~/config';
-import { getSkinProductsAxios } from '~/services/itemAxios';
-import { getSkinTypesAxios, getSkinTypeDetailsAxios } from '~/services/quizAxios';
+import { getItemsAxios } from '~/services/itemAxios';
+import { getSkinTypeDetailsAxios } from '~/services/quizAxios';
 import { CartContext } from '~/context/CartContext';
 import { FavoritesContext } from '~/context/FavoritesContext';
 import { useAuth } from '~/context/AuthContext';
@@ -16,7 +16,14 @@ const cx = classNames.bind(styles);
 const QuizResult = () => {
   const { skinType: skinTypeParam } = useParams();
   const location = useLocation();
-  const { points, answers } = location.state || { points: 0, answers: {} };
+  const { points, skinType, skinTypeInfo, answers, fromQuiz } = location.state || {
+    points: 0,
+    skinType: null,
+    skinTypeInfo: null,
+    answers: {},
+    fromQuiz: false
+  };
+  
   const [skinProducts, setSkinProducts] = useState([]);
   const [skinData, setSkinData] = useState({
     skinType: '',
@@ -32,15 +39,16 @@ const QuizResult = () => {
   const [animatingItems, setAnimatingItems] = useState({});
   const [favoriteAnimations, setFavoriteAnimations] = useState({});
   const [showScoreSection, setShowScoreSection] = useState(true);
-  const [userSkinType, setUserSkinType] = useState(null);
+  const [effectiveSkinType, setEffectiveSkinType] = useState(null);
 
   // Mapping for displaying Vietnamese skin type names
-  // Mapping from database skinType codes to Vietnamese display names
   const skinTypeMapping = {
     'da_dau': 'Da Dầu',
     'da_hon_hop': 'Da Hỗn Hợp',
     'da_thuong': 'Da Thường',
     'da_kho': 'Da Khô',
+    'da_kho_lao_hoa': 'Da Khô Lão Hóa',
+    'da_lao_hoa': 'Da Lão Hóa',
     'da_nhay_cam': 'Da Nhạy Cảm'
   };
 
@@ -50,91 +58,82 @@ const QuizResult = () => {
     'combination': 'da_hon_hop',
     'normal': 'da_thuong',
     'dry': 'da_kho',
+    'dry-aging': 'da_kho_lao_hoa',
+    'aging': 'da_lao_hoa',
     'sensitive': 'da_nhay_cam'
   };
 
-  // First, fetch all skin types to identify the user's skin type
+  // Determine the effective skin type for this session (from URL, state, or user profile)
   useEffect(() => {
-    const fetchSkinTypes = async () => {
+    const determineEffectiveSkinType = async () => {
       setSkinTypeLoading(true);
+      
       try {
-        // If we have a skin type from URL params (quiz result), use it directly
-        if (skinTypeParam) {
+        let finalSkinType = null;
+        
+        // Priority 1: Use skin type from state if it came from quiz
+        if (fromQuiz && skinType) {
+          console.log('Using skin type from quiz results:', skinType);
+          finalSkinType = skinType;
+        }
+        // Priority 2: Use skin type from URL params
+        else if (skinTypeParam) {
           console.log('Using skin type from URL params:', skinTypeParam);
-          setUserSkinType(skinTypeParam);
-          setSkinTypeLoading(false);
-          return;
+          // Convert from English route param to code if needed
+          finalSkinType = englishToCodeMapping[skinTypeParam.toLowerCase()] || skinTypeParam;
+        }
+        // Priority 3: Use skin type from user profile
+        else if (isLoggedIn() && user && user.skin) {
+          console.log('Using skin type from user profile:', user.skin);
+          finalSkinType = user.skin;
+        }
+        // Fallback to normal skin type
+        else {
+          console.log('No skin type available, defaulting to normal');
+          finalSkinType = 'da_thuong'; // Default to normal skin
         }
         
-        // Otherwise, get skin types from API and match with user profile
-        const response = await getSkinTypesAxios();
-        
-        if (response.error) {
-          console.error('Error fetching skin types:', response.message);
-          // Fall back to default if API fails
-          setUserSkinType('normal');
-        } else {
-          console.log('Skin types retrieved:', response.data);
-          
-          // If user is logged in and has a skin type in profile
-          if (isLoggedIn() && user && user.skin) {
-            console.log('User has skin type in profile:', user.skin);
-            
-            // Find the matching skin type code from the list
-            const skinTypes = response.data || [];
-            const matchedType = skinTypes.find(type => 
-              type.skinType?.toLowerCase() === user.skin.toLowerCase() || 
-              type.title?.toLowerCase() === user.skin.toLowerCase()
-            );
-            
-            if (matchedType) {
-              console.log('Matched to skin type:', matchedType.skinType);
-              setUserSkinType(matchedType.skinType);
-            } else {
-              // If no match found, default to normal
-              console.log('No match found, defaulting to normal');
-              setUserSkinType('normal');
-            }
-          } else {
-            // Default to normal if user has no skin type
-            console.log('User has no skin type, defaulting to normal');
-            setUserSkinType('normal');
-          }
-        }
+        setEffectiveSkinType(finalSkinType);
       } catch (err) {
-        console.error('Error in skin type fetch:', err);
-        setUserSkinType('normal'); // Default fallback
+        console.error('Error determining skin type:', err);
+        setEffectiveSkinType('da_thuong'); // Fallback to normal
       } finally {
         setSkinTypeLoading(false);
       }
     };
 
-    fetchSkinTypes();
-  }, [skinTypeParam, isLoggedIn, user]);
+    determineEffectiveSkinType();
+  }, [skinTypeParam, skinType, fromQuiz, isLoggedIn, user]);
 
-  // Then, fetch skin type details once we have the user's skin type
+  // Fetch skin type details once we have the effective skin type
   useEffect(() => {
     const fetchSkinTypeDetails = async () => {
-      if (!userSkinType || skinTypeLoading) {
-        return; // Chỉ gọi API khi userSkinType đã sẵn sàng và không còn loading
+      if (!effectiveSkinType || skinTypeLoading) {
+        return;
       }
 
       try {
-        let apiSkinType = userSkinType;
-
-        // Chuyển đổi skinType từ tiếng Anh sang mã API nếu cần
-        if (englishToCodeMapping[apiSkinType.toLowerCase()]) {
-          apiSkinType = englishToCodeMapping[apiSkinType.toLowerCase()];
+        console.log('Fetching skin type details for:', effectiveSkinType);
+        
+        // If skinTypeInfo is already available from quiz results, use it
+        if (fromQuiz && skinTypeInfo) {
+          console.log('Using skin type info from quiz results');
+          setSkinData({
+            skinType: effectiveSkinType,
+            description: skinTypeInfo.description || '',
+            recommendations: skinTypeInfo.recommendations || []
+          });
+          return;
         }
-
-        console.log('Fetching skin type details for:', apiSkinType);
-        const response = await getSkinTypeDetailsAxios(apiSkinType);
+        
+        // Otherwise, fetch details from API
+        const response = await getSkinTypeDetailsAxios(effectiveSkinType);
 
         if (response.error) {
           console.error('API error:', response.message);
           setError(response.message || 'Failed to fetch skin type details');
           setSkinData({
-            skinType: apiSkinType,
+            skinType: effectiveSkinType,
             description: 'Unable to load skin type description.',
             recommendations: []
           });
@@ -142,7 +141,7 @@ const QuizResult = () => {
           const details = response.data;
           console.log('Skin type details received:', details);
           setSkinData({
-            skinType: details.skinType || apiSkinType,
+            skinType: details.skinType || effectiveSkinType,
             description: details.description || '',
             recommendations: details.recommendations || []
           });
@@ -152,7 +151,7 @@ const QuizResult = () => {
         console.error('Error fetching skin type details:', err);
         setError('Could not load skin type details');
         setSkinData({
-          skinType: userSkinType,
+          skinType: effectiveSkinType,
           description: 'Unable to load skin type description.',
           recommendations: []
         });
@@ -160,39 +159,69 @@ const QuizResult = () => {
     };
 
     fetchSkinTypeDetails();
-  }, [userSkinType]);
+  }, [effectiveSkinType, skinTypeLoading, fromQuiz, skinTypeInfo]);
 
-  // Fetch product recommendations using getSkinProductsAxios
+  // Fetch product recommendations
   useEffect(() => {
-    let isMounted = true; // Cờ để kiểm tra component có còn được mount không
+    let isMounted = true;
 
     const fetchSkinProducts = async () => {
-      if (!skinData.skinType) {
-        return; // Chỉ gọi API khi skinType đã sẵn sàng
+      if (!effectiveSkinType || skinTypeLoading) {
+        return;
       }
 
       setLoading(true);
 
       try {
-        let skinTypeForProductAPI = skinData.skinType;
-
-        // Chuyển đổi mã loại da nếu cần
-        if (skinTypeMapping[skinData.skinType.toLowerCase()]) {
-          skinTypeForProductAPI = skinTypeMapping[skinData.skinType.toLowerCase()];
-        }
-
-        console.log('Fetching products for skin type:', skinTypeForProductAPI);
-        const response = await getSkinProductsAxios(skinTypeForProductAPI);
-
+        console.log('Fetching products for skin type:', effectiveSkinType);
+        
+        // Fetch all products
+        const response = await getItemsAxios();
+        
         if (isMounted) {
           if (response.error) {
             console.error('Product API error:', response.message);
             setError(response.message || 'Failed to fetch products');
             setSkinProducts([]);
           } else {
-            const products = response.data || [];
-            console.log(`Found ${products.length} products for skin type:`, skinTypeForProductAPI);
-            setSkinProducts(products);
+            // Filter products based on description containing relevant skin type keywords
+            const allProducts = response.data || [];
+            console.log(`Retrieved ${allProducts.length} total products`);
+            
+            const skinTypeKeywords = {
+              'da_dau': ['da dầu', 'oily skin', 'dầu nhờn'],
+              'da_hon_hop': ['da hỗn hợp', 'combination skin', 'da thường dầu'],
+              'da_thuong': ['da thường', 'normal skin', 'mọi loại da'],
+              'da_kho': ['da khô', 'dry skin', 'thiếu ẩm', 'khô ráp'],
+              'da_kho_lao_hoa': ['da khô lão hóa', 'dry aging skin', 'khô và lão hóa'],
+              'da_lao_hoa': ['da lão hóa', 'aging skin', 'nếp nhăn'],
+              'da_nhay_cam': ['da nhạy cảm', 'sensitive skin', 'dễ kích ứng']
+            };
+            
+            const keywords = skinTypeKeywords[effectiveSkinType.toLowerCase()] || [];
+            
+            // Add general keywords that apply to all skin types
+            keywords.push('mọi loại da', 'all skin types');
+            
+            // Filter products that match the keywords in description or name
+            const filteredProducts = allProducts.filter(product => {
+              const description = (product.description || '').toLowerCase();
+              const name = (product.name || '').toLowerCase();
+              
+              return keywords.some(keyword => 
+                description.includes(keyword) || name.includes(keyword)
+              );
+            });
+            
+            console.log(`Found ${filteredProducts.length} products for skin type:`, effectiveSkinType);
+            setSkinProducts(filteredProducts);
+            
+            if (filteredProducts.length === 0) {
+              console.log('No matching products, showing a subset of all products');
+              // If no products match, show at least some products (first 8)
+              setSkinProducts(allProducts.slice(0, 8));
+            }
+            
             setError(null);
           }
         }
@@ -212,20 +241,18 @@ const QuizResult = () => {
     fetchSkinProducts();
 
     return () => {
-      isMounted = false; // Cleanup khi component bị unmount
+      isMounted = false;
     };
-  }, [skinData.skinType]); // Chỉ gọi lại khi skinType thay đổi
+  }, [effectiveSkinType, skinTypeLoading]);
 
   useEffect(() => {
-    // Check if user came from direct navigation (from header)
-    if (location.state?.fromDirectNavigation) {
-      // We don't have quiz points and answers from direct navigation
-      // So we'll set a default value or hide the score section
+    // Check if user came from direct navigation (not from quiz)
+    if (!fromQuiz) {
       setShowScoreSection(false);
     } else {
       setShowScoreSection(true);
     }
-  }, [location.state]);
+  }, [fromQuiz]);
 
   const handleAddToCart = (item) => {
     // Check if user is logged in
@@ -396,7 +423,7 @@ const QuizResult = () => {
         </>
       )}
 
-      {/* Product recommendations from API */}
+      {/* Product recommendations */}
       <div className={cx('recommended-products-section')}>
         <h3>Sản phẩm được đề xuất cho bạn:</h3>
 
