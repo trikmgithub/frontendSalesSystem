@@ -120,99 +120,71 @@ const SkinQuiz = () => {
 
   // Tính toán kết quả và gửi dữ liệu lên server
   const calculateResult = async () => {
-    if (submitting) return; // Tránh gửi nhiều lần
+    if (submitting) return;
 
-    // Kiểm tra đã trả lời tất cả câu hỏi chưa
     const unansweredQuestions = getUnansweredQuestions();
-
     if (unansweredQuestions.length > 0) {
-      const missingQuestionIds = unansweredQuestions.map(q => q.questionId).join(', ');
-      alert(`Vui lòng trả lời tất cả các câu hỏi trước khi gửi kết quả. Câu hỏi còn thiếu: ${missingQuestionIds}`);
-      return;
+        alert('Vui lòng trả lời tất cả các câu hỏi trước khi gửi kết quả.');
+        return;
     }
 
-    // Kiểm tra đăng nhập
     if (!isLoggedIn()) {
-      alert('Bạn cần đăng nhập để gửi kết quả.');
-      return;
+        alert('Bạn cần đăng nhập để gửi kết quả.');
+        return;
     }
 
     setSubmitting(true);
 
     try {
-      // Chuyển đổi định dạng câu trả lời để phù hợp với API
-      const apiAnswers = {};
-      Object.keys(answers).forEach(questionId => {
-        if (answers[questionId].value !== null) {
-          // Convert to a numerical index + 1 (since the API expects 1-based indices)
-          apiAnswers[questionId] = answers[questionId].index + 1;
-        }
-      });
-
-      // Lấy userId từ context hoặc localStorage
-      const userId = getUserId();
-      if (!userId) {
-        alert('Không thể xác định ID người dùng. Vui lòng đăng nhập lại.');
-        setSubmitting(false);
-        return;
-      }
-
-      console.log('Submitting quiz with userId:', userId);
-      console.log('Answers:', apiAnswers);
-
-      // Gửi dữ liệu lên server với userId đúng định dạng
-      const response = await submitQuizAxios({
-        userId,
-        answers: apiAnswers
-      });
-
-      if (response.error) {
-        console.error('Failed to submit quiz:', response.message);
-        alert(`Đã xảy ra lỗi khi gửi kết quả: ${response.message || 'Vui lòng thử lại sau.'}`);
-        setSubmitting(false);
-        return;
-      }
-
-      // Nếu gửi thành công và có kết quả trả về
-      if (response.data && response.data.quizResult) {
-        const resultData = response.data;
-        const resultSkinType = resultData.quizResult.determinedSkinType;
-        console.log('Server determined skin type:', resultSkinType);
-
-        // Cập nhật loại da cho người dùng
-        try {
-          const updateResponse = await updateUserSkinTypeAxios(resultSkinType);
-          if (updateResponse.error) {
-            console.error('Failed to update user skin type:', updateResponse.message);
-          } else {
-            console.log('Successfully updated user skin type:', resultSkinType);
-          }
-        } catch (error) {
-          console.error('Error updating user skin type:', error);
-        }
-
-        // Chuyển hướng đến trang kết quả
-        const routeKey = routeKeysMap[resultSkinType] || 'normal'; // Fallback to normal
-        const resultPath = config.routes.skinQuizResult.replace(':skinType', routeKey);
-
-        navigate(resultPath, {
-          state: {
-            points: resultData.quizResult.scorePercentage,
-            skinType: resultSkinType, // Pass the actual skin type code
-            skinTypeInfo: resultData.skinTypeInfo, // Pass the detailed skin type info
-            fromQuiz: true, // Flag to indicate this came from quiz
-            answers: apiAnswers // Pass the answers for potential display in results
-          }
+        const apiAnswers = {};
+        Object.keys(answers).forEach(questionId => {
+            if (answers[questionId].value !== null) {
+                apiAnswers[questionId] = answers[questionId].index + 1;
+            }
         });
-      } else {
-        // Nếu không có kết quả rõ ràng từ server
-        alert('Không thể xác định loại da từ kết quả. Vui lòng thử lại sau.');
-      }
+
+        const userId = getUserId();
+        if (!userId) {
+            alert('Không thể xác định ID người dùng.');
+            setSubmitting(false);
+            return;
+        }
+
+        const response = await submitQuizAxios({ userId, answers: apiAnswers });
+
+        if (response.error) {
+            alert(`Đã xảy ra lỗi: ${response.message}`);
+            return;
+        }
+
+        if (response.data && response.data.quizResult) {
+            const resultData = response.data;
+            const resultSkinType = resultData.quizResult.determinedSkinType;
+
+            try {
+                await updateUserSkinTypeAxios(resultSkinType);
+            } catch (error) {
+                console.error('Error updating user skin type:', error);
+            }
+
+            // Simplified navigation
+            navigate(config.routes.skinQuizResult, {
+                state: {
+                    points: Math.round(resultData.quizResult.scorePercentage * 100) / 100,
+                    skinType: resultSkinType,
+                    skinTypeInfo: resultData.skinTypeInfo,
+                    fromQuiz: true,
+                    answers: apiAnswers
+                }
+            });
+        } else {
+            alert('Không thể xác định loại da từ kết quả.');
+        }
     } catch (error) {
-      console.error('Error during quiz submission:', error);
-      alert('Đã xảy ra lỗi khi gửi kết quả. Vui lòng thử lại sau.');
+        console.error('Error during quiz submission:', error);
+        alert('Đã xảy ra lỗi khi gửi kết quả.');
     } finally {
-      setSubmitting(false);
+        setSubmitting(false);
     }
   };
 

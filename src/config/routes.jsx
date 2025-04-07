@@ -5,7 +5,7 @@ const routes = {
     cart: '/cart',
     payment: '/payment',
     skinQuiz: '/skin-quiz',
-    skinQuizResult: '/skin-quiz/results/:skinType',
+    skinQuizResult: '/skin-quiz/results',
     passwordChangePage: '/profile/password-change',
     ordersPage: '/profile/orders',
     itemDetail: '/product/:id',

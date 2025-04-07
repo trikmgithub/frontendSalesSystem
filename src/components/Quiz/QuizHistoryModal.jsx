@@ -56,18 +56,16 @@ const QuizHistoryModal = ({ isOpen, onClose, history, skinTypesMap }) => {
   };
 
   const handleResultClick = (entry) => {
-    const routeKey = routeKeysMap[entry.determinedSkinType] || 'normal';
-    const resultPath = config.routes.skinQuizResult.replace(':skinType', routeKey);
-
-    navigate(resultPath, {
+    navigate(config.routes.skinQuizResult, {
       state: {
-        points: entry.scorePercentage,
+        points: Math.round(entry.scorePercentage * 100) / 100,
         skinType: entry.determinedSkinType,
         fromHistory: true,
-        answers: entry.answers
+        answers: entry.answers,
+        key: Date.now() // Thêm key để đảm bảo state luôn khác nhau
       }
     });
-    
+
     onClose();
   };
 
