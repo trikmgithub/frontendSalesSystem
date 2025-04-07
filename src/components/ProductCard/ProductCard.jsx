@@ -21,16 +21,11 @@ function ProductCard({ product, onAddToCompare }) {
   const [animatingFavorite, setAnimatingFavorite] = useState(false);
   const [animatingCompare, setAnimatingCompare] = useState(false);
 
-  // Calculate original price based on flash sale
-  const calculateOriginalPrice = (price, isFlashSale) => {
-    if (isFlashSale) {
-      return Math.round(price / 0.7); // 30% discount
-    }
-    return null;
-  };
-
-  const originalPrice = calculateOriginalPrice(product.price, product.flashSale);
-  const discount = originalPrice ? Math.round(((originalPrice - product.price) / originalPrice) * 100) : null;
+  // Determine price display values based on sale status
+  const currentPrice = product.isOnSale && product.discountedPrice ? product.discountedPrice : product.price;
+  const originalPrice = product.isOnSale ? product.price : null;
+  const discount = product.flashSale || 0;
+  const isOnSale = product.isOnSale && discount > 0;
 
   const handleAddToCart = (e) => {
     e.preventDefault();
@@ -152,7 +147,7 @@ function ProductCard({ product, onAddToCompare }) {
               <span>No Image</span>
             </div>
           )}
-          {discount && (
+          {isOnSale && (
             <div className={cx('discountBadge')}>
               {discount}%
             </div>
@@ -163,8 +158,8 @@ function ProductCard({ product, onAddToCompare }) {
           <div className={cx('brand')}>{product.brand?.name || ''}</div>
           <h3 className={cx('name')}>{product.name}</h3>
           <div className={cx('priceContainer')}>
-            <span className={cx('price')}>{product.price?.toLocaleString()} đ</span>
-            {originalPrice && (
+            <span className={cx('price')}>{currentPrice?.toLocaleString()} đ</span>
+            {isOnSale && originalPrice && (
               <span className={cx('originalPrice')}>{originalPrice.toLocaleString()} đ</span>
             )}
           </div>

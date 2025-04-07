@@ -27,6 +27,7 @@ function ItemDetail() {
         setLoading(true);
         getItemDetail(id)
             .then((response) => {
+                console.log("Item detail response:", response.data.item);
                 setItem(response.data.item);
                 setLoading(false);
             })
@@ -127,11 +128,6 @@ function ItemDetail() {
         }, 800);
     };
 
-    // Calculate original price (for flash sale items, the price from API is already discounted)
-    const calculateOriginalPrice = (discountedPrice) => {
-        return Math.round(discountedPrice / 0.7); // Add 30% to get original price
-    };
-
     if (loading) return (
         <div className={cx('loading-container')}>
             <div className={cx('loading-spinner')}></div>
@@ -152,10 +148,11 @@ function ItemDetail() {
         </div>
     );
 
-    // Calculate prices
-    const discountedPrice = item.flashSale ? item.price : null;
-    const originalPrice = item.flashSale ? calculateOriginalPrice(item.price) : item.price;
-    const discountPercentage = item.flashSale ? 30 : 0; // Assuming 30% discount for flash sales
+    // Determine price display values based on sale status
+    const currentPrice = item.isOnSale && item.discountedPrice ? item.discountedPrice : item.price;
+    const originalPrice = item.isOnSale ? item.price : null;
+    const discount = item.flashSale || 0;
+    const isOnSale = item.isOnSale && discount > 0;
 
     return (
         <div className={cx('product-detail-container')}>
@@ -198,25 +195,25 @@ function ItemDetail() {
                     
                     {/* Price Display */}
                     <div className={cx('price-container')}>
-                        {item.flashSale && (
+                        {isOnSale && (
                             <>
                                 <div className={cx('price-row')}>
                                     <span className={cx('current-price')}>
-                                        {discountedPrice?.toLocaleString()} đ
+                                        {currentPrice.toLocaleString()} đ
                                     </span>
                                     <span className={cx('original-price')}>
                                         {originalPrice.toLocaleString()} đ
                                     </span>
                                     <span className={cx('discount-badge')}>
-                                        -{discountPercentage}%
+                                        -{discount}%
                                     </span>
                                 </div>
                             </>
                         )}
-                        {!item.flashSale && (
+                        {!isOnSale && (
                             <div className={cx('price-row')}>
                                 <span className={cx('current-price')}>
-                                    {originalPrice.toLocaleString()} đ
+                                    {currentPrice.toLocaleString()} đ
                                 </span>
                             </div>
                         )}
