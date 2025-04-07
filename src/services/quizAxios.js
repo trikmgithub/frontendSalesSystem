@@ -20,6 +20,24 @@ const getQuestionsAxios = async () => {
 };
 
 /**
+ * Get all active quiz questions
+ * @returns {Promise} API response with active quiz questions
+ */
+const getActiveQuestionsAxios = async () => {
+  try {
+    const response = await axiosConfig.get('skin-quiz/questions/active');
+    return response;
+  } catch (error) {
+    console.error('Error fetching active quiz questions:', error);
+    return {
+      error: true,
+      message: error.response?.data?.message || error.message || 'Failed to fetch active quiz questions',
+      status: error.response?.status
+    };
+  }
+};
+
+/**
  * Create a new quiz question
  * @param {Object} questionData - Question data including questionId, questionText, options, and isActive
  * @returns {Promise} API response
@@ -263,5 +281,6 @@ export {
   updateSkinTypeAxios,
   deleteSkinTypeAxios,
   getQuizHistoryAxios,
-  submitQuizAxios
+  submitQuizAxios,
+  getActiveQuestionsAxios
 };

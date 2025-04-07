@@ -5,7 +5,7 @@ import classNames from 'classnames/bind';
 import config from '~/config';
 import { useAuth } from '~/context/AuthContext';
 import { 
-  getQuestionsAxios, 
+  getActiveQuestionsAxios, 
   submitQuizAxios,
   getQuizHistoryAxios // Add this import
 } from '~/services/quizAxios';
@@ -53,7 +53,7 @@ const SkinQuiz = () => {
     const fetchQuestions = async () => {
       setLoading(true);
       try {
-        const response = await getQuestionsAxios();
+        const response = await getActiveQuestionsAxios();
 
         if (response.error) {
           setError(response.message || 'Không thể tải câu hỏi.');
