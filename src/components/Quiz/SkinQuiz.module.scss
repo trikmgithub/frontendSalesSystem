@@ -12,6 +12,19 @@
 
 .quiz-header {
   margin-bottom: 40px;
+  position: relative;
+  
+  .header-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 20px;
+    
+    h1 {
+      flex: 1;
+      margin-right: 20px;
+    }
+  }
   
   h1 {
     color: #3e5b99;
@@ -59,6 +72,62 @@
         text-decoration: underline;
       }
     }
+  }
+}
+
+.history-button {
+  background-color: #fff;
+  color: #3e5b99;
+  font-size: 14px;
+  font-weight: 500;
+  padding: 8px 16px;
+  border: 2px solid #3e5b99;
+  border-radius: 20px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+  min-width: 140px;
+  justify-content: center;
+  
+  &:hover {
+    background-color: #3e5b99;
+    color: #fff;
+    transform: translateY(-2px);
+    box-shadow: 0 2px 8px rgba(62, 91, 153, 0.2);
+  }
+  
+  &:active {
+    transform: translateY(0);
+  }
+  
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+  }
+
+  .history-icon {
+    font-size: 16px;
+  }
+
+  .loading-icon {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    border: 2px solid #3e5b99;
+    border-radius: 50%;
+    border-top-color: transparent;
+    animation: spin 0.8s linear infinite;
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
   }
 }
 
@@ -189,6 +258,17 @@
   }
   
   .quiz-header {
+    .header-top {
+      flex-direction: column;
+      align-items: center;
+      gap: 15px;
+      
+      h1 {
+        margin-right: 0;
+        text-align: center;
+      }
+    }
+    
     h1 {
       font-size: 20px;
     }
@@ -209,5 +289,10 @@
   .submit-button {
     padding: 10px 20px;
     font-size: 14px;
+  }
+  
+  .history-button {
+    font-size: 13px;
+    padding: 6px 12px;
   }
 }

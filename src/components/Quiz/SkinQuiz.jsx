@@ -4,8 +4,13 @@ import styles from './SkinQuiz.module.scss';
 import classNames from 'classnames/bind';
 import config from '~/config';
 import { useAuth } from '~/context/AuthContext';
-import { getQuestionsAxios, submitQuizAxios } from '~/services/quizAxios';
+import { 
+  getQuestionsAxios, 
+  submitQuizAxios,
+  getQuizHistoryAxios // Add this import
+} from '~/services/quizAxios';
 import { updateUserSkinTypeAxios } from '~/services/userAxios';
+import QuizHistoryModal from './QuizHistoryModal';
 
 const cx = classNames.bind(styles);
 
@@ -17,13 +22,19 @@ const SkinQuiz = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [submitting, setSubmitting] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
+  const [quizHistory, setQuizHistory] = useState([]);
+  const [loadingHistory, setLoadingHistory] = useState(false);
 
   // Skin type mapping
   const skinTypesMap = {
     'da_dau': 'Da Dầu',
     'da_hon_hop': 'Da Hỗn Hợp',
     'da_thuong': 'Da Thường',
-    'da_kho': 'Da Khô'
+    'da_kho': 'Da Khô',
+    'da_kho_lao_hoa': 'Da Khô Lão Hóa',
+    'da_lao_hoa': 'Da Lão Hóa',
+    'da_nhay_cam': 'Da Nhạy Cảm'
   };
 
   // English route keys mapping
@@ -31,7 +42,10 @@ const SkinQuiz = () => {
     'da_dau': 'oily',
     'da_hon_hop': 'combination',
     'da_thuong': 'normal',
-    'da_kho': 'dry'
+    'da_kho': 'dry',
+    'da_kho_lao_hoa': 'dry-aging',
+    'da_lao_hoa': 'aging',
+    'da_nhay_cam': 'sensitive'
   };
 
   // Lấy danh sách câu hỏi từ API khi component được mount
@@ -223,6 +237,32 @@ const SkinQuiz = () => {
     return null; // Return null instead of empty string to prevent API calls with invalid ID
   };
 
+  const handleViewHistory = async () => {
+    if (!isLoggedIn()) {
+      alert('Bạn cần đăng nhập để xem lịch sử.');
+      return;
+    }
+
+    setLoadingHistory(true);
+    try {
+      const userId = getUserId();
+      if (!userId) return;
+
+      const response = await getQuizHistoryAxios(userId);
+      if (response.error) {
+        alert('Không thể tải lịch sử kiểm tra: ' + response.message);
+      } else {
+        setQuizHistory(response.data || []);
+        setShowHistory(true);
+      }
+    } catch (error) {
+      console.error('Error fetching quiz history:', error);
+      alert('Đã xảy ra lỗi khi tải lịch sử kiểm tra.');
+    } finally {
+      setLoadingHistory(false);
+    }
+  };
+
   // Debug helper
   const debugAnswers = () => {
     const answeredCount = Object.keys(answers).filter(key =>
@@ -287,7 +327,27 @@ const SkinQuiz = () => {
     <div className={cx('quiz-container')}>
       {/* Header phần giới thiệu */}
       <div className={cx('quiz-header')}>
-        <h1>BÀI KIỂM TRA LOẠI DA & CÁCH CHĂM SÓC</h1>
+        <div className={cx('header-top')}>
+          <h1>BÀI KIỂM TRA LOẠI DA & CÁCH CHĂM SÓC</h1>
+          <button
+            type="button"
+            className={cx('history-button')}
+            onClick={handleViewHistory}
+            disabled={loadingHistory}
+          >
+            {loadingHistory ? (
+              <>
+                <span className={cx('loading-icon')}></span>
+                Đang tải...
+              </>
+            ) : (
+              <>
+                <span className={cx('history-icon')}>📋</span>
+                Lịch sử kiểm tra
+              </>
+            )}
+          </button>
+        </div>
         <p>
           Mỗi người chúng ta đều có một cơ địa và làn da khác nhau. Để có cách chăm sóc da đúng đắn,
           điều quan trọng là bạn cần phải thấu hiểu làn da. Beauty Skin hân hạnh mang đến bài trắc nghiệm nhỏ để
@@ -358,6 +418,14 @@ const SkinQuiz = () => {
           {submitting ? 'ĐANG GỬI...' : 'GỬI KẾT QUẢ'}
         </button>
       </div>
+
+      {/* Modal hiển thị lịch sử kiểm tra */}
+      <QuizHistoryModal
+        isOpen={showHistory}
+        onClose={() => setShowHistory(false)}
+        history={quizHistory}
+        skinTypesMap={skinTypesMap}
+      />
     </div>
   );
 };

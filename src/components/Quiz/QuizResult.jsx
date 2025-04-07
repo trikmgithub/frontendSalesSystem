@@ -47,6 +47,8 @@ const QuizResult = () => {
     'da_hon_hop': 'Da Hỗn Hợp',
     'da_thuong': 'Da Thường',
     'da_kho': 'Da Khô',
+    'da_kho_lao_hoa': 'Da Khô Lão Hóa',
+    'da_lao_hoa': 'Da Lão Hóa',
     'da_nhay_cam': 'Da Nhạy Cảm'
   };
 
@@ -56,6 +58,8 @@ const QuizResult = () => {
     'combination': 'da_hon_hop',
     'normal': 'da_thuong',
     'dry': 'da_kho',
+    'dry-aging': 'da_kho_lao_hoa',
+    'aging': 'da_lao_hoa',
     'sensitive': 'da_nhay_cam'
   };
 
@@ -189,6 +193,8 @@ const QuizResult = () => {
               'da_hon_hop': ['da hỗn hợp', 'combination skin', 'da thường dầu'],
               'da_thuong': ['da thường', 'normal skin', 'mọi loại da'],
               'da_kho': ['da khô', 'dry skin', 'thiếu ẩm', 'khô ráp'],
+              'da_kho_lao_hoa': ['da khô lão hóa', 'dry aging skin', 'khô và lão hóa'],
+              'da_lao_hoa': ['da lão hóa', 'aging skin', 'nếp nhăn'],
               'da_nhay_cam': ['da nhạy cảm', 'sensitive skin', 'dễ kích ứng']
             };
             
