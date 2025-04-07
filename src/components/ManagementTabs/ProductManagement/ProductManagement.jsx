@@ -54,7 +54,8 @@ function ProductManagement() {
     brand: {},
     images: [], // Will store file objects
     imageUrls: [], // For the API
-    flashSale: false
+    flashSale: 0, // Now stores percentage value instead of boolean
+    isOnSale: false // New boolean indicator if product is on sale
   });
 
   // State for brands (to populate dropdowns)
@@ -80,7 +81,7 @@ function ProductManagement() {
           if (sortField) {
             sortProductsData(productsData, sortField, sortDirection);
           }
-          
+
           setProducts(productsData);
           setTotalItems(productsData.length);
           setTotalPages(Math.ceil(productsData.length / PAGE_SIZE));
@@ -95,7 +96,7 @@ function ProductManagement() {
           if (sortField) {
             sortProductsData(productsData, sortField, sortDirection);
           }
-          
+
           setProducts(productsData);
           setTotalItems(response.data.paginateItem.meta.numberItems);
           setTotalPages(response.data.paginateItem.meta.totalPages);
@@ -108,13 +109,13 @@ function ProductManagement() {
       setLoading(false);
     }
   };
-  
+
   // Helper function to sort products data in place
   const sortProductsData = (data, field, direction) => {
     return data.sort((a, b) => {
       let valueA = a[field];
       let valueB = b[field];
-      
+
       // Handle special cases
       if (field === 'price' || field === 'quantity') {
         valueA = parseFloat(valueA) || 0;
@@ -126,7 +127,7 @@ function ProductManagement() {
         valueA = a.brand?.name?.toLowerCase() || '';
         valueB = b.brand?.name?.toLowerCase() || '';
       }
-      
+
       if (direction === 'asc') {
         return valueA > valueB ? 1 : -1;
       } else {
@@ -142,7 +143,7 @@ function ProductManagement() {
   useEffect(() => {
     fetchBrands();
   }, []);
-  
+
   // Disable body scroll when any modal is open
   useDisableBodyScroll(showCreateModal || showEditModal || showDeleteModal);
 
@@ -174,17 +175,17 @@ function ProductManagement() {
       setSortField(field);
       setSortDirection('desc');
     }
-    
+
     // Apply sorting to current data immediately
     sortProductsList(field, sortField === field && sortDirection === 'asc' ? 'desc' : 'asc');
   };
-  
+
   // Function to sort products list
   const sortProductsList = (field, direction) => {
     const sortedProducts = [...products].sort((a, b) => {
       let valueA = a[field];
       let valueB = b[field];
-      
+
       // Handle special cases
       if (field === 'price' || field === 'quantity') {
         valueA = parseFloat(valueA) || 0;
@@ -196,14 +197,14 @@ function ProductManagement() {
         valueA = a.brand?.name?.toLowerCase() || '';
         valueB = b.brand?.name?.toLowerCase() || '';
       }
-      
+
       if (direction === 'asc') {
         return valueA > valueB ? 1 : -1;
       } else {
         return valueA < valueB ? 1 : -1;
       }
     });
-    
+
     setProducts(sortedProducts);
   };
 
@@ -298,6 +299,13 @@ function ProductManagement() {
       errors.images = 'At least one image is required';
     }
 
+    // Validate flash sale percentage if enabled
+    if (formData.isOnSale) {
+      if (formData.flashSale <= 0 || formData.flashSale > 100) {
+        errors.flashSale = 'Discount percentage must be between 1 and 100';
+      }
+    }
+
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
   };
@@ -315,7 +323,8 @@ function ProductManagement() {
       // Prepare product data with original files instead of base64
       const productData = {
         ...formData,
-        imageFiles: formData.images // Use the actual File objects
+        imageFiles: formData.images, // Use the actual File objects
+        flashSale: formData.isOnSale ? formData.flashSale : 0
       };
 
       const response = await itemAxios.createItemAxios(productData);
@@ -353,7 +362,8 @@ function ProductManagement() {
         price: formData.price,
         description: formData.description,
         quantity: formData.quantity,
-        brand: formData.brand
+        brand: formData.brand,
+        flashSale: formData.isOnSale ? formData.flashSale : 0
       };
 
       const response = await itemAxios.updateItemAxios(currentProduct._id, productData);
@@ -397,10 +407,9 @@ function ProductManagement() {
 
     if (type === 'checkbox') {
       setFormData(prev => ({ ...prev, [name]: checked }));
-    } else if (name === 'price' || name === 'quantity') {
+    } else if (name === 'price' || name === 'quantity' || name === 'flashSale') {
       setFormData(prev => ({ ...prev, [name]: parseFloat(value) || 0 }));
     } else if (name === 'brand') {
-      // Handle brand as object
       setFormData(prev => ({
         ...prev,
         brand: { _id: value }
@@ -408,6 +417,16 @@ function ProductManagement() {
     } else {
       setFormData(prev => ({ ...prev, [name]: value }));
     }
+  };
+
+  // New function to toggle flash sale on/off
+  const toggleFlashSale = () => {
+    setFormData(prev => ({
+      ...prev,
+      isOnSale: !prev.isOnSale,
+      // Reset flashSale percentage to 0 if turning off
+      flashSale: !prev.isOnSale ? prev.flashSale : 0
+    }));
   };
 
   // Handle file upload for images
@@ -480,7 +499,8 @@ function ProductManagement() {
       brand: {},
       images: [],
       imageUrls: [],
-      flashSale: false
+      flashSale: 0,
+      isOnSale: false
     });
     setCurrentProduct(null);
   };
@@ -500,7 +520,8 @@ function ProductManagement() {
       brand: product.brand || {},
       images: [], // Start with empty images array since we can't access file objects
       imageUrls: existingImageUrls, // But keep the existing image URLs
-      flashSale: product.flashSale || false
+      flashSale: product.flashSale || 0,
+      isOnSale: product.isOnSale || (product.flashSale > 0)
     });
     setShowEditModal(true);
   };
@@ -607,7 +628,7 @@ function ProductManagement() {
                     Quantity {getSortIcon('quantity')}
                   </th>
                   <th className={cx('brand-column')}>Brand</th>
-                  <th className={cx('flash-sale-column')}>Flash Sale</th>
+                  <th className={cx('flash-sale-column')}>Flash Sale (%)</th>
                   <th className={cx('actions-column')}>Actions</th>
                 </tr>
               </thead>
@@ -637,7 +658,11 @@ function ProductManagement() {
                     </td>
                     <td className={cx('brand-column')}>{product.brand?.name || '-'}</td>
                     <td className={cx('flash-sale-column')}>
-                      {product.flashSale ? <FaCheck className={cx('flash-sale-icon')} /> : <FaTimes />}
+                      {product.flashSale > 0 ? (
+                        <span className={cx('flash-sale-value')}>{product.flashSale}%</span>
+                      ) : (
+                        <FaTimes />
+                      )}
                     </td>
                     <td className={cx('actions-column')}>
                       <button
@@ -800,6 +825,43 @@ function ProductManagement() {
                 </div>
               </div>
               <div className={cx('form-group')}>
+                <label>Flash Sale</label>
+                <div className={cx('toggle-container')}>
+                  <button
+                    type="button"
+                    className={cx('toggle-button', { active: formData.isOnSale })}
+                    onClick={toggleFlashSale}
+                  >
+                    <div className={cx('toggle-slider')}>
+                      <div className={cx('toggle-knob')}></div>
+                    </div>
+                    <span className={cx('toggle-label')}>
+                      {formData.isOnSale ? 'On Sale' : 'Regular Price'}
+                    </span>
+                  </button>
+                </div>
+                {formData.isOnSale && (
+                  <div className={cx('flash-sale-percentage-container')} style={{ marginTop: '15px' }}>
+                    <label htmlFor="edit-flashSale">Discount Percentage (%)</label>
+                    <input
+                      type="number"
+                      id="edit-flashSale"
+                      name="flashSale"
+                      value={formData.flashSale}
+                      onChange={handleInputChange}
+                      min="1"
+                      max="100"
+                      className={cx({ 'error-input': formErrors.flashSale })}
+                    />
+                    {formErrors.flashSale && (
+                      <div className={cx('error-message')}>
+                        <FaExclamationTriangle /> {formErrors.flashSale}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+              <div className={cx('form-group')}>
                 <label htmlFor="brand">Brand</label>
                 <select
                   id="brand"
@@ -864,23 +926,6 @@ function ProductManagement() {
                 )}
                 <div className={cx('image-upload-help')}>
                   Upload up to 3 JPG or PNG images. Max 1MB per image recommended.
-                </div>
-              </div>
-              <div className={cx('form-group')}>
-                <label>Flash Sale Status</label>
-                <div className={cx('toggle-container')}>
-                  <button
-                    type="button"
-                    className={cx('toggle-button', { active: formData.flashSale })}
-                    onClick={() => setFormData(prev => ({ ...prev, flashSale: !prev.flashSale }))}
-                  >
-                    <div className={cx('toggle-slider')}>
-                      <div className={cx('toggle-knob')}></div>
-                    </div>
-                    <span className={cx('toggle-label')}>
-                      {formData.flashSale ? 'On Sale' : 'Regular Price'}
-                    </span>
-                  </button>
                 </div>
               </div>
             </div>
@@ -995,6 +1040,43 @@ function ProductManagement() {
                     </div>
                   )}
                 </div>
+              </div>
+              <div className={cx('form-group')}>
+                <label>Flash Sale</label>
+                <div className={cx('toggle-container')}>
+                  <button
+                    type="button"
+                    className={cx('toggle-button', { active: formData.isOnSale })}
+                    onClick={toggleFlashSale}
+                  >
+                    <div className={cx('toggle-slider')}>
+                      <div className={cx('toggle-knob')}></div>
+                    </div>
+                    <span className={cx('toggle-label')}>
+                      {formData.isOnSale ? 'On Sale' : 'Regular Price'}
+                    </span>
+                  </button>
+                </div>
+                {formData.isOnSale && (
+                  <div className={cx('flash-sale-percentage-container')} style={{ marginTop: '15px' }}>
+                    <label htmlFor="edit-flashSale">Discount Percentage (%)</label>
+                    <input
+                      type="number"
+                      id="edit-flashSale"
+                      name="flashSale"
+                      value={formData.flashSale}
+                      onChange={handleInputChange}
+                      min="1"
+                      max="100"
+                      className={cx({ 'error-input': formErrors.flashSale })}
+                    />
+                    {formErrors.flashSale && (
+                      <div className={cx('error-message')}>
+                        <FaExclamationTriangle /> {formErrors.flashSale}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
               <div className={cx('form-group')}>
                 <label htmlFor="brand">Brand</label>

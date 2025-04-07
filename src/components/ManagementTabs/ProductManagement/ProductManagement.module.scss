@@ -766,3 +766,39 @@
   font-weight: 500;
   margin-top: 10px;
 }
+
+.flash-sale-column {
+  width: 100px;
+  text-align: center;
+
+  .flash-sale-icon {
+    color: #2e7d32;
+  }
+  
+  .flash-sale-value {
+    background-color: #e8f5e9;
+    color: #2e7d32;
+    font-weight: 500;
+    padding: 2px 6px;
+    border-radius: 4px;
+    display: inline-block;
+  }
+}
+
+.toggle-label {
+  font-family: 'Roboto', Arial, sans-serif;
+  font-weight: normal;
+  font-size: 14px;
+}
+
+.form-group label {
+  font-family: 'Roboto', Arial, sans-serif;
+  font-weight: 500;
+  font-size: 14px;
+  margin-bottom: 8px;
+}
+
+.submit-button, .cancel-button, .delete-button {
+  font-family: 'Roboto', Arial, sans-serif;
+  font-weight: 500;
+}

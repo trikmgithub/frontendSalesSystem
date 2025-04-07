@@ -98,6 +98,7 @@ const updateItemAxios = async (itemId, itemData) => {
         formData.append('price', itemData.price);
         formData.append('description', itemData.description);
         formData.append('quantity', itemData.quantity);
+        formData.append('flashSale', itemData.flashSale.toString()); // Add flashSale parameter
         
         // Add brand as the ID string directly (not as an object)
         formData.append('brand', itemData.brand._id);

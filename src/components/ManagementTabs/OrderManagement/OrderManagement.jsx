@@ -4,7 +4,7 @@ import styles from './OrderManagement.module.scss';
 import useDisableBodyScroll from '~/hooks/useDisableBodyScroll';
 import {
   FaChevronDown, FaChevronUp, FaMoneyBill, FaCalendarAlt,
-  FaSort, FaSortAmountDown, FaSortAmountUp, FaFilter, FaShoppingCart,
+  FaSort, FaSortAmountDown, FaSortAmountUp, FaShoppingCart,
   FaUndo, FaFileInvoice, FaEnvelope, FaSpinner, FaTimes, FaExclamationTriangle
 } from 'react-icons/fa';
 import {
@@ -14,7 +14,6 @@ import {
   getCompletedOrdersAxios,
   getCancelledOrdersAxios,
   downloadInvoiceAxios,
-  sendInvoiceEmailAxios,
   getCartDetailAxios
 } from '~/services/cartAxios';
 import { getUserByIdAxios } from '~/services/userAxios';
