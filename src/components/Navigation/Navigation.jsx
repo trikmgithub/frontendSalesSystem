@@ -1,3 +1,4 @@
+// src/components/Navigation/Navigation.jsx
 import { Link, useNavigate } from 'react-router-dom';
 import classNames from 'classnames/bind';
 import styles from './Navigation.module.scss';
@@ -8,6 +9,7 @@ import { useState, useEffect, useRef } from 'react';
 import LoginForm from '~/components/Header/LoginPopup';
 import { updateAddressAxios } from '~/services/userAxios';
 import AddressSelector from '~/components/AddressSelector';
+import { useAuth } from '~/context/AuthContext'; // Import useAuth hook
 
 const cx = classNames.bind(styles);
 
@@ -17,22 +19,10 @@ function Navigation() {
     const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
     const locationSelectorRef = useRef(null);
     const navigate = useNavigate();
+    const { userInfo } = useAuth(); // Get userInfo from AuthContext
 
-    // Get address from user object in localStorage, fallback to confirmedAddress or default value
-    const [confirmedAddress, setConfirmedAddress] = useState(() => {
-        // Try to get address from user object first
-        try {
-            const userData = JSON.parse(localStorage.getItem('user') || '{}');
-            if (userData && userData.address) {
-                return userData.address;
-            }
-        } catch (error) {
-            console.error("Error parsing user data from localStorage:", error);
-        }
-
-        // Fallback to confirmedAddress or default
-        return localStorage.getItem('confirmedAddress') || "Chọn khu vực của bạn";
-    });
+    // State to hold the user's address
+    const [userAddress, setUserAddress] = useState("Chọn khu vực của bạn");
     
     // State for the address data from selector
     const [addressData, setAddressData] = useState({
@@ -42,6 +32,53 @@ function Navigation() {
         formattedAddress: ""
     });
     const [isSubmitting, setIsSubmitting] = useState(false);
+
+    // Initialize address from user data in localStorage
+    useEffect(() => {
+        const loadAddressFromUser = () => {
+            try {
+                const userData = JSON.parse(localStorage.getItem('user') || '{}');
+                if (userData && userData.address) {
+                    setUserAddress(userData.address);
+                }
+            } catch (error) {
+                console.error("Error parsing user data from localStorage:", error);
+            }
+        };
+
+        loadAddressFromUser();
+    }, []);
+
+    // Update address when userInfo changes (from AuthContext)
+    useEffect(() => {
+        if (userInfo && userInfo.address) {
+            setUserAddress(userInfo.address);
+        }
+    }, [userInfo]);
+
+    // Listen for storage events to update address when changed in other components
+    useEffect(() => {
+        const handleStorageChange = (e) => {
+            if (e.key === 'user') {
+                try {
+                    const userData = JSON.parse(e.newValue || '{}');
+                    if (userData && userData.address) {
+                        setUserAddress(userData.address);
+                    }
+                } catch (error) {
+                    console.error("Error parsing user data from storage event:", error);
+                }
+            }
+        };
+
+        // Add event listener for storage changes
+        window.addEventListener('storage', handleStorageChange);
+        
+        // Clean up
+        return () => {
+            window.removeEventListener('storage', handleStorageChange);
+        };
+    }, []);
 
     // Create NavSearchLink component for category links
     const NavSearchLink = ({ to, children, className }) => {
@@ -121,13 +158,16 @@ function Navigation() {
                 // Always update localStorage with new address regardless of API success
                 userData.address = newAddress;
                 localStorage.setItem('user', JSON.stringify(userData));
+                
+                // Force a storage event to notify other components
+                window.dispatchEvent(new StorageEvent('storage', {
+                    key: 'user',
+                    newValue: JSON.stringify(userData)
+                }));
             }
 
-            // Also maintain the confirmedAddress for backward compatibility
-            localStorage.setItem('confirmedAddress', newAddress);
-
             // Update state
-            setConfirmedAddress(newAddress);
+            setUserAddress(newAddress);
 
             // Close modal and reset form
             setIsAddressModalOpen(false);
@@ -361,14 +401,14 @@ function Navigation() {
                 </nav>
                 <div ref={locationSelectorRef} className={cx('locationSelector')} onClick={() => setIsLocationOpen(!isLocationOpen)}>
                     <HiOutlineLocationMarker className={cx('locationIcon')} />
-                    <span>{confirmedAddress}</span>
+                    <span>{userAddress}</span>
                     {isLocationOpen && (
                         <div className={cx('locationDropdown')}>
                             <div className={cx('locationHeader')}>Khu vực bạn chọn hiện tại</div>
                             <div className={cx('locationContent')}>
                                 <div className={cx('locationRow')}>
                                     <HiOutlineLocationMarker className={cx('locationIcon')} />
-                                    <span className={cx('locationText')}>{confirmedAddress}</span>
+                                    <span className={cx('locationText')}>{userAddress}</span>
                                 </div>
                                 <button className={cx('changeLocation')} onClick={handleChangeAddress}>
                                     Đổi địa chỉ
@@ -388,9 +428,8 @@ function Navigation() {
                                     <span>Chọn khu vực của bạn</span>
                                 </div>
 
-                                {/* Replace with AddressSelector */}
                                 <AddressSelector 
-                                    initialAddress={confirmedAddress} 
+                                    initialAddress={userAddress} 
                                     onAddressChange={handleAddressChange}
                                 />
 

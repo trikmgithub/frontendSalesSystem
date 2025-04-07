@@ -149,6 +149,30 @@ const EditProfileModal = ({
       address: addressData.formattedAddress
     };
     
+    // Update user data in localStorage to ensure address is immediately available
+    try {
+      const storedUserData = JSON.parse(localStorage.getItem('user') || '{}');
+      if (storedUserData && storedUserData._id) {
+        // Update the address in the user object
+        storedUserData.address = addressData.formattedAddress;
+        
+        // Save the updated user back to localStorage
+        localStorage.setItem('user', JSON.stringify(storedUserData));
+        
+        // Dispatch storage event for real-time updates in other components
+        window.dispatchEvent(new StorageEvent('storage', {
+          key: 'user',
+          newValue: JSON.stringify(storedUserData),
+          url: window.location.href
+        }));
+        
+        console.log('User address updated in localStorage and event dispatched');
+      }
+    } catch (error) {
+      console.error('Error updating user address in localStorage:', error);
+    }
+    
+    // Call the onSubmit callback to handle API update
     onSubmit(submissionData);
   };
 

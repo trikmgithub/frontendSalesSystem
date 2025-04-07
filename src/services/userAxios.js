@@ -131,6 +131,22 @@ const updateAddressAxios = async (addressData) => {
                     userData.address = res.data.user.address;
                     localStorage.setItem('user', JSON.stringify(userData));
                     console.log('Address updated in localStorage after API success');
+                    
+                    // Also update confirmedAddress for backward compatibility
+                    localStorage.setItem('confirmedAddress', res.data.user.address);
+                    
+                    // Dispatch storage events to notify other components of the change
+                    window.dispatchEvent(new StorageEvent('storage', {
+                        key: 'user',
+                        newValue: JSON.stringify(userData),
+                        url: window.location.href
+                    }));
+                    
+                    window.dispatchEvent(new StorageEvent('storage', {
+                        key: 'confirmedAddress',
+                        newValue: res.data.user.address,
+                        url: window.location.href
+                    }));
                 }
             } catch (localStorageError) {
                 console.error('Error updating address in localStorage:', localStorageError);
