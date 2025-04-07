@@ -4,12 +4,11 @@ import styles from './QuizResult.module.scss';
 import classNames from 'classnames/bind';
 import config from '~/config';
 import { getItemsAxios } from '~/services/itemAxios';
-import { getSkinTypeDetailsAxios } from '~/services/quizAxios';
+import { getSkinTypeDetailsAxios, getSkinTypesAxios } from '~/services/quizAxios';
 import { CartContext } from '~/context/CartContext';
 import { FavoritesContext } from '~/context/FavoritesContext';
 import { useAuth } from '~/context/AuthContext';
-import { toast } from 'react-toastify';
-import { FaHeart, FaShoppingCart } from 'react-icons/fa';
+import ProductCard from '~/components/ProductCard';
 
 const cx = classNames.bind(styles);
 
@@ -33,35 +32,37 @@ const QuizResult = () => {
   const [loading, setLoading] = useState(true);
   const [skinTypeLoading, setSkinTypeLoading] = useState(true);
   const [error, setError] = useState(null);
-  const { addToCart } = useContext(CartContext);
-  const { addToFavorites, removeFromFavorites, isInFavorites } = useContext(FavoritesContext);
-  const { isLoggedIn, openLogin, user } = useAuth();
-  const [animatingItems, setAnimatingItems] = useState({});
-  const [favoriteAnimations, setFavoriteAnimations] = useState({});
+  const { isLoggedIn, user } = useAuth();
   const [showScoreSection, setShowScoreSection] = useState(true);
   const [effectiveSkinType, setEffectiveSkinType] = useState(null);
+  const [skinTypeMappings, setSkinTypeMappings] = useState({});
 
-  // Mapping for displaying Vietnamese skin type names
-  const skinTypeMapping = {
-    'da_dau': 'Da Dầu',
-    'da_hon_hop': 'Da Hỗn Hợp',
-    'da_thuong': 'Da Thường',
-    'da_kho': 'Da Khô',
-    'da_kho_lao_hoa': 'Da Khô Lão Hóa',
-    'da_lao_hoa': 'Da Lão Hóa',
-    'da_nhay_cam': 'Da Nhạy Cảm'
-  };
+  // Fetch all skin types first to build mappings
+  useEffect(() => {
+    const fetchSkinTypes = async () => {
+      try {
+        // Fetch all skin types from the API
+        const response = await getSkinTypesAxios();
+        
+        if (!response.error && response.data) {
+          const skinTypes = response.data;
+          const nameMap = {};
+          
+          // Map each skin type code to its Vietnamese name
+          skinTypes.forEach(skinType => {
+            nameMap[skinType.skinType] = skinType.vietnameseSkinType;
+          });
+          
+          setSkinTypeMappings(nameMap);
+          console.log('Loaded skin type mappings:', nameMap);
+        }
+      } catch (err) {
+        console.error('Error fetching skin types:', err);
+      }
+    };
 
-  // Reverse mapping from English to Vietnamese skin type codes
-  const englishToCodeMapping = {
-    'oily': 'da_dau',
-    'combination': 'da_hon_hop',
-    'normal': 'da_thuong',
-    'dry': 'da_kho',
-    'dry-aging': 'da_kho_lao_hoa',
-    'aging': 'da_lao_hoa',
-    'sensitive': 'da_nhay_cam'
-  };
+    fetchSkinTypes();
+  }, []);
 
   // Determine the effective skin type for this session (from URL, state, or user profile)
   useEffect(() => {
@@ -76,11 +77,10 @@ const QuizResult = () => {
           console.log('Using skin type from quiz results:', skinType);
           finalSkinType = skinType;
         }
-        // Priority 2: Use skin type from URL params
+        // Priority 2: Use skin type directly from URL params
         else if (skinTypeParam) {
           console.log('Using skin type from URL params:', skinTypeParam);
-          // Convert from English route param to code if needed
-          finalSkinType = englishToCodeMapping[skinTypeParam.toLowerCase()] || skinTypeParam;
+          finalSkinType = skinTypeParam;
         }
         // Priority 3: Use skin type from user profile
         else if (isLoggedIn() && user && user.skin) {
@@ -188,20 +188,16 @@ const QuizResult = () => {
             const allProducts = response.data || [];
             console.log(`Retrieved ${allProducts.length} total products`);
             
-            const skinTypeKeywords = {
-              'da_dau': ['da dầu', 'oily skin', 'dầu nhờn'],
-              'da_hon_hop': ['da hỗn hợp', 'combination skin', 'da thường dầu'],
-              'da_thuong': ['da thường', 'normal skin', 'mọi loại da'],
-              'da_kho': ['da khô', 'dry skin', 'thiếu ẩm', 'khô ráp'],
-              'da_kho_lao_hoa': ['da khô lão hóa', 'dry aging skin', 'khô và lão hóa'],
-              'da_lao_hoa': ['da lão hóa', 'aging skin', 'nếp nhăn'],
-              'da_nhay_cam': ['da nhạy cảm', 'sensitive skin', 'dễ kích ứng']
-            };
+            // Get the Vietnamese name of the skin type
+            const skinTypeDisplayName = skinTypeMappings[effectiveSkinType] || effectiveSkinType;
             
-            const keywords = skinTypeKeywords[effectiveSkinType.toLowerCase()] || [];
-            
-            // Add general keywords that apply to all skin types
-            keywords.push('mọi loại da', 'all skin types');
+            // Create dynamic keywords based on the skin type (both code and display name)
+            const keywords = [
+              effectiveSkinType.toLowerCase(),
+              skinTypeDisplayName.toLowerCase(),
+              'mọi loại da', 
+              'all skin types'
+            ];
             
             // Filter products that match the keywords in description or name
             const filteredProducts = allProducts.filter(product => {
@@ -243,7 +239,7 @@ const QuizResult = () => {
     return () => {
       isMounted = false;
     };
-  }, [effectiveSkinType, skinTypeLoading]);
+  }, [effectiveSkinType, skinTypeLoading, skinTypeMappings]);
 
   useEffect(() => {
     // Check if user came from direct navigation (not from quiz)
@@ -254,123 +250,12 @@ const QuizResult = () => {
     }
   }, [fromQuiz]);
 
-  const handleAddToCart = (item) => {
-    // Check if user is logged in
-    if (!isLoggedIn()) {
-      // Show login popup and set callback to add item to cart after login
-      openLogin(() => {
-        // Only show animation and add to cart after successful login
-        setAnimatingItems(prev => ({
-          ...prev,
-          [item._id]: true
-        }));
-
-        addToCart(item);
-        toast.success(`${item.name} đã được thêm vào giỏ hàng!`);
-
-        // Reset animation after it completes
-        setTimeout(() => {
-          setAnimatingItems(prev => ({
-            ...prev,
-            [item._id]: false
-          }));
-        }, 1000);
-      });
-      return;
-    }
-
-    // User is logged in, add to cart with animation
-    setAnimatingItems(prev => ({
-      ...prev,
-      [item._id]: true
-    }));
-
-    addToCart(item);
-    toast.success(`${item.name} đã được thêm vào giỏ hàng!`);
-
-    // Reset animation after it completes
-    setTimeout(() => {
-      setAnimatingItems(prev => ({
-        ...prev,
-        [item._id]: false
-      }));
-    }, 1000);
-  };
-
-  const handleToggleFavorite = (item) => {
-    const isFavorite = isInFavorites(item._id);
-
-    // Check if user is logged in
-    if (!isLoggedIn()) {
-      // Show login popup and set callback to toggle favorite after login
-      openLogin(() => {
-        // Only toggle favorite after successful login
-        setFavoriteAnimations(prev => ({
-          ...prev,
-          [item._id]: true
-        }));
-
-        if (isFavorite) {
-          removeFromFavorites(item._id);
-          toast.success(`${item.name} đã được xóa khỏi danh sách yêu thích!`);
-        } else {
-          addToFavorites(item);
-          toast.success(`${item.name} đã được thêm vào danh sách yêu thích!`);
-        }
-
-        // Reset animation after it completes
-        setTimeout(() => {
-          setFavoriteAnimations(prev => ({
-            ...prev,
-            [item._id]: false
-          }));
-        }, 800);
-      });
-      return;
-    }
-
-    // User is logged in, toggle favorite with animation
-    setFavoriteAnimations(prev => ({
-      ...prev,
-      [item._id]: true
-    }));
-
-    if (isFavorite) {
-      removeFromFavorites(item._id);
-      toast.success(`${item.name} đã được xóa khỏi danh sách yêu thích!`);
-    } else {
-      addToFavorites(item);
-      toast.success(`${item.name} đã được thêm vào danh sách yêu thích!`);
-    }
-
-    // Reset animation after it completes
-    setTimeout(() => {
-      setFavoriteAnimations(prev => ({
-        ...prev,
-        [item._id]: false
-      }));
-    }, 800);
-  };
-
-  // Calculate original price based on flash sale (if true, add 30% to the price)
-  const calculateOriginalPrice = (price, isFlashSale) => {
-    if (isFlashSale) {
-      return Math.round(price / 0.7); // 30% discount
-    }
-    return null;
-  };
-
   // Helper function to get display name for skin type
   const getSkinTypeDisplayName = (skinType) => {
     if (!skinType) return 'Không xác định';
     
-    // Check if it's already a display name
-    if (Object.values(skinTypeMapping).includes(skinType)) {
-      return skinType;
-    }
-    
-    // Check if it's a code we can map
-    return skinTypeMapping[skinType.toLowerCase()] || 'Không xác định';
+    // Get name from mappings if available
+    return skinTypeMappings[skinType] || skinType;
   };
 
   return (
@@ -448,106 +333,11 @@ const QuizResult = () => {
 
         {!loading && !error && skinProducts.length > 0 && (
           <div className={cx('product-grid')}>
-            {skinProducts.map((item) => {
-              const originalPrice = calculateOriginalPrice(item.price, item.flashSale);
-              const discount = originalPrice ? Math.round(((originalPrice - item.price) / originalPrice) * 100) : null;
-
-              return (
-                <div key={item._id} className={cx('product-item')}>
-                  <Link to={`/product/${item._id}`} className={cx('product-link')}>
-                    <div className={cx('image-container')}>
-                      {item.imageUrls && item.imageUrls.length > 0 ? (
-                        <img
-                          src={item.imageUrls[0]}
-                          alt={item.name}
-                          className={cx('product-image')}
-                          onError={(e) => {
-                            e.target.onerror = null;
-                            e.target.src = 'https://via.placeholder.com/300x300?text=No+Image';
-                          }}
-                        />
-                      ) : (
-                        <img
-                          src="https://via.placeholder.com/300x300?text=No+Image"
-                          alt={item.name}
-                          className={cx('product-image')}
-                        />
-                      )}
-                      {discount && (
-                        <div className={cx('discount-badge')}>
-                          {discount}%
-                        </div>
-                      )}
-                    </div>
-
-                    <div className={cx('product-info')}>
-                      <div className={cx('price-section')}>
-                        <div className={cx('current-price')}>
-                          {item.price?.toLocaleString()} đ
-                        </div>
-                        {originalPrice && (
-                          <div className={cx('original-price')}>
-                            {originalPrice.toLocaleString()} đ
-                          </div>
-                        )}
-                      </div>
-
-                      <div className={cx('brand-name')}>{item.brand?.name || ''}</div>
-                      <h4 className={cx('product-name')}>{item.name}</h4>
-
-                      <div className={cx('stock-status')}>
-                        {item.stock ? 'Còn hàng' : 'Hết hàng'}
-                      </div>
-                    </div>
-                  </Link>
-
-                  <div className={cx('product-actions')}>
-                    <button
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        handleAddToCart(item);
-                      }}
-                      className={cx('add-to-cart-button', {
-                        'animating': animatingItems[item._id]
-                      })}
-                      disabled={!item.stock || animatingItems[item._id]}
-                      aria-label="Add to cart"
-                      title="Add to cart"
-                    >
-                      <FaShoppingCart />
-                      {animatingItems[item._id] && (
-                        <span className={cx('success-indicator')}>✓</span>
-                      )}
-                    </button>
-
-                    <button
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        handleToggleFavorite(item);
-                      }}
-                      className={cx('favorite-button', {
-                        'active': isInFavorites(item._id),
-                        'animating': favoriteAnimations[item._id]
-                      })}
-                      disabled={favoriteAnimations[item._id]}
-                      aria-label="Toggle favorite"
-                      title="Add to favorites"
-                    >
-                      <FaHeart className={cx({
-                        'heart-beat': favoriteAnimations[item._id] && !isInFavorites(item._id),
-                        'heart-break': favoriteAnimations[item._id] && isInFavorites(item._id)
-                      })} />
-                    </button>
-
-                    {animatingItems[item._id] && (
-                      <div className={cx('fly-to-cart-animation')}></div>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
+            {skinProducts.map((product) => (
+              <div key={product._id} className={cx('product-item-wrapper')}>
+                <ProductCard product={product} />
+              </div>
+            ))}
           </div>
         )}
       </div>

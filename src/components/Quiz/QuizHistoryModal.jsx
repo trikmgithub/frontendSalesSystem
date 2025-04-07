@@ -8,7 +8,7 @@ import { BsArrowRight } from 'react-icons/bs';
 
 const cx = classNames.bind(styles);
 
-const QuizHistoryModal = ({ isOpen, onClose, history, skinTypesMap }) => {
+const QuizHistoryModal = ({ isOpen, onClose, history, getSkinTypeName }) => {
   const navigate = useNavigate();
 
   // Handle click outside modal
@@ -48,16 +48,9 @@ const QuizHistoryModal = ({ isOpen, onClose, history, skinTypesMap }) => {
     });
   };
 
-  const routeKeysMap = {
-    'da_dau': 'oily',
-    'da_hon_hop': 'combination',
-    'da_thuong': 'normal',
-    'da_kho': 'dry'
-  };
-
   const handleResultClick = (entry) => {
-    const routeKey = routeKeysMap[entry.determinedSkinType] || 'normal';
-    const resultPath = config.routes.skinQuizResult.replace(':skinType', routeKey);
+    // Use the skin type code directly in the URL
+    const resultPath = config.routes.skinQuizResult.replace(':skinType', entry.determinedSkinType);
 
     navigate(resultPath, {
       state: {
@@ -98,7 +91,7 @@ const QuizHistoryModal = ({ isOpen, onClose, history, skinTypesMap }) => {
                       <p>
                         <strong>Loại da xác định:</strong>{' '}
                         <span className={cx('skin-type')}>
-                          {skinTypesMap[entry.determinedSkinType] || entry.determinedSkinType}
+                          {getSkinTypeName(entry.determinedSkinType)}
                         </span>
                       </p>
                       <p>

@@ -7,7 +7,9 @@ import { useAuth } from '~/context/AuthContext';
 import { 
   getActiveQuestionsAxios, 
   submitQuizAxios,
-  getQuizHistoryAxios // Add this import
+  getQuizHistoryAxios, 
+  getSkinTypeDetailsAxios,
+  getSkinTypesAxios
 } from '~/services/quizAxios';
 import { updateUserSkinTypeAxios } from '~/services/userAxios';
 import QuizHistoryModal from './QuizHistoryModal';
@@ -25,28 +27,33 @@ const SkinQuiz = () => {
   const [showHistory, setShowHistory] = useState(false);
   const [quizHistory, setQuizHistory] = useState([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
+  const [skinTypeNames, setSkinTypeNames] = useState({});
 
-  // Skin type mapping
-  const skinTypesMap = {
-    'da_dau': 'Da Dầu',
-    'da_hon_hop': 'Da Hỗn Hợp',
-    'da_thuong': 'Da Thường',
-    'da_kho': 'Da Khô',
-    'da_kho_lao_hoa': 'Da Khô Lão Hóa',
-    'da_lao_hoa': 'Da Lão Hóa',
-    'da_nhay_cam': 'Da Nhạy Cảm'
+  // Fetch skin type names dynamically if needed
+  // Fetch skin type names dynamically
+useEffect(() => {
+  const fetchSkinTypeNames = async () => {
+    try {
+      // Fetch all skin types from the API
+      const response = await getSkinTypesAxios();
+      
+      if (!response.error && response.data) {
+        const namesMap = {};
+        
+        // Map each skin type code to its Vietnamese name
+        response.data.forEach(skinType => {
+          namesMap[skinType.skinType] = skinType.vietnameseSkinType;
+        });
+        
+        setSkinTypeNames(namesMap);
+      }
+    } catch (err) {
+      console.error('Error fetching skin type names:', err);
+    }
   };
 
-  // English route keys mapping
-  const routeKeysMap = {
-    'da_dau': 'oily',
-    'da_hon_hop': 'combination',
-    'da_thuong': 'normal',
-    'da_kho': 'dry',
-    'da_kho_lao_hoa': 'dry-aging',
-    'da_lao_hoa': 'aging',
-    'da_nhay_cam': 'sensitive'
-  };
+  fetchSkinTypeNames();
+}, []);
 
   // Lấy danh sách câu hỏi từ API khi component được mount
   useEffect(() => {
@@ -119,102 +126,102 @@ const SkinQuiz = () => {
   };
 
   // Tính toán kết quả và gửi dữ liệu lên server
-  const calculateResult = async () => {
-    if (submitting) return; // Tránh gửi nhiều lần
+const calculateResult = async () => {
+  if (submitting) return; // Tránh gửi nhiều lần
 
-    // Kiểm tra đã trả lời tất cả câu hỏi chưa
-    const unansweredQuestions = getUnansweredQuestions();
+  // Kiểm tra đã trả lời tất cả câu hỏi chưa
+  const unansweredQuestions = getUnansweredQuestions();
 
-    if (unansweredQuestions.length > 0) {
-      const missingQuestionIds = unansweredQuestions.map(q => q.questionId).join(', ');
-      alert(`Vui lòng trả lời tất cả các câu hỏi trước khi gửi kết quả. Câu hỏi còn thiếu: ${missingQuestionIds}`);
-      return;
-    }
+  if (unansweredQuestions.length > 0) {
+    const missingQuestionIds = unansweredQuestions.map(q => q.questionId).join(', ');
+    alert(`Vui lòng trả lời tất cả các câu hỏi trước khi gửi kết quả. Câu hỏi còn thiếu: ${missingQuestionIds}`);
+    return;
+  }
 
-    // Kiểm tra đăng nhập
-    if (!isLoggedIn()) {
-      alert('Bạn cần đăng nhập để gửi kết quả.');
-      return;
-    }
+  // Kiểm tra đăng nhập
+  if (!isLoggedIn()) {
+    alert('Bạn cần đăng nhập để gửi kết quả.');
+    return;
+  }
 
-    setSubmitting(true);
+  setSubmitting(true);
 
-    try {
-      // Chuyển đổi định dạng câu trả lời để phù hợp với API
-      const apiAnswers = {};
-      Object.keys(answers).forEach(questionId => {
-        if (answers[questionId].value !== null) {
-          // Convert to a numerical index + 1 (since the API expects 1-based indices)
-          apiAnswers[questionId] = answers[questionId].index + 1;
-        }
-      });
-
-      // Lấy userId từ context hoặc localStorage
-      const userId = getUserId();
-      if (!userId) {
-        alert('Không thể xác định ID người dùng. Vui lòng đăng nhập lại.');
-        setSubmitting(false);
-        return;
+  try {
+    // Chuyển đổi định dạng câu trả lời để phù hợp với API
+    const apiAnswers = {};
+    Object.keys(answers).forEach(questionId => {
+      if (answers[questionId].value !== null) {
+        // Convert to a numerical index + 1 (since the API expects 1-based indices)
+        apiAnswers[questionId] = answers[questionId].index + 1;
       }
+    });
 
-      console.log('Submitting quiz with userId:', userId);
-      console.log('Answers:', apiAnswers);
-
-      // Gửi dữ liệu lên server với userId đúng định dạng
-      const response = await submitQuizAxios({
-        userId,
-        answers: apiAnswers
-      });
-
-      if (response.error) {
-        console.error('Failed to submit quiz:', response.message);
-        alert(`Đã xảy ra lỗi khi gửi kết quả: ${response.message || 'Vui lòng thử lại sau.'}`);
-        setSubmitting(false);
-        return;
-      }
-
-      // Nếu gửi thành công và có kết quả trả về
-      if (response.data && response.data.quizResult) {
-        const resultData = response.data;
-        const resultSkinType = resultData.quizResult.determinedSkinType;
-        console.log('Server determined skin type:', resultSkinType);
-
-        // Cập nhật loại da cho người dùng
-        try {
-          const updateResponse = await updateUserSkinTypeAxios(resultSkinType);
-          if (updateResponse.error) {
-            console.error('Failed to update user skin type:', updateResponse.message);
-          } else {
-            console.log('Successfully updated user skin type:', resultSkinType);
-          }
-        } catch (error) {
-          console.error('Error updating user skin type:', error);
-        }
-
-        // Chuyển hướng đến trang kết quả
-        const routeKey = routeKeysMap[resultSkinType] || 'normal'; // Fallback to normal
-        const resultPath = config.routes.skinQuizResult.replace(':skinType', routeKey);
-
-        navigate(resultPath, {
-          state: {
-            points: resultData.quizResult.scorePercentage,
-            skinType: resultSkinType, // Pass the actual skin type code
-            skinTypeInfo: resultData.skinTypeInfo, // Pass the detailed skin type info
-            fromQuiz: true, // Flag to indicate this came from quiz
-            answers: apiAnswers // Pass the answers for potential display in results
-          }
-        });
-      } else {
-        // Nếu không có kết quả rõ ràng từ server
-        alert('Không thể xác định loại da từ kết quả. Vui lòng thử lại sau.');
-      }
-    } catch (error) {
-      console.error('Error during quiz submission:', error);
-      alert('Đã xảy ra lỗi khi gửi kết quả. Vui lòng thử lại sau.');
-    } finally {
+    // Lấy userId từ context hoặc localStorage
+    const userId = getUserId();
+    if (!userId) {
+      alert('Không thể xác định ID người dùng. Vui lòng đăng nhập lại.');
       setSubmitting(false);
+      return;
     }
-  };
+
+    console.log('Submitting quiz with userId:', userId);
+    console.log('Answers:', apiAnswers);
+
+    // Gửi dữ liệu lên server với userId đúng định dạng
+    const response = await submitQuizAxios({
+      userId,
+      answers: apiAnswers
+    });
+
+    if (response.error) {
+      console.error('Failed to submit quiz:', response.message);
+      alert(`Đã xảy ra lỗi khi gửi kết quả: ${response.message || 'Vui lòng thử lại sau.'}`);
+      setSubmitting(false);
+      return;
+    }
+
+    // Nếu gửi thành công và có kết quả trả về
+    if (response.data && response.data.quizResult) {
+      const resultData = response.data;
+      const resultSkinType = resultData.quizResult.determinedSkinType;
+      console.log('Server determined skin type:', resultSkinType);
+
+      // Cập nhật loại da cho người dùng
+      try {
+        const updateResponse = await updateUserSkinTypeAxios(resultSkinType);
+        if (updateResponse.error) {
+          console.error('Failed to update user skin type:', updateResponse.message);
+        } else {
+          console.log('Successfully updated user skin type:', resultSkinType);
+        }
+      } catch (error) {
+        console.error('Error updating user skin type:', error);
+      }
+
+      // Use the skin type directly from the API response for the URL
+      const resultPath = config.routes.skinQuizResult.replace(':skinType', resultSkinType);
+
+      // Pass all necessary data to the results page
+      navigate(resultPath, {
+        state: {
+          points: resultData.quizResult.scorePercentage,
+          skinType: resultSkinType,
+          skinTypeInfo: resultData.skinTypeInfo, // This contains vietnameseSkinType, description, and recommendations
+          fromQuiz: true,
+          answers: resultData.quizResult.answers // Use the server's answers instead of local ones
+        }
+      });
+    } else {
+      // Nếu không có kết quả rõ ràng từ server
+      alert('Không thể xác định loại da từ kết quả. Vui lòng thử lại sau.');
+    }
+  } catch (error) {
+    console.error('Error during quiz submission:', error);
+    alert('Đã xảy ra lỗi khi gửi kết quả. Vui lòng thử lại sau.');
+  } finally {
+    setSubmitting(false);
+  }
+};
 
   const getUserId = () => {
     // 1. Thử lấy từ context
@@ -261,6 +268,11 @@ const SkinQuiz = () => {
     } finally {
       setLoadingHistory(false);
     }
+  };
+
+  // Get Vietnamese skin type name
+  const getSkinTypeName = (skinTypeCode) => {
+    return skinTypeNames[skinTypeCode] || skinTypeCode;
   };
 
   // Debug helper
@@ -424,7 +436,7 @@ const SkinQuiz = () => {
         isOpen={showHistory}
         onClose={() => setShowHistory(false)}
         history={quizHistory}
-        skinTypesMap={skinTypesMap}
+        getSkinTypeName={getSkinTypeName}
       />
     </div>
   );
