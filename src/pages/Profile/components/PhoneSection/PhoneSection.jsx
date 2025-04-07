@@ -12,12 +12,22 @@ const PhoneSection = ({ phone, onUpdatePhone, isUpdating }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [validationError, setValidationError] = useState('');
   
-  // Validate phone number (simple validation)
+  // Validate phone number - updated to require exactly 10 digits
   const validatePhone = (number) => {
-    // Basic validation - phone should be numeric and have a reasonable length
-    if (!number) return false;
-    const phoneRegex = /^\d{9,15}$/; // 9-15 digits
-    return phoneRegex.test(number);
+    // Check if input is empty
+    if (!number) {
+      setValidationError('Vui lòng nhập số điện thoại');
+      return false;
+    }
+    
+    // Check if input has exactly 10 digits
+    const phoneRegex = /^\d{10}$/;
+    if (!phoneRegex.test(number)) {
+      setValidationError('Vui lòng nhập số điện thoại đúng 10 chữ số');
+      return false;
+    }
+    
+    return true;
   };
   
   const handlePhoneChange = (e) => {
@@ -43,8 +53,7 @@ const PhoneSection = ({ phone, onUpdatePhone, isUpdating }) => {
   
   const handleSubmit = () => {
     if (!validatePhone(phoneNumber)) {
-      setValidationError('Vui lòng nhập số điện thoại hợp lệ (9-15 chữ số)');
-      return;
+      return; // Validation error is already set by validatePhone function
     }
     
     onUpdatePhone(phoneNumber);
@@ -71,8 +80,9 @@ const PhoneSection = ({ phone, onUpdatePhone, isUpdating }) => {
                   className={cx('formInput')}
                   value={phoneNumber}
                   onChange={handlePhoneChange}
-                  placeholder="Nhập số điện thoại"
+                  placeholder="Nhập số điện thoại 10 chữ số"
                   disabled={isUpdating}
+                  maxLength={10} // Limit input to 10 characters
                 />
                 {validationError && (
                   <p className={cx('errorMessage')}>{validationError}</p>

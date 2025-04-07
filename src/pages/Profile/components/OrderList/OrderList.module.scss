@@ -5,7 +5,7 @@
 .orderListContainer {
   display: flex;
   flex-direction: column;
-  gap: v.$spacing-lg;
+  gap: v.$spacing-md;
 }
 
 .filterContainer {
@@ -15,6 +15,7 @@
   padding: v.$spacing-md;
   background-color: v.$gray-100;
   border-radius: v.$border-radius-sm;
+  margin-bottom: v.$spacing-sm;
 }
 
 .filterLabel {
@@ -38,149 +39,178 @@
   }
 }
 
-.orderTable {
-  margin-bottom: 0;
-  
-  th {
-    font-weight: 600;
-    padding: v.$spacing-md;
-    
-    &.idColumn {
-      width: 15%;
-    }
-    
-    &.dateColumn {
-      width: 30%;
-    }
-    
-    &.statusColumn {
-      width: 20%;
-    }
-    
-    &.amountColumn {
-      width: 25%;
-    }
-    
-    &.actionColumn {
-      width: 10%;
-      text-align: center;
-    }
-  }
-}
-
-.ordersList {
-  display: flex;
-  flex-direction: column;
-  gap: v.$spacing-md;
-}
-
-.orderItem {
-  background-color: white;
+// Improved table wrapper
+.tableWrapper {
   border-radius: v.$border-radius-md;
   box-shadow: v.$shadow-sm;
   overflow: hidden;
+  background-color: white;
+}
+
+// Table header
+.tableHeader {
+  display: flex;
+  background-color: v.$gray-100;
+  border-bottom: 1px solid v.$border-color;
+}
+
+.headerCell {
+  padding: v.$spacing-md;
+  font-weight: 600;
+  color: v.$text-medium;
   
-  &.expanded {
-    box-shadow: v.$shadow-md;
+  &.idColumn {
+    width: 15%;
+  }
+  
+  &.dateColumn {
+    width: 30%;
+  }
+  
+  &.statusColumn {
+    width: 20%;
+  }
+  
+  &.amountColumn {
+    width: 25%;
+    text-align: right; // Right-align the header
+    
+    .sortableColumn {
+      justify-content: flex-end; // Right-align the content and sort icon
+    }
+  }
+  
+  &.actionColumn {
+    width: 10%;
+    text-align: center;
+  }
+}
+
+// Table body
+.tableBodyWrapper {
+  width: 100%;
+}
+
+.orderRow {
+  border-bottom: 1px solid v.$border-color;
+  
+  &:last-child {
+    border-bottom: none;
   }
 }
 
 .orderHeader {
   display: flex;
-  align-items: center;
-  padding: v.$spacing-lg;
   cursor: pointer;
   transition: background-color v.$transition-normal;
   
   &:hover {
-    background-color: v.$gray-100;
+    background-color: v.$gray-50;
   }
   
-  @include v.responsive(mobile) {
-    flex-wrap: wrap;
-    gap: v.$spacing-sm;
+  &.expanded {
+    background-color: v.$gray-50;
   }
 }
 
-.orderColumn {
-  padding: 0 v.$spacing-sm;
-  
-  @include v.responsive(mobile) {
-    padding: v.$spacing-xs;
-  }
+.orderCell {
+  padding: v.$spacing-md;
   
   &.idColumn {
     width: 15%;
     font-weight: 600;
     color: v.$primary-color;
-    
-    @include v.responsive(mobile) {
-      width: 60%;
-      order: 1;
-    }
+    display: flex;
+    align-items: center;
   }
   
   &.dateColumn {
     width: 30%;
+    color: v.$text-medium;
     display: flex;
     align-items: center;
-    gap: v.$spacing-sm;
-    color: v.$text-medium;
     
-    @include v.responsive(mobile) {
-      width: 100%;
-      order: 3;
+    .columnIcon {
+      color: v.$primary-color;
+      margin-right: v.$spacing-sm;
+      flex-shrink: 0;
+    }
+    
+    span {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
   }
   
   &.statusColumn {
     width: 20%;
-    
-    @include v.responsive(mobile) {
-      width: 40%;
-      order: 2;
-      text-align: right;
-    }
+    display: flex;
+    align-items: center;
   }
   
   &.amountColumn {
     width: 25%;
-    text-align: right;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start; // Right-align the content
     font-weight: 600;
-    color: v.$text-dark;
+    text-align: right;
     
-    @include v.responsive(mobile) {
-      width: 60%;
-      order: 4;
+    span {
+      white-space: nowrap; // Prevent line breaking
     }
   }
   
   &.actionColumn {
     width: 10%;
     display: flex;
+    align-items: center;
     justify-content: center;
     color: v.$gray-500;
-    
-    @include v.responsive(mobile) {
-      width: 40%;
-      order: 5;
-      justify-content: flex-end;
-    }
   }
 }
 
-.expandIcon {
-  transition: transform v.$transition-normal;
-  
-  .expanded & {
-    transform: rotate(180deg);
+.sortableColumn {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: v.$spacing-xs;
+
+  &:hover {
+    color: v.$primary-color;
   }
 }
 
-.columnIcon {
-  color: v.$primary-color;
+.badge {
+  display: inline-block;
+  padding: v.$spacing-xs v.$spacing-sm;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  white-space: nowrap;
+
+  &.pending {
+    background-color: rgba(v.$warning-color, 0.1);
+    color: color.adjust(v.$warning-color, $lightness: -20%);
+    border: 1px solid rgba(v.$warning-color, 0.2);
+  }
+
+  &.done {
+    background-color: rgba(v.$success-color, 0.1);
+    color: color.adjust(v.$success-color, $lightness: -10%);
+    border: 1px solid rgba(v.$success-color, 0.2);
+  }
+
+  &.cancelled {
+    background-color: rgba(v.$danger-color, 0.1);
+    color: color.adjust(v.$danger-color, $lightness: -10%);
+    border: 1px solid rgba(v.$danger-color, 0.2);
+  }
 }
 
+// Order details section
 .orderDetails {
   padding: v.$spacing-lg;
   border-top: 1px solid v.$border-color;
@@ -236,17 +266,19 @@
     background-color: v.$gray-100;
     font-weight: 500;
     color: v.$text-medium;
+    border-bottom: 1px solid v.$border-color;
+  }
+  
+  td {
+    border-bottom: 1px solid v.$border-color;
   }
   
   tr:nth-child(even) {
     background-color: v.$gray-50;
   }
   
-  @include v.responsive(mobile) {
-    th, td {
-      padding: v.$spacing-xs;
-      font-size: 0.875rem;
-    }
+  tr:last-child td {
+    border-bottom: none;
   }
 }
 
@@ -308,4 +340,8 @@
     color: v.$danger-color;
     margin: 0;
   }
+}
+
+.expandIcon {
+  transition: transform v.$transition-normal;
 }

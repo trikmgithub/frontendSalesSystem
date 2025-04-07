@@ -47,6 +47,12 @@ const OrderList = ({ orders, loading, error }) => {
     return sortDirection === 'asc' ? <ArrowUp size={14} /> : <ArrowDown size={14} />;
   };
 
+  // Format date consistently
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    return `lúc ${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')} ${date.getDate()} tháng ${date.getMonth() + 1}, ${date.getFullYear()}`;
+  };
+
   // Apply sorting and filtering
   const getSortedAndFilteredOrders = () => {
     if (!Array.isArray(orders)) return [];
@@ -74,6 +80,7 @@ const OrderList = ({ orders, loading, error }) => {
 
   const sortedAndFilteredOrders = getSortedAndFilteredOrders();
 
+  // Render loading state
   if (loading) {
     return (
       <div className={cx('loadingContainer')}>
@@ -83,6 +90,7 @@ const OrderList = ({ orders, loading, error }) => {
     );
   }
 
+  // Render error state
   if (error) {
     return (
       <div className={cx('errorContainer')}>
@@ -91,25 +99,9 @@ const OrderList = ({ orders, loading, error }) => {
     );
   }
 
-  if (!sortedAndFilteredOrders.length) {
-    return (
-      <EmptyState 
-        icon={<ShoppingBag size={48} />}
-        title="Không có đơn hàng nào"
-        message={
-          filterStatus !== 'all' 
-            ? `Bạn không có đơn hàng nào ${filterStatus === 'pending' ? 'đang xử lý' : 
-                                         filterStatus === 'done' ? 'đã hoàn thành' : 'đã hủy'}`
-            : "Bạn chưa có đơn hàng nào"
-        }
-        actionText="Tiếp tục mua sắm"
-        actionLink="/"
-      />
-    );
-  }
-
   return (
     <div className={cx('orderListContainer')}>
+      {/* Filter section - always visible */}
       <div className={cx('filterContainer')}>
         <label className={cx('filterLabel')}>Trạng thái đơn hàng:</label>
         <select 
@@ -125,46 +117,148 @@ const OrderList = ({ orders, loading, error }) => {
         </select>
       </div>
 
-      <div className={cx('tableContainer')}>
-        <table className={cx('table', 'orderTable')}>
-          <thead>
-            <tr>
-              <th className={cx('idColumn')}>Mã đơn hàng</th>
-              <th 
-                className={cx('dateColumn')}
-                onClick={() => handleSort('purchaseDate')}
-              >
-                <div className={cx('sortableColumn')}>
-                  <span>Ngày mua</span>
-                  {getSortIcon('purchaseDate')}
+      {/* Either show table or empty state */}
+      {sortedAndFilteredOrders.length > 0 ? (
+        <div className={cx('tableWrapper')}>
+          {/* Fixed header */}
+          <div className={cx('tableHeader')}>
+            <div className={cx('headerCell', 'idColumn')}>Mã đơn hàng</div>
+            <div 
+              className={cx('headerCell', 'dateColumn')}
+              onClick={() => handleSort('purchaseDate')}
+            >
+              <div className={cx('sortableColumn')}>
+                <span>Ngày mua</span>
+                {getSortIcon('purchaseDate')}
+              </div>
+            </div>
+            <div className={cx('headerCell', 'statusColumn')}>Trạng thái</div>
+            <div 
+              className={cx('headerCell', 'amountColumn')}
+              onClick={() => handleSort('totalAmount')}
+            >
+              <div className={cx('sortableColumn')}>
+                <span>Tổng tiền</span>
+                {getSortIcon('totalAmount')}
+              </div>
+            </div>
+            <div className={cx('headerCell', 'actionColumn')}></div>
+          </div>
+          
+          {/* Scrollable body */}
+          <div className={cx('tableBodyWrapper')}>
+            {sortedAndFilteredOrders.map(order => (
+              <div key={order._id} className={cx('orderRow')}>
+                <div className={cx('orderHeader', { 'expanded': !!expandedOrders[order._id] })} 
+                    onClick={() => toggleOrderExpansion(order._id)}>
+                  <div className={cx('orderCell', 'idColumn')}>
+                    #{order._id.substring(order._id.length - 8)}
+                  </div>
+                  <div className={cx('orderCell', 'dateColumn')}>
+                    <Calendar size={16} className={cx('columnIcon')} />
+                    <span>{formatDate(order.purchaseDate)}</span>
+                  </div>
+                  <div className={cx('orderCell', 'statusColumn')}>
+                    <span className={cx('badge', {
+                      'done': order.status.toLowerCase() === 'done',
+                      'pending': order.status.toLowerCase() === 'pending',
+                      'cancelled': ['cancelled', 'cancel'].includes(order.status.toLowerCase())
+                    })}>
+                      {order.status.toLowerCase() === 'pending' ? 'ĐANG XỬ LÝ' :
+                       order.status.toLowerCase() === 'done' ? 'HOÀN THÀNH' :
+                       'ĐÃ HỦY'}
+                    </span>
+                  </div>
+                  <div className={cx('orderCell', 'amountColumn')}>
+                    <span>{new Intl.NumberFormat('vi-VN').format(order.totalAmount)} đ</span>
+                  </div>
+                  <div className={cx('orderCell', 'actionColumn')}>
+                    {expandedOrders[order._id] ? (
+                      <ChevronUp size={18} className={cx('expandIcon')} />
+                    ) : (
+                      <ChevronDown size={18} className={cx('expandIcon')} />
+                    )}
+                  </div>
                 </div>
-              </th>
-              <th className={cx('statusColumn')}>Trạng thái</th>
-              <th 
-                className={cx('amountColumn')}
-                onClick={() => handleSort('totalAmount')}
-              >
-                <div className={cx('sortableColumn')}>
-                  <span>Tổng tiền</span>
-                  {getSortIcon('totalAmount')}
-                </div>
-              </th>
-              <th className={cx('actionColumn')}></th>
-            </tr>
-          </thead>
-        </table>
-      </div>
-
-      <div className={cx('ordersList')}>
-        {sortedAndFilteredOrders.map(order => (
-          <OrderItem 
-            key={order._id} 
-            order={order}
-            isExpanded={!!expandedOrders[order._id]}
-            onToggleExpand={() => toggleOrderExpansion(order._id)}
-          />
-        ))}
-      </div>
+                
+                {/* Order details section (only shown when expanded) */}
+                {expandedOrders[order._id] && (
+                  <div className={cx('orderDetails')}>
+                    <div className={cx('orderInfo')}>
+                      <div className={cx('orderInfoItem')}>
+                        <span className={cx('infoLabel')}>Phương thức thanh toán:</span>
+                        <span className={cx('infoValue')}>
+                          {order.paymentMethod === 'credit_card' ? 'Chuyển khoản' : 
+                           order.paymentMethod === 'cod' ? 'Thanh toán khi nhận hàng' : 
+                           order.paymentMethod}
+                        </span>
+                      </div>
+                    </div>
+                    
+                    <div className={cx('itemsList')}>
+                      <h3 className={cx('detailsTitle')}>Sản phẩm đã mua</h3>
+                      
+                      {order.items && order.items.length > 0 ? (
+                        <div className={cx('tableContainer')}>
+                          <table className={cx('table', 'itemsTable')}>
+                            <thead>
+                              <tr>
+                                <th>Sản phẩm</th>
+                                <th>Số lượng</th>
+                                <th>Đơn giá</th>
+                                <th>Thành tiền</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {order.items.map((item, index) => {
+                                // Check if itemId is an object (the full product) or a string (just the ID)
+                                const productName = typeof item.itemId === 'object' 
+                                  ? (item.itemId?.name || 'Sản phẩm không xác định') 
+                                  : `Sản phẩm #${item.itemId || index + 1}`;
+                                  
+                                return (
+                                  <tr key={index}>
+                                    <td>{productName}</td>
+                                    <td>{item.quantity}</td>
+                                    <td>{new Intl.NumberFormat('vi-VN').format(item.price)} đ</td>
+                                    <td>{new Intl.NumberFormat('vi-VN').format(item.price * item.quantity)} đ</td>
+                                  </tr>
+                                );
+                              })}
+                            </tbody>
+                          </table>
+                        </div>
+                      ) : (
+                        <p className={cx('noItemsMessage')}>Không có thông tin sản phẩm</p>
+                      )}
+                    </div>
+                    
+                    <div className={cx('orderSummary')}>
+                      <div className={cx('summaryRow')}>
+                        <span className={cx('summaryLabel')}>Tổng tiền:</span>
+                        <span className={cx('summaryValue')}>{new Intl.NumberFormat('vi-VN').format(order.totalAmount)} đ</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : (
+        <EmptyState 
+          icon={<ShoppingBag size={48} />}
+          title="Không có đơn hàng nào"
+          message={
+            filterStatus !== 'all' 
+              ? `Bạn không có đơn hàng nào ${filterStatus === 'pending' ? 'đang xử lý' : 
+                                          filterStatus === 'done' ? 'đã hoàn thành' : 'đã hủy'}`
+              : "Bạn chưa có đơn hàng nào"
+          }
+          actionText="Tiếp tục mua sắm"
+          actionLink="/"
+        />
+      )}
     </div>
   );
 };
