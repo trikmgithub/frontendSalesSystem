@@ -147,15 +147,17 @@ const getSkinTypeDetailsAxios = async (type) => {
 
 /**
  * Create a new skin type
- * @param {Object} skinTypeData - Skin type data with skinType, description and recommendations
+ * @param {Object} skinTypeData - Skin type data with skinType, vietnameseSkinType, description, recommendations and scoreThreshold
  * @returns {Promise} API response
  */
 const createSkinTypeAxios = async (skinTypeData) => {
   try {
     const formattedData = {
       skinType: skinTypeData.skinType,
+      vietnameseSkinType: skinTypeData.vietnameseSkinType,
       description: skinTypeData.description,
-      recommendations: skinTypeData.recommendations || []
+      recommendations: skinTypeData.recommendations || [],
+      scoreThreshold: skinTypeData.scoreThreshold || 10
     };
 
     const response = await axiosConfig.post('skin-quiz/skin-types', formattedData);
@@ -179,8 +181,10 @@ const createSkinTypeAxios = async (skinTypeData) => {
 const updateSkinTypeAxios = async (skinTypeCode, skinTypeData) => {
   try {
     const formattedData = {
+      vietnameseSkinType: skinTypeData.vietnameseSkinType,
       description: skinTypeData.description,
-      recommendations: skinTypeData.recommendations || []
+      recommendations: skinTypeData.recommendations || [],
+      scoreThreshold: skinTypeData.scoreThreshold
     };
 
     const response = await axiosConfig.patch(`skin-quiz/skin-types/${skinTypeCode}`, formattedData);

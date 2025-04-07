@@ -21,7 +21,6 @@ import {
 } from 'react-icons/fa';
 import {
   getSkinTypesAxios,
-  getSkinTypeDetailsAxios,
   createSkinTypeAxios,
   updateSkinTypeAxios,
   deleteSkinTypeAxios,
@@ -55,8 +54,10 @@ function SkinTypesTab() {
   const [currentSkinType, setCurrentSkinType] = useState(null);
   const [skinTypeFormData, setSkinTypeFormData] = useState({
     skinType: '',
+    vietnameseSkinType: '',
     description: '',
-    recommendations: ['']
+    recommendations: [''],
+    scoreThreshold: 10
   });
   const [skinTypeFormErrors, setSkinTypeFormErrors] = useState({});
 
@@ -82,6 +83,7 @@ function SkinTypesTab() {
       const search = searchTerm.toLowerCase().trim();
       result = result.filter(skinType =>
         skinType.skinType?.toLowerCase().includes(search) ||
+        skinType.vietnameseSkinType?.toLowerCase().includes(search) ||
         skinType.description?.toLowerCase().includes(search) ||
         skinType.recommendations?.some(rec => rec.toLowerCase().includes(search))
       );
@@ -96,9 +98,17 @@ function SkinTypesTab() {
           valueA = a.skinType?.toLowerCase() || '';
           valueB = b.skinType?.toLowerCase() || '';
           break;
+        case 'vietnameseSkinType':
+          valueA = a.vietnameseSkinType?.toLowerCase() || '';
+          valueB = b.vietnameseSkinType?.toLowerCase() || '';
+          break;
         case 'description':
           valueA = a.description?.toLowerCase() || '';
           valueB = b.description?.toLowerCase() || '';
+          break;
+        case 'scoreThreshold':
+          valueA = a.scoreThreshold || 0;
+          valueB = b.scoreThreshold || 0;
           break;
         case 'createdAt':
         default:
@@ -107,10 +117,16 @@ function SkinTypesTab() {
           break;
       }
 
-      if (sortDirection === 'asc') {
-        return valueA > valueB ? 1 : -1;
+      // For numeric values like scoreThreshold
+      if (sortField === 'scoreThreshold') {
+        return sortDirection === 'asc' ? valueA - valueB : valueB - valueA;
       } else {
-        return valueA < valueB ? 1 : -1;
+        // For string values
+        if (sortDirection === 'asc') {
+          return valueA > valueB ? 1 : -1;
+        } else {
+          return valueA < valueB ? 1 : -1;
+        }
       }
     });
 
@@ -182,8 +198,17 @@ function SkinTypesTab() {
 
   // Function to handle input change for skin type form
   const handleSkinTypeInputChange = (e) => {
-    const { name, value } = e.target;
-    setSkinTypeFormData(prev => ({ ...prev, [name]: value }));
+    const { name, value, type } = e.target;
+
+    // Handle number inputs specially
+    if (type === 'number') {
+      setSkinTypeFormData(prev => ({
+        ...prev,
+        [name]: value === '' ? '' : parseInt(value, 10)
+      }));
+    } else {
+      setSkinTypeFormData(prev => ({ ...prev, [name]: value }));
+    }
   };
 
   // Function to handle recommendation change
@@ -224,8 +249,18 @@ function SkinTypesTab() {
       errors.skinType = 'Skin type code is required';
     }
 
+    if (!skinTypeFormData.vietnameseSkinType?.trim()) {
+      errors.vietnameseSkinType = 'Vietnamese skin type name is required';
+    }
+
     if (!skinTypeFormData.description?.trim()) {
       errors.description = 'Description is required';
+    }
+
+    if (skinTypeFormData.scoreThreshold === '' || isNaN(skinTypeFormData.scoreThreshold)) {
+      errors.scoreThreshold = 'Score threshold must be a valid number';
+    } else if (skinTypeFormData.scoreThreshold < 0) {
+      errors.scoreThreshold = 'Score threshold must be a positive number';
     }
 
     const recommendationErrors = [];
@@ -250,8 +285,10 @@ function SkinTypesTab() {
   const openCreateSkinTypeModal = () => {
     setSkinTypeFormData({
       skinType: '',
+      vietnameseSkinType: '',
       description: '',
-      recommendations: ['']
+      recommendations: [''],
+      scoreThreshold: 10
     });
 
     setSkinTypeFormErrors({});
@@ -264,10 +301,12 @@ function SkinTypesTab() {
 
     setSkinTypeFormData({
       skinType: skinType.skinType || '',
+      vietnameseSkinType: skinType.vietnameseSkinType || '',
       description: skinType.description || '',
       recommendations: skinType.recommendations?.length
         ? [...skinType.recommendations]
-        : ['']
+        : [''],
+      scoreThreshold: skinType.scoreThreshold !== undefined ? skinType.scoreThreshold : 10
     });
 
     setSkinTypeFormErrors({});
@@ -298,8 +337,10 @@ function SkinTypesTab() {
       // Reset form and close modal
       setSkinTypeFormData({
         skinType: '',
+        vietnameseSkinType: '',
         description: '',
-        recommendations: ['']
+        recommendations: [''],
+        scoreThreshold: 10
       });
 
       setShowCreateModal(false);
@@ -332,8 +373,10 @@ function SkinTypesTab() {
       // Reset form and close modal
       setSkinTypeFormData({
         skinType: '',
+        vietnameseSkinType: '',
         description: '',
-        recommendations: ['']
+        recommendations: [''],
+        scoreThreshold: 10
       });
 
       setShowEditModal(false);
@@ -435,22 +478,46 @@ function SkinTypesTab() {
               <thead>
                 <tr>
                   <th
-                    className={cx('skin-type-column', 'sortable')}
+                    className={cx('skin-type-code-column', 'sortable')}
                     onClick={() => handleSort('skinType')}
                   >
-                    Skin Type {getSortIcon('skinType')}
+                    Skin Type Code {getSortIcon('skinType')}
                   </th>
-                  <th className={cx('description-column')}>
+                  <th
+                    className={cx('vietnamese-name-column', 'sortable')}
+                    onClick={() => handleSort('vietnameseSkinType')}
+                  >
+                    Vietnamese Name {getSortIcon('vietnameseSkinType')}
+                  </th>
+                  <th
+                    className={cx('score-column', 'sortable')}
+                    onClick={() => handleSort('scoreThreshold')}
+                  >
+                    Score Threshold {getSortIcon('scoreThreshold')}
+                  </th>
+                  <th
+                    className={cx('description-column')}
+                  >
                     Description
                   </th>
-                  <th className={cx('recommendations-column')}>Recommendations</th>
-                  <th className={cx('actions-column')}>Actions</th>
+                  <th
+                    className={cx('recommendations-column')}
+                  >
+                    Recommendations
+                  </th>
+                  <th
+                    className={cx('actions-column')}
+                  >
+                    Actions
+                  </th>
                 </tr>
               </thead>
               <tbody>
                 {getCurrentPageItems().map(skinType => (
                   <tr key={skinType._id}>
-                    <td className={cx('skin-type-column')}>{skinType.skinType}</td>
+                    <td className={cx('skin-type-code-column')}>{skinType.skinType}</td>
+                    <td className={cx('vietnamese-name-column')}>{skinType.vietnameseSkinType || '-'}</td>
+                    <td className={cx('score-column')}>{skinType.scoreThreshold !== undefined ? skinType.scoreThreshold : '-'}</td>
                     <td className={cx('description-column')}>
                       <div className={cx('truncated-text')}>{skinType.description}</div>
                     </td>
@@ -571,6 +638,48 @@ function SkinTypesTab() {
               </div>
 
               <div className={cx('form-group')}>
+                <label htmlFor="vietnameseSkinType">Vietnamese Name</label>
+                <input
+                  type="text"
+                  id="vietnameseSkinType"
+                  name="vietnameseSkinType"
+                  value={skinTypeFormData.vietnameseSkinType}
+                  onChange={handleSkinTypeInputChange}
+                  className={cx({ 'error-input': skinTypeFormErrors.vietnameseSkinType })}
+                  placeholder="e.g. Da khô, Da dầu, Da thường"
+                />
+                {skinTypeFormErrors.vietnameseSkinType && (
+                  <div className={cx('error-message')}>
+                    <FaExclamationTriangle /> {skinTypeFormErrors.vietnameseSkinType}
+                  </div>
+                )}
+                <div className={cx('form-help-text')}>
+                  The display name for this skin type in Vietnamese
+                </div>
+              </div>
+
+              <div className={cx('form-group')}>
+                <label htmlFor="scoreThreshold">Score Threshold</label>
+                <input
+                  type="number"
+                  id="scoreThreshold"
+                  name="scoreThreshold"
+                  value={skinTypeFormData.scoreThreshold}
+                  onChange={handleSkinTypeInputChange}
+                  min="0"
+                  className={cx({ 'error-input': skinTypeFormErrors.scoreThreshold })}
+                />
+                {skinTypeFormErrors.scoreThreshold && (
+                  <div className={cx('error-message')}>
+                    <FaExclamationTriangle /> {skinTypeFormErrors.scoreThreshold}
+                  </div>
+                )}
+                <div className={cx('form-help-text')}>
+                  The minimum score required to classify as this skin type
+                </div>
+              </div>
+
+              <div className={cx('form-group')}>
                 <label htmlFor="description">Description</label>
                 <textarea
                   id="description"
@@ -679,6 +788,45 @@ function SkinTypesTab() {
               </div>
 
               <div className={cx('form-group')}>
+                <label htmlFor="edit-vietnameseSkinType">Vietnamese Name</label>
+                <input
+                  type="text"
+                  id="edit-vietnameseSkinType"
+                  name="vietnameseSkinType"
+                  value={skinTypeFormData.vietnameseSkinType}
+                  onChange={handleSkinTypeInputChange}
+                  className={cx({ 'error-input': skinTypeFormErrors.vietnameseSkinType })}
+                  placeholder="e.g. Da khô, Da dầu, Da thường"
+                />
+                {skinTypeFormErrors.vietnameseSkinType && (
+                  <div className={cx('error-message')}>
+                    <FaExclamationTriangle /> {skinTypeFormErrors.vietnameseSkinType}
+                  </div>
+                )}
+              </div>
+
+              <div className={cx('form-group')}>
+                <label htmlFor="edit-scoreThreshold">Score Threshold</label>
+                <input
+                  type="number"
+                  id="edit-scoreThreshold"
+                  name="scoreThreshold"
+                  value={skinTypeFormData.scoreThreshold}
+                  onChange={handleSkinTypeInputChange}
+                  min="0"
+                  className={cx({ 'error-input': skinTypeFormErrors.scoreThreshold })}
+                />
+                {skinTypeFormErrors.scoreThreshold && (
+                  <div className={cx('error-message')}>
+                    <FaExclamationTriangle /> {skinTypeFormErrors.scoreThreshold}
+                  </div>
+                )}
+                <div className={cx('form-help-text')}>
+                  The minimum score required to classify as this skin type
+                </div>
+              </div>
+
+              <div className={cx('form-group')}>
                 <label htmlFor="edit-description">Description</label>
                 <textarea
                   id="edit-description"
@@ -771,7 +919,8 @@ function SkinTypesTab() {
             <div className={cx('modal-body')}>
               <p>Are you sure you want to delete this skin type?</p>
               <div className={cx('question-preview')}>
-                <div><strong>Skin Type:</strong> {currentSkinType?.skinType}</div>
+                <div><strong>Skin Type Code:</strong> {currentSkinType?.skinType}</div>
+                <div><strong>Vietnamese Name:</strong> {currentSkinType?.vietnameseSkinType || '-'}</div>
                 <div><strong>Description:</strong> {currentSkinType?.description}</div>
               </div>
               <p className={cx('delete-warning')}>

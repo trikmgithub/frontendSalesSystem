@@ -1,3 +1,4 @@
+// src/components/ManagementTabs/QuizManagement/QuestionsTab.jsx
 import React, { useState, useEffect } from 'react';
 import classNames from 'classnames/bind';
 import styles from './QuizManagement.module.scss';
@@ -51,28 +52,6 @@ function QuestionsTab({ skinTypes }) {
 
     // Use hook to disable body scroll when modal is open
     useDisableBodyScroll(showCreateModal || showEditModal || showDeleteModal);
-
-    // Add CSS styles for status badge
-    const statusBadgeStyle = {
-        active: {
-            backgroundColor: '#e6f7e6',
-            color: '#2a5a3f',
-            padding: '4px 8px',
-            borderRadius: '4px',
-            display: 'inline-block',
-            fontSize: '12px',
-            fontWeight: '500',
-        },
-        inactive: {
-            backgroundColor: '#f7e6e6',
-            color: '#a53030',
-            padding: '4px 8px',
-            borderRadius: '4px',
-            display: 'inline-block',
-            fontSize: '12px',
-            fontWeight: '500',
-        }
-    };
 
     // Fetch questions when component mounts
     useEffect(() => {
@@ -342,7 +321,7 @@ function QuestionsTab({ skinTypes }) {
                                                     {index === 0 ? (
                                                         <>
                                                             <td rowSpan={question.options.length} className={cx('status-column')}>
-                                                                <div style={question.isActive ? statusBadgeStyle.active : statusBadgeStyle.inactive}>
+                                                                <div className={cx('status-badge', question.isActive ? 'active' : 'inactive')}>
                                                                     {question.isActive ? 'Active' : 'Inactive'}
                                                                 </div>
                                                             </td>
@@ -379,7 +358,7 @@ function QuestionsTab({ skinTypes }) {
                                                 <td className={cx('point-column')}>-</td>
                                                 <td className={cx('skin-type-column')}>-</td>
                                                 <td className={cx('status-column')}>
-                                                    <div style={question.isActive ? statusBadgeStyle.active : statusBadgeStyle.inactive}>
+                                                    <div className={cx('status-badge', question.isActive ? 'active' : 'inactive')}>
                                                         {question.isActive ? 'Active' : 'Inactive'}
                                                     </div>
                                                 </td>

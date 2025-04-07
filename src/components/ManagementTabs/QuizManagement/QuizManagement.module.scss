@@ -276,6 +276,7 @@
       border-bottom: 1px solid #eee;
       font-size: 14px;
       vertical-align: top;
+      word-wrap: break-word;
     }
 
     th {
@@ -297,29 +298,50 @@
       }
     }
 
-    // Option data rows
-    .option-data-row {
+    tr {
       &:hover {
         background-color: #f9f9f9;
       }
-
-      &.inactive-row {
-        background-color: #fafafa;
-        color: #999;
-      }
-
-      // Add a subtle border between option rows from the same question
-      &:not(:last-child) td:not([rowspan]) {
-        border-bottom: 1px dashed #eee;
-      }
-
-      // Add more space between different questions
-      &:last-child td {
-        border-bottom: 1px solid #eee;
-      }
     }
 
-    // Column width specifications
+    // Column width specifications for skin type columns
+    .skin-type-code-column {
+      width: 11%;
+      min-width: 120px;
+      max-width: 150px;
+    }
+
+    .vietnamese-name-column {
+      width: 12%;
+      min-width: 140px;
+      max-width: 180px;
+    }
+
+    .score-column {
+      width: 12%;
+      min-width: 100px;
+      max-width: 120px;
+      text-align: center;
+    }
+
+    .description-column {
+      width: 25%;
+      min-width: 200px;
+    }
+
+    .recommendations-column {
+      width: 30%;
+      min-width: 250px;
+    }
+
+    .actions-column {
+      width: 100px;
+      min-width: 80px;
+      text-align: center;
+      white-space: nowrap;
+    }
+
+    // Original column width specifications
     .order-column {
       width: 80px;
       text-align: center;
@@ -342,20 +364,28 @@
       width: 120px;
     }
 
-    .actions-column {
-      width: 100px;
-      text-align: center;
-      white-space: nowrap;
+    // Content styling
+    .truncated-text {
+      max-height: 80px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      display: -webkit-box;
+      -webkit-line-clamp: 4;
+      -webkit-box-orient: vertical;
     }
 
-    // Content styling within cells
-    .option-item,
-    .point-item,
-    .skin-type-item {
-      padding: 4px 0;
-      display: flex;
-      align-items: center;
-      min-height: 24px;
+    .options-list {
+      margin: 0;
+      padding-left: 1.2em;
+      
+      .option-item {
+        margin-bottom: 4px;
+        font-size: 13px;
+        
+        &:last-child {
+          margin-bottom: 0;
+        }
+      }
     }
 
     // Action buttons
@@ -383,6 +413,38 @@
       &.delete:hover {
         color: #ff4d4f;
       }
+    }
+
+    // Option data rows
+    .option-data-row {
+      &:hover {
+        background-color: #f9f9f9;
+      }
+
+      &.inactive-row {
+        background-color: #fafafa;
+        color: #999;
+      }
+
+      // Add a subtle border between option rows from the same question
+      &:not(:last-child) td:not([rowspan]) {
+        border-bottom: 1px dashed #eee;
+      }
+
+      // Add more space between different questions
+      &:last-child td {
+        border-bottom: 1px solid #eee;
+      }
+    }
+
+    // Content styling within cells
+    .option-item,
+    .point-item,
+    .skin-type-item {
+      padding: 4px 0;
+      display: flex;
+      align-items: center;
+      min-height: 24px;
     }
   }
 }
