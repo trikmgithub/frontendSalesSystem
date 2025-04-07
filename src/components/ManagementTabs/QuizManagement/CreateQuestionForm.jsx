@@ -6,9 +6,9 @@ import { createQuestionAxios } from '~/services/quizAxios';
 
 const cx = classNames.bind(styles);
 
-function CreateQuestionForm({ skinTypes, onClose, onSuccess }) {
+function CreateQuestionForm({ skinTypes, initialQuestion, onClose, onSuccess }) {
   const [loading, setLoading] = useState(false);
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState(initialQuestion || {
     questionId: '',
     questionText: '',
     options: [{ text: '', points: '', skinType: '' }],
@@ -163,7 +163,7 @@ function CreateQuestionForm({ skinTypes, onClose, onSuccess }) {
               id="questionId"
               name="questionId"
               value={formData.questionId}
-              onChange={handleInputChange}
+              readOnly
               className={cx({ 'error-input': formErrors.questionId })}
             />
             {formErrors.questionId && (
@@ -171,6 +171,9 @@ function CreateQuestionForm({ skinTypes, onClose, onSuccess }) {
                 <FaExclamationTriangle /> {formErrors.questionId}
               </div>
             )}
+            <div className={cx('form-help-text')}>
+              Question ID is automatically generated to maintain sequence
+            </div>
           </div>
 
           <div className={cx('form-group')}>
@@ -270,6 +273,11 @@ function CreateQuestionForm({ skinTypes, onClose, onSuccess }) {
                       <option value="3">3 Points</option>
                       <option value="4">4 Points</option>
                       <option value="5">5 Points</option>
+                      <option value="6">6 Point</option>
+                      <option value="7">7 Points</option>
+                      <option value="8">8 Points</option>
+                      <option value="9">9 Points</option>
+                      <option value="10">10 Points</option>
                     </select>
                     {formErrors.options?.[index]?.points && (
                       <div className={cx('error-message')}>

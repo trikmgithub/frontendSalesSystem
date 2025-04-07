@@ -31,7 +31,7 @@ function QuizManagement() {
     fetchSkinTypes();
   }, []);
 
-  // Fetch all skin types
+  // Fetch all skin types - export this function to be used by child components
   const fetchSkinTypes = async () => {
     try {
       setLoadingSkinTypes(true);
@@ -54,7 +54,14 @@ function QuizManagement() {
 
   // Function to switch between tabs
   const switchTab = (tab) => {
+    // Refresh skin types data when switching tabs
+    fetchSkinTypes(); 
     setActiveTab(tab);
+  };
+
+  // Handler for skin type creation success in SkinTypesTab
+  const handleSkinTypeUpdateSuccess = () => {
+    fetchSkinTypes();
   };
 
   return (
@@ -95,12 +102,17 @@ function QuizManagement() {
 
       {/* QUESTIONS TAB */}
       {activeTab === 'questions' && (
-        <QuestionsTab skinTypes={skinTypes} />
+        <QuestionsTab 
+          skinTypes={skinTypes} 
+          fetchSkinTypes={fetchSkinTypes}
+        />
       )}
 
       {/* SKIN TYPES TAB */}
       {activeTab === 'skinTypes' && (
-        <SkinTypesTab />
+        <SkinTypesTab 
+          onUpdateSuccess={handleSkinTypeUpdateSuccess}
+        />
       )}
     </div>
   );

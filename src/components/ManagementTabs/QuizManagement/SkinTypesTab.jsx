@@ -29,7 +29,7 @@ import {
 const cx = classNames.bind(styles);
 const PAGE_SIZE = 10;
 
-function SkinTypesTab() {
+function SkinTypesTab({ onUpdateSuccess }) {
   // State for skin types
   const [skinTypes, setSkinTypes] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -347,6 +347,10 @@ function SkinTypesTab() {
       fetchSkinTypes();
       toast.success('Skin type created successfully');
 
+      // Notify parent component that skin types have been updated
+      if (onUpdateSuccess) {
+        onUpdateSuccess();
+      }
     } catch (err) {
       console.error('Error creating skin type:', err);
       toast.error(err.message || 'Failed to create skin type. Please try again.');
@@ -487,7 +491,7 @@ function SkinTypesTab() {
                     className={cx('vietnamese-name-column', 'sortable')}
                     onClick={() => handleSort('vietnameseSkinType')}
                   >
-                    Vietnamese Name {getSortIcon('vietnameseSkinType')}
+                    Name {getSortIcon('vietnameseSkinType')}
                   </th>
                   <th
                     className={cx('score-column', 'sortable')}
@@ -522,13 +526,13 @@ function SkinTypesTab() {
                       <div className={cx('truncated-text')}>{skinType.description}</div>
                     </td>
                     <td className={cx('recommendations-column')}>
-                      <ul className={cx('options-list')}>
+                      <div className={cx('recommendations-list')}>
                         {skinType.recommendations?.map((rec, index) => (
-                          <li key={index} className={cx('option-item')}>
-                            {rec}
-                          </li>
+                          <div key={index} className={cx('recommendation-item')}>
+                            • {rec}
+                          </div>
                         )) || 'No recommendations'}
-                      </ul>
+                      </div>
                     </td>
                     <td className={cx('actions-column')}>
                       <button
@@ -638,7 +642,7 @@ function SkinTypesTab() {
               </div>
 
               <div className={cx('form-group')}>
-                <label htmlFor="vietnameseSkinType">Vietnamese Name</label>
+                <label htmlFor="vietnameseSkinType">Name</label>
                 <input
                   type="text"
                   id="vietnameseSkinType"
@@ -653,9 +657,6 @@ function SkinTypesTab() {
                     <FaExclamationTriangle /> {skinTypeFormErrors.vietnameseSkinType}
                   </div>
                 )}
-                <div className={cx('form-help-text')}>
-                  The display name for this skin type in Vietnamese
-                </div>
               </div>
 
               <div className={cx('form-group')}>
@@ -788,7 +789,7 @@ function SkinTypesTab() {
               </div>
 
               <div className={cx('form-group')}>
-                <label htmlFor="edit-vietnameseSkinType">Vietnamese Name</label>
+                <label htmlFor="edit-vietnameseSkinType">Name</label>
                 <input
                   type="text"
                   id="edit-vietnameseSkinType"
@@ -920,7 +921,7 @@ function SkinTypesTab() {
               <p>Are you sure you want to delete this skin type?</p>
               <div className={cx('question-preview')}>
                 <div><strong>Skin Type Code:</strong> {currentSkinType?.skinType}</div>
-                <div><strong>Vietnamese Name:</strong> {currentSkinType?.vietnameseSkinType || '-'}</div>
+                <div><strong>Name:</strong> {currentSkinType?.vietnameseSkinType || '-'}</div>
                 <div><strong>Description:</strong> {currentSkinType?.description}</div>
               </div>
               <p className={cx('delete-warning')}>

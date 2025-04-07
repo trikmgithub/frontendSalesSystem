@@ -26,7 +26,7 @@ import DeleteQuestionModal from './DeleteQuestionModal';
 const cx = classNames.bind(styles);
 const PAGE_SIZE = 10;
 
-function QuestionsTab({ skinTypes }) {
+function QuestionsTab({ skinTypes, fetchSkinTypes }) {
     // State for question list
     const [questions, setQuestions] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -176,8 +176,56 @@ function QuestionsTab({ skinTypes }) {
         setCurrentPage(1);
     };
 
+    // Function to calculate the next question ID
+    const calculateNextQuestionId = () => {
+        // If no questions, start with Q1
+        if (questions.length === 0) {
+            return 'Q1';
+        }
+
+        // Extract all question IDs and their numeric values
+        const questionIds = questions
+            .map(q => {
+                // Extract numeric part after Q prefix
+                const match = (q.questionId || '').match(/^Q(\d+)$/);
+                return match ? parseInt(match[1], 10) : 0;
+            })
+            .filter(id => id > 0) // Filter out invalid IDs
+            .sort((a, b) => a - b); // Sort numerically
+
+        // If no valid IDs, start with Q1
+        if (questionIds.length === 0) {
+            return 'Q1';
+        }
+
+        // Find the first gap in the sequence
+        let nextId = 1;
+        for (const id of questionIds) {
+            if (id > nextId) {
+                // Found a gap
+                break;
+            }
+            nextId = id + 1;
+        }
+
+        return `Q${nextId}`;
+    };
+
     // Function to open create modal
-    const openCreateModal = () => {
+    const openCreateModal = async () => {
+        // Fetch the latest skin types before opening the modal
+        if (fetchSkinTypes) {
+            await fetchSkinTypes();
+        }
+        
+        const nextId = calculateNextQuestionId();
+        setCurrentQuestion({
+            questionId: nextId,
+            questionText: '',
+            options: [{ text: '', points: '', skinType: '' }],
+            order: 1,
+            isActive: true
+        });
         setShowCreateModal(true);
     };
 
@@ -188,7 +236,12 @@ function QuestionsTab({ skinTypes }) {
     };
 
     // Function to open edit modal
-    const openEditModal = (question) => {
+    const openEditModal = async (question) => {
+        // Fetch the latest skin types before opening the modal
+        if (fetchSkinTypes) {
+            await fetchSkinTypes();
+        }
+        
         setCurrentQuestion(question);
         setShowEditModal(true);
     };
@@ -440,6 +493,7 @@ function QuestionsTab({ skinTypes }) {
             {showCreateModal && (
                 <CreateQuestionForm 
                     skinTypes={skinTypes}
+                    initialQuestion={currentQuestion}
                     onClose={() => setShowCreateModal(false)}
                     onSuccess={handleCreateSuccess}
                 />
