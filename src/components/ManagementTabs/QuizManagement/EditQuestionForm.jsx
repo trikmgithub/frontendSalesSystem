@@ -12,7 +12,6 @@ function EditQuestionForm({ skinTypes, question, onClose, onSuccess }) {
     questionId: '',
     questionText: '',
     options: [{ text: '', points: '', skinType: '' }],
-    order: 1,
     isActive: true,
   });
   const [formErrors, setFormErrors] = useState({});
@@ -30,7 +29,6 @@ function EditQuestionForm({ skinTypes, question, onClose, onSuccess }) {
               skinType: opt.skinType || ''
             }))
           : [{ text: '', points: '', skinType: '' }],
-        order: question.order || 1,
         isActive: question.isActive !== undefined ? question.isActive : true,
       });
     }
@@ -120,10 +118,6 @@ function EditQuestionForm({ skinTypes, question, onClose, onSuccess }) {
       errors.options = optionErrors;
     }
 
-    if (isNaN(formData.order) || formData.order < 1) {
-      errors.order = 'Order must be a positive number';
-    }
-
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
   };
@@ -198,24 +192,6 @@ function EditQuestionForm({ skinTypes, question, onClose, onSuccess }) {
             {formErrors.questionText && (
               <div className={cx('error-message')}>
                 <FaExclamationTriangle /> {formErrors.questionText}
-              </div>
-            )}
-          </div>
-
-          <div className={cx('form-group')}>
-            <label htmlFor="edit-order">Question Order</label>
-            <input
-              type="number"
-              id="edit-order"
-              name="order"
-              value={formData.order}
-              onChange={handleInputChange}
-              min="1"
-              className={cx({ 'error-input': formErrors.order })}
-            />
-            {formErrors.order && (
-              <div className={cx('error-message')}>
-                <FaExclamationTriangle /> {formErrors.order}
               </div>
             )}
           </div>

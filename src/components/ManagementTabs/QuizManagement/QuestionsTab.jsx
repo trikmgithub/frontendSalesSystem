@@ -218,14 +218,13 @@ function QuestionsTab({ skinTypes, fetchSkinTypes }) {
             await fetchSkinTypes();
         }
         
-        const nextId = calculateNextQuestionId();
         setCurrentQuestion({
-            questionId: nextId,
+            questionId: '',
             questionText: '',
             options: [{ text: '', points: '', skinType: '' }],
-            order: 1,
             isActive: true
-        });
+        }); // Removed order property
+        
         setShowCreateModal(true);
     };
 
@@ -330,7 +329,7 @@ function QuestionsTab({ skinTypes, fetchSkinTypes }) {
                                         className={cx('order-column', 'sortable')}
                                         onClick={() => handleSort('questionId')}
                                     >
-                                        Order {getSortIcon('questionId')}
+                                        ID {getSortIcon('questionId')}
                                     </th>
                                     <th className={cx('question-column')}>
                                         Question
@@ -399,7 +398,7 @@ function QuestionsTab({ skinTypes, fetchSkinTypes }) {
                                                 </tr>
                                             ))
                                         ) : (
-                                            // Handle case with no options
+                                            // Handle case with no options - removed order cell
                                             <tr className={cx('option-data-row')}>
                                                 <td className={cx('order-column')}>
                                                     <strong>{question.questionId || '-'}</strong>
