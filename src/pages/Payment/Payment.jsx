@@ -22,8 +22,6 @@ const Payment = () => {
   const [selectedPayment, setSelectedPayment] = useState('cod');
   const [tempSelectedPayment, setTempSelectedPayment] = useState('cod');
   const { cartItems, removeFromCart, clearCart } = useContext(CartContext);
-  const calculateTotal = () => cartItems.reduce((total, item) => total + item.price * item.quantity, 0);
-  const formatPrice = (price) => new Intl.NumberFormat("vi-VN").format(price) + " ₫";
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -47,6 +45,43 @@ const Payment = () => {
     formattedAddress: ""
   });
   const [isAddressUpdating, setIsAddressUpdating] = useState(false);
+
+  // Format price for display
+  const formatPrice = (price) => new Intl.NumberFormat("vi-VN").format(price) + " ₫";
+  
+  // Get subtotal (sum of all original prices)
+  const getSubtotal = () => {
+    return cartItems.reduce((total, item) => {
+      // Use original price for subtotal (price if no discount, or calculated price if has discount)
+      const originalPrice = item.isOnSale && item.discountedPrice ? 
+        (item.price) : 
+        (item.price);
+      return total + (originalPrice * item.quantity);
+    }, 0);
+  };
+
+  // Get total discount
+  const getTotalDiscount = () => {
+    return cartItems.reduce((total, item) => {
+      // Calculate discount only if the item is on sale
+      if (item.isOnSale && item.discountedPrice) {
+        const discount = (item.price - item.discountedPrice) * item.quantity;
+        return total + discount;
+      }
+      return total;
+    }, 0);
+  };
+
+  // Get final total (what customer pays)
+  const getFinalTotal = () => {
+    return cartItems.reduce((total, item) => {
+      // Use discounted price if available, otherwise use regular price
+      const priceToUse = item.isOnSale && item.discountedPrice ? 
+        item.discountedPrice : 
+        item.price;
+      return total + (priceToUse * item.quantity);
+    }, 0);
+  };
 
   // Fetch user data when component mounts
   useEffect(() => {
@@ -108,7 +143,7 @@ const Payment = () => {
       const formattedItems = cartItems.map(item => ({
         itemId: item._id,
         quantity: item.quantity,
-        price: item.price
+        price: item.isOnSale && item.discountedPrice ? item.discountedPrice : item.price
       }));
 
       // Set status based on payment method
@@ -119,7 +154,7 @@ const Payment = () => {
       const cartData = {
         userId: userId,
         items: formattedItems,
-        totalAmount: calculateTotal(),
+        totalAmount: getFinalTotal(),
         status: orderStatus,
         paymentMethod: paymentMethod === "bank" ? "credit_card" : "cod"
       };
@@ -165,7 +200,7 @@ const Payment = () => {
         if (cartCreated) {
           // Cart has been cleared in createCartRecord
           // Then process payment via PayOS
-          await payosPayAxios(cartItems, calculateTotal());
+          await payosPayAxios(cartItems, getFinalTotal());
           // The redirect happens in the payosPayAxios function
         }
       } catch (error) {
@@ -352,22 +387,6 @@ const Payment = () => {
     }
   };
 
-  // Calculate discounted price if item is on flash sale
-  const calculatePriceDisplay = (item) => {
-    if (item.flashSale) {
-      const originalPrice = Math.round(item.price / 0.7); // Calculate original price (30% discount)
-      return {
-        currentPrice: item.price,
-        originalPrice: originalPrice
-      };
-    } else {
-      return {
-        currentPrice: item.price,
-        originalPrice: null
-      };
-    }
-  };
-
   return (
     <div className={cx('payment-container')}>
       {/* Header */}
@@ -408,7 +427,7 @@ const Payment = () => {
                 </div>
               </div>
 
-              {/* Phone Number Section - NEW */}
+              {/* Phone Number Section */}
               <div className={cx('section')}>
                 <h3>📱 Số điện thoại</h3>
                 <div className={cx('phone-box')}>
@@ -435,8 +454,9 @@ const Payment = () => {
               <div className={cx('section', 'order-items-section')}>
                 <h3 className={cx('section-heading')}>🛒 Thông tin kiện hàng</h3>
                 {cartItems.map((item) => {
-                  const { currentPrice, originalPrice } = calculatePriceDisplay(item);
-
+                  const hasDiscount = item.isOnSale && item.discountedPrice;
+                  const displayPrice = hasDiscount ? item.discountedPrice : item.price;
+                  
                   return (
                     <div key={item._id} className={cx("order-item")}>
                       <div className={cx("item-image-container")}>
@@ -458,10 +478,12 @@ const Payment = () => {
                         <div className={cx("quantity-price")}>
                           <span>{item.quantity}</span>
                           <span> × </span>
-                          <span>{formatPrice(currentPrice)}</span>
-                        </div>
-                        <div className={cx("total-item-price")}>
-                          {formatPrice(currentPrice * item.quantity)}
+                          <span className={cx("discounted-price")}>{formatPrice(displayPrice)}</span>
+                          {hasDiscount && (
+                            <span className={cx("original-price")}>
+                              {formatPrice(item.price)}
+                            </span>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -511,19 +533,15 @@ const Payment = () => {
                 </h3>
                 <div className={cx('summary-item')}>
                   <span>Tạm tính ({cartItems.length})</span>
-                  <span>{formatPrice(calculateTotal())}</span>
+                  <span>{formatPrice(getSubtotal())}</span>
                 </div>
                 <div className={cx('summary-item')}>
                   <span>Giảm giá</span>
-                  <span>-0 đ</span>
-                </div>
-                <div className={cx('summary-item')}>
-                  <span>Phí vận chuyển</span>
-                  <span>0 đ</span>
+                  <span>-{formatPrice(getTotalDiscount())}</span>
                 </div>
                 <div className={cx('summary-item', 'total')}>
                   <span>Thành tiền (Đã VAT)</span>
-                  <span className={cx("total-price")}>{formatPrice(calculateTotal())}</span>
+                  <span className={cx("total-price")}>{formatPrice(getFinalTotal())}</span>
                 </div>
               </div>
 
@@ -536,7 +554,7 @@ const Payment = () => {
         )}
       </div>
 
-      {/* Phone Modal - NEW */}
+      {/* Phone Modal */}
       {showPhoneModal && (
         <div className={cx('modal-overlay')} onClick={togglePhoneModal}>
           <div className={cx('phone-modal')} onClick={(e) => e.stopPropagation()}>
@@ -576,7 +594,7 @@ const Payment = () => {
         </div>
       )}
 
-      {/* Address Modal - Refactored to use AddressSelector */}
+      {/* Address Modal */}
       {showAddressModal && (
         <div className={cx('modal-overlay')} onClick={toggleAddressModal}>
           <div className={cx('address-modal')} onClick={(e) => e.stopPropagation()}>
