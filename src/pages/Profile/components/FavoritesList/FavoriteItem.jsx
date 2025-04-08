@@ -8,39 +8,45 @@ import sharedStyles from '../../styles/ProfileShared.module.scss';
 
 const cx = classNames.bind({ ...styles, ...sharedStyles });
 
-const FavoriteItem = ({ 
-  item, 
-  onAddToCart, 
-  onRemoveFromFavorites 
-}) => {
+const FavoriteItem = ({ item, onAddToCart, onRemoveFromFavorites }) => {
   const [isRemoving, setIsRemoving] = useState(false);
   const [isAddingToCart, setIsAddingToCart] = useState(false);
   
   // Format price with commas
   const formatPrice = (price) => {
-    return new Intl.NumberFormat('vi-VN').format(price) + ' đ';
+    return price.toLocaleString() + ' đ';
   };
+
+  // Tính toán giá và trạng thái sale
+  const originalPrice = item.price;
+  const discount = item.flashSale || 0;
+  const isOnSale = discount > 0;
+  const currentPrice = isOnSale 
+    ? Math.round(originalPrice * (1 - discount/100)) 
+    : originalPrice;
   
-  // Handle add to cart with animation
   const handleAddToCart = () => {
     if (isAddingToCart) return;
-    
     setIsAddingToCart(true);
-    onAddToCart(item);
     
-    // Reset animation after 1s
+    // Tạo object mới với đầy đủ thông tin giảm giá
+    const itemToAdd = {
+      ...item,
+      isOnSale: isOnSale,
+      discountedPrice: isOnSale ? currentPrice : null,
+      price: originalPrice,
+      flashSale: discount
+    };
+    
+    onAddToCart(itemToAdd);
     setTimeout(() => {
       setIsAddingToCart(false);
     }, 1000);
   };
   
-  // Handle remove with animation
   const handleRemove = () => {
     if (isRemoving) return;
-    
     setIsRemoving(true);
-    
-    // Add slight delay before actual removal for animation
     setTimeout(() => {
       onRemoveFromFavorites(item._id);
     }, 300);
@@ -51,7 +57,7 @@ const FavoriteItem = ({
       <div className={cx('favoriteInfo')}>
         <div className={cx('productImage')}>
           <img 
-            src={item.imageUrls && item.imageUrls[0] ? item.imageUrls[0] : '/placeholder.jpg'} 
+            src={item.imageUrls?.[0]} 
             alt={item.name} 
             onError={(e) => {
               e.target.onerror = null;
@@ -65,7 +71,25 @@ const FavoriteItem = ({
           <h3 className={cx('productName')}>
             <Link to={`/product/${item._id}`}>{item.name}</Link>
           </h3>
-          <div className={cx('productPrice')}>{formatPrice(item.price)}</div>
+          
+          {/* Price Display */}
+          <div className={cx('priceContainer')}>
+            <div className={cx('priceRow')}>
+              <span className={cx('currentPrice')}>
+                {formatPrice(currentPrice)}
+              </span>
+              {isOnSale && (
+                <>
+                  <span className={cx('originalPrice')}>
+                    {formatPrice(originalPrice)}
+                  </span>
+                  <span className={cx('discountBadge')}>
+                    -{discount}%
+                  </span>
+                </>
+              )}
+            </div>
+          </div>
         </div>
       </div>
       
@@ -85,10 +109,6 @@ const FavoriteItem = ({
               <ShoppingCart size={16} />
               <span>Thêm vào giỏ</span>
             </>
-          )}
-          
-          {isAddingToCart && (
-            <span className={cx('animationCircle')}></span>
           )}
         </button>
         

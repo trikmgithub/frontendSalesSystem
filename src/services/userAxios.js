@@ -254,6 +254,67 @@ const updatePhoneAxios = async (phoneData) => {
     }
 };
 
+// Get user's favorite items
+const getFavoriteItemsAxios = async () => {
+    try {
+        const token = localStorage.getItem('access_token');
+        const config = {
+            headers: {
+                Authorization: `Bearer ${token}`,
+            },
+        };
+        const res = await axiosConfig.get('users/favorite-items', config);
+        return res.data;
+    } catch (error) {
+        return {
+            error: true,
+            message: error.response?.data?.message || error.message || 'Failed to fetch favorite items',
+            status: error.response?.status
+        };
+    }
+};
+
+// Add item to favorites
+const addToFavoritesAxios = async (itemId) => {
+    try {
+        const token = localStorage.getItem('access_token');
+        const config = {
+            headers: {
+                Authorization: `Bearer ${token}`,
+            },
+        };
+        const res = await axiosConfig.post('users/favorite-items', { itemId }, config);
+        return res.data;
+    } catch (error) {
+        return {
+            error: true,
+            message: error.response?.data?.message || error.message || 'Failed to add to favorites',
+            status: error.response?.status
+        };
+    }
+};
+
+// Remove item from favorites
+const removeFromFavoritesAxios = async (itemId) => {
+    try {
+        const token = localStorage.getItem('access_token');
+        const config = {
+            headers: {
+                Authorization: `Bearer ${token}`,
+            },
+            data: { itemId }
+        };
+        const res = await axiosConfig.del('users/favorite-items', config);
+        return res.data;
+    } catch (error) {
+        return {
+            error: true,
+            message: error.response?.data?.message || error.message || 'Failed to remove from favorites',
+            status: error.response?.status
+        };
+    }
+};
+
 export { 
     getUsersAxios, 
     getUserByIdAxios, 
@@ -265,5 +326,8 @@ export {
     updatePasswordAxios,
     forgetPasswordAxios,
     getPhoneAxios,
-    updatePhoneAxios
+    updatePhoneAxios,
+    getFavoriteItemsAxios,
+    addToFavoritesAxios,
+    removeFromFavoritesAxios
 };

@@ -102,6 +102,38 @@
   color: v.$primary-color;
 }
 
+.priceContainer {
+  margin: 8px 0;
+
+  .priceRow {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .currentPrice {
+    font-size: 18px;
+    font-weight: 600;
+    color: #f26522;
+  }
+
+  .originalPrice {
+    font-size: 14px;
+    color: #999;
+    text-decoration: line-through;
+  }
+
+  .discountBadge {
+    background-color: #f26522;
+    color: white;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 500;
+  }
+}
+
 .favoriteActions {
   display: flex;
   gap: v.$spacing-md;
