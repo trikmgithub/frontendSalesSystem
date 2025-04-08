@@ -17,6 +17,7 @@ const routes = {
     search: '/search',
     compare: '/compare',
     googleLoginError: '/auth/google-login-error',
+    quizHistory: '/profile/quiz-history',
 };
 
 export default routes;

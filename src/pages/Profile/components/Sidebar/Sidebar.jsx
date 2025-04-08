@@ -1,7 +1,7 @@
 // src/pages/Profile/components/Sidebar/Sidebar.jsx
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { User, ShoppingBag, Heart, LogOut } from 'lucide-react';
+import { User, ShoppingBag, Heart, LogOut, BarChart2 } from 'lucide-react';
 import classNames from 'classnames/bind';
 import styles from './Sidebar.module.scss';
 import routes from '~/config/routes';
@@ -23,6 +23,9 @@ const Sidebar = ({ selectedTab, userInfo = {} }) => {
         break;
       case 'favorites':
         navigate(routes.favorites);
+        break;
+      case 'quizHistory':
+        navigate(routes.quizHistory);
         break;
       default:
         navigate(routes.profile);
@@ -88,6 +91,14 @@ const Sidebar = ({ selectedTab, userInfo = {} }) => {
         >
           <Heart size={18} />
           <span>Danh sách yêu thích</span>
+        </button>
+        
+        <button 
+          className={cx('navItem', { 'active': selectedTab === 'quizHistory' })}
+          onClick={() => handleTabChange('quizHistory')}
+        >
+          <BarChart2 size={18} />
+          <span>Lịch sử kiểm tra da</span>
         </button>
       </nav>
       
