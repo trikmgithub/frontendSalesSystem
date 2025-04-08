@@ -75,7 +75,7 @@ const OrdersPage = () => {
     fetchUserOrders();
   }, []);
 
-  // Safely parse order data to prevent rendering errors
+  // Update the validateOrderData function to handle the new response format
   const validateOrderData = (orders) => {
     // Check if orders is an array
     if (!Array.isArray(orders)) {
@@ -85,20 +85,29 @@ const OrdersPage = () => {
     
     // Process each order to ensure it has the expected structure
     return orders.map(order => {
-      // Ensure items is an array
+      // Ensure items is an array and handle the new nested itemId object structure
       const items = Array.isArray(order.items) ? order.items.map(item => {
-        // Extract item details safely
         return {
           _id: item._id || '',
-          itemId: item.itemId,
+          itemId: item.itemId,  // Now this can be an object with product details
           quantity: Number(item.quantity) || 1,
           price: Number(item.price) || 0
         };
       }) : [];
       
+      // Ensure recipientInfo is properly structured
+      const recipientInfo = order.recipientInfo || {
+        name: "Không có thông tin",
+        email: "Không có thông tin",
+        address: "Không có thông tin",
+        phone: "Không có thông tin"
+      };
+      
       return {
         ...order,
         items,
+        isOrderForOther: !!order.isOrderForOther,
+        recipientInfo,
         purchaseDate: order.purchaseDate || new Date().toISOString(),
         totalAmount: Number(order.totalAmount) || 0,
         status: order.status || 'pending',

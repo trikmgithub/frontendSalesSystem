@@ -112,6 +112,8 @@ const logoutAxios = async () => {
             console.log('No access token found, proceeding with local logout');
             // Still perform local logout even without a token
             localStorage.removeItem('access_token');
+            localStorage.removeItem('admin_active_tab');
+            localStorage.removeItem('staff_active_tab');
             localStorage.setItem('user', 'null');  // Set to 'null' string instead of removing
             localStorage.setItem('cartItems', 'null');
             localStorage.setItem('favoriteItems', 'null');

@@ -1007,3 +1007,130 @@
     cursor: not-allowed;
   }
 }
+
+.typeColumn {
+  width: 15%;
+}
+
+.orderTypeBadge {
+  font-size: 12px;
+  font-weight: 500;
+  padding: 4px 10px;
+  border-radius: 12px;
+  
+  &.otherRecipient {
+    background: #e6f7ff;
+    color: #1890ff;
+    border: 1px solid #91d5ff;
+  }
+  
+  &.selfRecipient {
+    background: #f9f0ff;
+    color: #722ed1;
+    border: 1px solid #d3adf7;
+  }
+}
+
+/* Recipient Info Section */
+.recipientSection {
+  margin-top: 20px;
+  padding-top: 15px;
+  border-top: 1px solid #e8e8e8;
+  
+  .sectionTitle {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 12px;
+    color: #333;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    
+    &::before {
+      content: '👤';
+    }
+  }
+}
+
+.recipientInfo {
+  background-color: #f9f9f9;
+  border-radius: 6px;
+  padding: 15px;
+  border: 1px solid #f0f0f0;
+}
+
+.recipientRow {
+  display: flex;
+  margin-bottom: 8px;
+  
+  &:last-child {
+    margin-bottom: 0;
+  }
+  
+  &.noteRow {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px dashed #e0e0e0;
+  }
+}
+
+.recipientLabel {
+  width: 100px;
+  font-weight: 500;
+  color: #666;
+  flex-shrink: 0;
+}
+
+.recipientValue {
+  color: #333;
+  
+  &.noteValue {
+    font-style: italic;
+    color: #555;
+    background: #fffbe6;
+    padding: 5px 10px;
+    border-radius: 4px;
+  }
+}
+
+/* Update media queries for the new column */
+@media (max-width: 992px) {
+  .orderListHeader, .paymentHeader {
+    .typeColumn {
+      width: 15%;
+    }
+    
+    /* Adjust other columns as needed */
+    .idColumn {
+      width: 15%;
+    }
+    .dateColumn {
+      width: 20%;
+    }
+    .methodColumn {
+      width: 15%;
+    }
+    .statusColumn {
+      width: 15%;
+    }
+    .amountColumn {
+      width: 15%;
+    }
+    .actionColumn {
+      width: 10%;
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .paymentHeader {
+    .typeColumn {
+      width: auto;
+      order: 2;
+      padding: 5px;
+      margin-right: 10px;
+    }
+    
+    /* Adjust other columns */
+  }
+}

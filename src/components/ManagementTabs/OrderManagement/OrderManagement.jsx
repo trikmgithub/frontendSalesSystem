@@ -455,6 +455,48 @@ function OrderManagement() {
     }
   };
 
+  // First, add new helper functions to display recipient info
+  const getRecipientName = (payment) => {
+    if (payment?.recipientInfo?.name) {
+      return payment.recipientInfo.name;
+    }
+    return 'Không có thông tin';
+  };
+
+  const getRecipientSection = (payment) => {
+    if (!payment.recipientInfo) return null;
+    
+    return (
+      <div className={cx('recipientSection')}>
+        <h3 className={cx('sectionTitle')}>Thông tin người nhận</h3>
+        <div className={cx('recipientInfo')}>
+          <div className={cx('recipientRow')}>
+            <span className={cx('recipientLabel')}>Tên:</span>
+            <span className={cx('recipientValue')}>{payment.recipientInfo.name || 'Không có'}</span>
+          </div>
+          <div className={cx('recipientRow')}>
+            <span className={cx('recipientLabel')}>Email:</span>
+            <span className={cx('recipientValue')}>{payment.recipientInfo.email || 'Không có'}</span>
+          </div>
+          <div className={cx('recipientRow')}>
+            <span className={cx('recipientLabel')}>Địa chỉ:</span>
+            <span className={cx('recipientValue')}>{payment.recipientInfo.address || 'Không có'}</span>
+          </div>
+          <div className={cx('recipientRow')}>
+            <span className={cx('recipientLabel')}>Điện thoại:</span>
+            <span className={cx('recipientValue')}>{payment.recipientInfo.phone || 'Không có'}</span>
+          </div>
+          {payment.recipientInfo.note && (
+            <div className={cx('recipientRow', 'noteRow')}>
+              <span className={cx('recipientLabel')}>Ghi chú:</span>
+              <span className={cx('recipientValue', 'noteValue')}>{payment.recipientInfo.note}</span>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className={cx('paymentsSection')}>
       <h2 className={cx('sectionTitle')}>Order Management</h2>
@@ -521,6 +563,9 @@ function OrderManagement() {
             <div className={cx('orderColumn', 'methodColumn')}>
               Payment Method
             </div>
+            <div className={cx('orderColumn', 'typeColumn')}>
+              Order Type
+            </div>
             <div className={cx('orderColumn', 'statusColumn')}>
               Status
             </div>
@@ -530,12 +575,12 @@ function OrderManagement() {
             >
               Amount {getSortIcon('totalAmount')}
             </div>
-            <div className={cx('orderColumn', 'actionColumn')}></div>
+            <div className={cx('orderColumn', 'actionColumn')}>Actions</div>
           </div>
 
           {sortedAndFilteredPayments.map(payment => (
             <div key={payment._id} className={cx('paymentCard')}>
-              <div className={cx('paymentHeader')}>
+              <div className={cx('paymentHeader')} onClick={() => togglePaymentExpansion(payment._id)}>
                 <div className={cx('orderColumn', 'idColumn')}>
                   #{payment._id.substring(payment._id.length - 8)}
                 </div>
@@ -548,6 +593,14 @@ function OrderManagement() {
                 <div className={cx('orderColumn', 'methodColumn')}>
                   {getPaymentMethodIcon(payment.paymentMethod)}
                   {getPaymentMethodText(payment.paymentMethod)}
+                </div>
+
+                <div className={cx('orderColumn', 'typeColumn')}>
+                  {payment.isOrderForOther ? (
+                    <span className={cx('orderTypeBadge', 'otherRecipient')}>Đặt hộ</span>
+                  ) : (
+                    <span className={cx('orderTypeBadge', 'selfRecipient')}>Đặt cho mình</span>
+                  )}
                 </div>
 
                 <div className={cx('orderColumn', 'statusColumn')}>
@@ -602,6 +655,8 @@ function OrderManagement() {
                       </div>
                     </div>
                   </div>
+
+                  {getRecipientSection(payment)}
 
                   <div className={cx('itemsList')}>
                     <h3>Order Items</h3>
@@ -768,6 +823,22 @@ function OrderManagement() {
                     </span>
                   </span>
                 </div>
+
+                {selectedPayment && selectedPayment.isOrderForOther && (
+                  <div className={cx('summaryRow')}>
+                    <span className={cx('summaryLabel')}>Order Type:</span>
+                    <span className={cx('summaryValue')}>
+                      <span className={cx('orderTypeBadge', 'otherRecipient')}>Đặt hộ</span>
+                    </span>
+                  </div>
+                )}
+                
+                {selectedPayment && selectedPayment.recipientInfo && (
+                  <div className={cx('summaryRow')}>
+                    <span className={cx('summaryLabel')}>Recipient:</span>
+                    <span className={cx('summaryValue')}>{selectedPayment.recipientInfo.name}</span>
+                  </div>
+                )}
               </div>
             </div>
 

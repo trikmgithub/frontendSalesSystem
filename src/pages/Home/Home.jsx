@@ -1,10 +1,13 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { getItemsPaginatedAxios } from '~/services/itemAxios';
+import { logoutAxios } from '~/services/authAxios'; // Import the logout function
 import classNames from 'classnames/bind';
 import styles from './Home.module.scss';
 import ProductCard from '~/components/ProductCard';
 import { useCompare } from '~/context/CompareContext';
 import LandingPage from '~/pages/Landing/LandingPage';
+import { toast } from 'react-toastify'; // Import toast for notification
 
 const cx = classNames.bind(styles);
 
@@ -18,6 +21,32 @@ function Home() {
     const [itemsPerPage] = useState(15); // Updated to show 15 items per page
     const { addToCompare } = useCompare();
     const [showProducts, setShowProducts] = useState(false); // State to control product display
+    const navigate = useNavigate();
+
+    // Modified effect to log out admin/staff users instead of redirecting
+    useEffect(() => {
+        try {
+            const userString = localStorage.getItem('user');
+            
+            // Only proceed if we have user data in localStorage
+            if (userString && userString !== 'null') {
+                const user = JSON.parse(userString);
+                
+                // Check user role and log out if admin, manager or staff
+                if (user.role) {
+                    if (['ADMIN', 'MANAGER', 'STAFF'].includes(user.role)) {
+                        // Log user out for security
+                        logoutAxios();
+                        return;
+                    }
+                    // Regular users (USER role) stay on the home page
+                }
+            }
+        } catch (error) {
+            console.error('Error checking user role:', error);
+            // If there's an error parsing, continue showing the home page
+        }
+    }, [navigate]);
 
     useEffect(() => {
         // Check if user has visited before

@@ -121,7 +121,19 @@ function Header() {
     };
 
     const handleSkinQuizClick = () => {
-        navigate('/skin-quiz'); // Chuyển trực tiếp đến trang skin-quiz
+        // Check if user is logged in first
+        if (!isLoggedIn()) {
+            
+            // Open login modal with callback to redirect to quiz after login
+            openLogin(() => {
+                // This function runs after successful login
+                navigate('/skin-quiz');
+            });
+            return;
+        }
+        
+        // User is logged in, navigate directly to quiz page
+        navigate('/skin-quiz');
     };
 
     // Client-side search functionality

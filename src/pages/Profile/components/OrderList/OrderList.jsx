@@ -189,10 +189,52 @@ const OrderList = ({ orders, loading, error }) => {
                         <span className={cx('infoLabel')}>Phương thức thanh toán:</span>
                         <span className={cx('infoValue')}>
                           {order.paymentMethod === 'credit_card' ? 'Chuyển khoản' : 
-                           order.paymentMethod === 'cod' ? 'Thanh toán khi nhận hàng' : 
+                           order.paymentMethod === 'cod' || order.paymentMethod === 'cash' ? 'Thanh toán khi nhận hàng' : 
                            order.paymentMethod}
                         </span>
                       </div>
+                      
+                      {/* Add order type */}
+                      <div className={cx('orderInfoItem')}>
+                        <span className={cx('infoLabel')}>Loại đơn hàng:</span>
+                        <span className={cx('infoValue')}>
+                          {order.isOrderForOther ? 
+                            <span className={cx('badge', 'orderForOther')}>Đặt cho người khác</span> : 
+                            <span className={cx('badge', 'orderForSelf')}>Đặt cho mình</span>
+                          }
+                        </span>
+                      </div>
+                      
+                      {/* Add recipient information section */}
+                      {order.recipientInfo && (
+                        <div className={cx('recipientSection')}>
+                          <h4 className={cx('detailsSubtitle')}>Thông tin người nhận:</h4>
+                          <div className={cx('recipientGrid')}>
+                            <div className={cx('recipientInfoItem')}>
+                              <span className={cx('recipientLabel')}>Tên:</span>
+                              <span className={cx('recipientValue')}>{order.recipientInfo.name}</span>
+                            </div>
+                            <div className={cx('recipientInfoItem')}>
+                              <span className={cx('recipientLabel')}>Email:</span>
+                              <span className={cx('recipientValue')}>{order.recipientInfo.email}</span>
+                            </div>
+                            <div className={cx('recipientInfoItem')}>
+                              <span className={cx('recipientLabel')}>Địa chỉ:</span>
+                              <span className={cx('recipientValue')}>{order.recipientInfo.address}</span>
+                            </div>
+                            <div className={cx('recipientInfoItem')}>
+                              <span className={cx('recipientLabel')}>Số điện thoại:</span>
+                              <span className={cx('recipientValue')}>{order.recipientInfo.phone}</span>
+                            </div>
+                            {order.recipientInfo.note && (
+                              <div className={cx('recipientInfoItem', 'fullWidth')}>
+                                <span className={cx('recipientLabel')}>Ghi chú:</span>
+                                <span className={cx('recipientValue', 'note')}>{order.recipientInfo.note}</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
                     </div>
                     
                     <div className={cx('itemsList')}>
@@ -211,14 +253,25 @@ const OrderList = ({ orders, loading, error }) => {
                             </thead>
                             <tbody>
                               {order.items.map((item, index) => {
-                                // Check if itemId is an object (the full product) or a string (just the ID)
-                                const productName = typeof item.itemId === 'object' 
-                                  ? (item.itemId?.name || 'Sản phẩm không xác định') 
+                                // Now we can directly access the product properties from item.itemId object
+                                const productName = item.itemId && typeof item.itemId === 'object' 
+                                  ? item.itemId.name
                                   : `Sản phẩm #${item.itemId || index + 1}`;
+                                
+                                const productImage = item.itemId && typeof item.itemId === 'object' && item.itemId.imageUrls && item.itemId.imageUrls.length > 0
+                                  ? item.itemId.imageUrls[0]
+                                  : null;
                                   
                                 return (
                                   <tr key={index}>
-                                    <td>{productName}</td>
+                                    <td className={cx('productCell')}>
+                                      {productImage && (
+                                        <div className={cx('productImage')}>
+                                          <img src={productImage} alt={productName} />
+                                        </div>
+                                      )}
+                                      <div className={cx('productName')}>{productName}</div>
+                                    </td>
                                     <td>{item.quantity}</td>
                                     <td>{new Intl.NumberFormat('vi-VN').format(item.price)} đ</td>
                                     <td>{new Intl.NumberFormat('vi-VN').format(item.price * item.quantity)} đ</td>
