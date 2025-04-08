@@ -218,12 +218,15 @@ function QuestionsTab({ skinTypes, fetchSkinTypes }) {
             await fetchSkinTypes();
         }
         
+        // Generate the next available ID (fills gaps in sequence)
+        const nextId = calculateNextQuestionId();
+        
         setCurrentQuestion({
-            questionId: '',
+            questionId: nextId,  // Set the auto-generated ID here
             questionText: '',
             options: [{ text: '', points: '', skinType: '' }],
             isActive: true
-        }); // Removed order property
+        });
         
         setShowCreateModal(true);
     };

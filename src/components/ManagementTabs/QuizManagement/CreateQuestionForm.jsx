@@ -158,8 +158,8 @@ function CreateQuestionForm({ skinTypes, initialQuestion, onClose, onSuccess }) 
               id="questionId"
               name="questionId"
               value={formData.questionId}
-              readOnly
               className={cx({ 'error-input': formErrors.questionId })}
+              readOnly
             />
             {formErrors.questionId && (
               <div className={cx('error-message')}>

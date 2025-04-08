@@ -727,8 +727,15 @@ function OrderManagement() {
                       <button
                         className={cx('invoiceButton', 'downloadButton')}
                         onClick={() => handleDownloadInvoice(payment._id)}
-                        disabled={actionLoading[`download_${payment._id}`]}
-                        title="Download Invoice"
+                        disabled={
+                          actionLoading[`download_${payment._id}`] ||
+                          payment.status.toLowerCase() !== 'done' // Only allow download for done status
+                        }
+                        title={
+                          payment.status.toLowerCase() !== 'done' 
+                            ? "Chỉ có thể tải hóa đơn cho đơn hàng hoàn thành" 
+                            : "Download Invoice"
+                        }
                       >
                         {actionLoading[`download_${payment._id}`] ? (
                           <FaSpinner className={cx('spinnerIcon')} />
@@ -741,8 +748,17 @@ function OrderManagement() {
                       <button
                         className={cx('invoiceButton', 'emailButton')}
                         onClick={() => handleSendInvoice(payment._id, payment.userId)}
-                        disabled={actionLoading[`email_${payment._id}`] || !userEmails[payment.userId] || userEmails[payment.userId] === 'Unknown'}
-                        title="Send Invoice by Email"
+                        disabled={
+                          actionLoading[`email_${payment._id}`] || 
+                          !userEmails[payment.userId] || 
+                          userEmails[payment.userId] === 'Unknown' ||
+                          payment.status.toLowerCase() !== 'done' // Only allow email for done status
+                        }
+                        title={
+                          payment.status.toLowerCase() !== 'done' 
+                            ? "Chỉ có thể gửi hóa đơn cho đơn hàng hoàn thành" 
+                            : "Send Invoice by Email"
+                        }
                       >
                         {actionLoading[`email_${payment._id}`] ? (
                           <FaSpinner className={cx('spinnerIcon')} />
