@@ -5,7 +5,7 @@ import styles from './Navigation.module.scss';
 import { FaBars } from 'react-icons/fa';
 import { IoIosArrowForward } from 'react-icons/io';
 import { HiOutlineLocationMarker } from 'react-icons/hi';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import LoginForm from '~/components/Header/LoginPopup';
 import { updateAddressAxios } from '~/services/userAxios';
 import AddressSelector from '~/components/AddressSelector';
@@ -33,21 +33,47 @@ function Navigation() {
     });
     const [isSubmitting, setIsSubmitting] = useState(false);
 
-    // Initialize address from user data in localStorage
+    // Add a one-time refresh when component mounts
     useEffect(() => {
-        const loadAddressFromUser = () => {
-            try {
-                const userData = JSON.parse(localStorage.getItem('user') || '{}');
-                if (userData && userData.address) {
-                    setUserAddress(userData.address);
-                }
-            } catch (error) {
-                console.error("Error parsing user data from localStorage:", error);
-            }
-        };
-
-        loadAddressFromUser();
+        // Check if we've already refreshed this session
+        const hasRefreshed = sessionStorage.getItem('navigationRefreshed');
+        
+        // If we haven't refreshed yet, do it once
+        if (!hasRefreshed) {
+            // Set the flag before refreshing to prevent infinite refresh loop
+            sessionStorage.setItem('navigationRefreshed', 'true');
+            
+            // Short timeout to ensure the flag is set before refreshing
+            setTimeout(() => {
+                window.location.reload();
+            }, 50);
+        }
     }, []);
+
+    // Enhanced function to load address from localStorage
+    const loadAddressFromStorage = useCallback(() => {
+        try {
+            // Try to get address from user object first
+            const userData = JSON.parse(localStorage.getItem('user') || '{}');
+            if (userData && userData.address) {
+                setUserAddress(userData.address);
+                return;
+            }
+            
+            // As fallback, check for confirmedAddress
+            const confirmedAddress = localStorage.getItem('confirmedAddress');
+            if (confirmedAddress) {
+                setUserAddress(confirmedAddress);
+            }
+        } catch (error) {
+            console.error("Error loading address from localStorage:", error);
+        }
+    }, []);
+
+    // Initialize address from localStorage when component mounts
+    useEffect(() => {
+        loadAddressFromStorage();
+    }, [loadAddressFromStorage]);
 
     // Update address when userInfo changes (from AuthContext)
     useEffect(() => {
@@ -56,9 +82,11 @@ function Navigation() {
         }
     }, [userInfo]);
 
-    // Listen for storage events to update address when changed in other components
+    // Listen for storage events to update address when changed
     useEffect(() => {
+        // Handler for both cross-tab and same-tab storage events
         const handleStorageChange = (e) => {
+            // For same-tab update events
             if (e.key === 'user') {
                 try {
                     const userData = JSON.parse(e.newValue || '{}');
@@ -68,17 +96,32 @@ function Navigation() {
                 } catch (error) {
                     console.error("Error parsing user data from storage event:", error);
                 }
+            } else if (e.key === 'confirmedAddress') {
+                // For direct confirmedAddress updates
+                if (e.newValue) {
+                    setUserAddress(e.newValue);
+                }
             }
         };
 
-        // Add event listener for storage changes
+        // Add event listeners
         window.addEventListener('storage', handleStorageChange);
+        
+        // Create a custom event listener for same-tab updates
+        const handleCustomStorageEvent = () => {
+            // Re-load from localStorage any time our custom event fires
+            loadAddressFromStorage();
+        };
+        
+        // Add a custom event listener for address updates within the same tab
+        window.addEventListener('addressUpdated', handleCustomStorageEvent);
         
         // Clean up
         return () => {
             window.removeEventListener('storage', handleStorageChange);
+            window.removeEventListener('addressUpdated', handleCustomStorageEvent);
         };
-    }, []);
+    }, [loadAddressFromStorage]);
 
     // Create NavSearchLink component for category links
     const NavSearchLink = ({ to, children, className }) => {
@@ -131,6 +174,7 @@ function Navigation() {
         setAddressData(newAddressData);
     };
 
+    // Update handleSubmit to dispatch a custom event after updating localStorage
     const handleSubmit = async () => {
         if (!addressData.formattedAddress) {
             return; // Address is incomplete
@@ -164,6 +208,9 @@ function Navigation() {
                     key: 'user',
                     newValue: JSON.stringify(userData)
                 }));
+                
+                // Dispatch a custom event for same-tab updates
+                window.dispatchEvent(new Event('addressUpdated'));
             }
 
             // Update state

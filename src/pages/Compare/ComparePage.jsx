@@ -1,18 +1,19 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { useLocation, Link } from 'react-router-dom';
-import { getItemDetail } from '~/services/itemAxios';
-import { FaArrowLeft, FaShoppingCart, FaHeart, FaTrash } from 'react-icons/fa';
-import { CartContext } from '~/context/CartContext';
-import { FavoritesContext } from '~/context/FavoritesContext';
-import { useCompare } from '~/context/CompareContext';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { FaArrowLeft, FaHeart, FaShoppingCart, FaTrash } from 'react-icons/fa';
 import { toast } from 'react-toastify';
 import classNames from 'classnames/bind';
 import styles from './ComparePage.module.scss';
+import { CartContext } from '~/context/CartContext';
+import { FavoritesContext } from '~/context/FavoritesContext';
+import { useCompare } from '~/context/CompareContext';
+import { getItemDetail } from '~/services/itemAxios';
 
 const cx = classNames.bind(styles);
 
 const ComparePage = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -22,67 +23,75 @@ const ComparePage = () => {
   const { addToFavorites, isInFavorites, removeFromFavorites } = useContext(FavoritesContext);
   const { compareItems, removeFromCompare } = useCompare();
 
+  // Listen for changes to compareItems in the context
+  useEffect(() => {
+    // Only update products if we have already fetched them once
+    // and if compareItems has changed
+    if (fetchCompleted && compareItems) {
+      // Get current product IDs
+      const currentProductIds = products.map(product => product._id);
+      // Get compare item IDs
+      const compareItemIds = compareItems.map(item => item._id);
+      
+      // Find products that should be removed (in products but not in compareItems)
+      const productsToRemove = products.filter(
+        product => !compareItemIds.includes(product._id)
+      );
+      
+      // If products need to be removed, update the state
+      if (productsToRemove.length > 0) {
+        // Filter out removed products
+        const updatedProducts = products.filter(
+          product => compareItemIds.includes(product._id)
+        );
+        
+        // Update the URL with remaining product IDs
+        if (updatedProducts.length >= 2) {
+          window.history.replaceState(
+            null, 
+            '', 
+            `${location.pathname}?ids=${updatedProducts.map(p => p._id).join(',')}`
+          );
+          setProducts(updatedProducts);
+        } else {
+          // If fewer than 2 products remain, redirect to home
+          toast.info('So sánh cần ít nhất 2 sản phẩm, quay về trang chủ');
+          navigate('/');
+        }
+      }
+    }
+  }, [compareItems, fetchCompleted, products]);
+
   // Single useEffect for data fetching without causing loops
   useEffect(() => {
-    if (fetchCompleted) return; // Prevent re-fetching if already completed
+    if (fetchCompleted) return;
     
     const fetchProducts = async () => {
-      console.log("Fetching products once...");
-      setLoading(true);
-      
-      // Get product IDs from URL query parameters
-      const searchParams = new URLSearchParams(location.search);
-      const productIdsFromUrl = searchParams.get('ids')?.split(',') || [];
-      
-      console.log("Product IDs from URL:", productIdsFromUrl);
-      
       try {
-        // First check if we have enough items in compareItems to use directly
-        if (productIdsFromUrl.length === 0 && compareItems.length >= 2) {
-          console.log("Using compare items from context directly:", compareItems.length);
-          setProducts(compareItems);
+        setLoading(true);
+        
+        // Parse IDs from URL
+        const searchParams = new URLSearchParams(location.search);
+        const productIds = searchParams.get('ids')?.split(',').filter(Boolean) || [];
+        
+        // Validate we have at least 2 valid IDs
+        if (productIds.length < 2) {
+          setError('Need at least 2 products to compare');
           setLoading(false);
           setFetchCompleted(true);
           return;
         }
         
-        if (productIdsFromUrl.length === 0) {
-          setError('No products selected for comparison');
-          setLoading(false);
-          setFetchCompleted(true);
-          return;
-        }
+        // Fetch detailed product data for each ID
+        const validProducts = [];
         
-        // Try fetching from API first
-        let validProducts = [];
-        
-        // Use a for loop instead of Promise.all to handle each product independently
-        for (const id of productIdsFromUrl) {
+        for (const id of productIds) {
           try {
-            console.log(`Fetching product ${id}...`);
             const response = await getItemDetail(id);
             
-            // Check if the response has the expected structure
-            if (response && 
-                response.data && 
-                response.data.data && 
-                response.data.data.item) {
-              
-              const product = response.data.data.item;
-              
-              // Skip deleted products
-              if (!product.isDeleted) {
-                validProducts.push(product);
-              }
-            } else {
-              console.log(`Product ${id} not found in API response`);
-              
-              // Try to find the product in compareItems as fallback
-              const contextProduct = compareItems.find(item => item._id === id);
-              if (contextProduct) {
-                console.log(`Found product ${id} in context`);
-                validProducts.push(contextProduct);
-              }
+            // Check if the response contains the item data with the new format
+            if (response && response.data && response.data.item) {
+              validProducts.push(response.data.item);
             }
           } catch (err) {
             console.error(`Error fetching product ${id}:`, err);
@@ -96,18 +105,10 @@ const ComparePage = () => {
           }
         }
         
-        // Final fallback: if we don't have at least 2 products, use compareItems
-        if (validProducts.length < 2 && compareItems.length >= 2) {
-          console.log("Not enough products from API, using all context items");
-          validProducts = [...compareItems];
-        }
-        
-        console.log("Final valid products:", validProducts.length);
-        
         // Update state with the products we found
         setProducts(validProducts);
         
-        // Set error if we still don't have enough products
+        // Set error if we don't have enough products
         if (validProducts.length < 2) {
           setError('Không đủ sản phẩm để so sánh');
         }
@@ -142,14 +143,6 @@ const ComparePage = () => {
     }).format(price);
   };
   
-  // Calculate original price based on flash sale
-  const calculateOriginalPrice = (price, isFlashSale) => {
-    if (isFlashSale && price) {
-      return Math.round(price / 0.7); // 30% discount
-    }
-    return null;
-  };
-
   // Handle adding product to cart
   const handleAddToCart = (product) => {
     addToCart(product);
@@ -237,8 +230,6 @@ const ComparePage = () => {
           </div>
           
           {products.map((product) => {
-            const originalPrice = calculateOriginalPrice(product.price, product.flashSale);
-            
             return (
               <div key={product._id} className={cx('headerCell', 'productCell')}>
                 <div className={cx('productHeader')}>
@@ -275,15 +266,22 @@ const ComparePage = () => {
                         e.target.src = "https://via.placeholder.com/150x150?text=No+Image";
                       }}
                     />
+                    {product.isOnSale && product.flashSale > 0 && (
+                      <span className={cx('saleTag')}>-{product.flashSale}%</span>
+                    )}
                   </div>
                   
                   <div className={cx('productInfo')}>
                     <div className={cx('productBrand')}>{product.brand?.name || "Không có thương hiệu"}</div>
                     <h3 className={cx('productName')}>{product.name}</h3>
                     <div className={cx('productPrice')}>
-                      <span className={cx('currentPrice')}>{formatPrice(product.price)}</span>
-                      {originalPrice && (
-                        <span className={cx('originalPrice')}>{formatPrice(originalPrice)}</span>
+                      {product.isOnSale && product.discountedPrice ? (
+                        <>
+                          <span className={cx('currentPrice')}>{formatPrice(product.discountedPrice)}</span>
+                          <span className={cx('originalPrice')}>{formatPrice(product.price)}</span>
+                        </>
+                      ) : (
+                        <span className={cx('currentPrice')}>{formatPrice(product.price)}</span>
                       )}
                     </div>
                     <Link to={`/product/${product._id}`} className={cx('viewDetailButton')}>
@@ -306,7 +304,15 @@ const ComparePage = () => {
             
             {products.map((product) => (
               <div key={`price-${product._id}`} className={cx('rowCell', 'dataCell')}>
-                <span className={cx('price')}>{formatPrice(product.price)}</span>
+                {product.isOnSale && product.discountedPrice ? (
+                  <div className={cx('priceWrapper')}>
+                    <span className={cx('discountedPrice')}>{formatPrice(product.discountedPrice)}</span>
+                    <span className={cx('originalPriceStrikethrough')}>{formatPrice(product.price)}</span>
+                    <span className={cx('discountPercentage')}>Giảm {product.flashSale}%</span>
+                  </div>
+                ) : (
+                  <span className={cx('price')}>{formatPrice(product.price)}</span>
+                )}
               </div>
             ))}
           </div>
@@ -339,10 +345,25 @@ const ComparePage = () => {
             ))}
           </div>
           
+          {/* Brand description row */}
+          <div className={cx('tableRow')}>
+            <div className={cx('rowCell', 'featureCell')}>
+              <span>Mô tả thương hiệu</span>
+            </div>
+            
+            {products.map((product) => (
+              <div key={`brand-desc-${product._id}`} className={cx('rowCell', 'dataCell', 'descriptionCell')}>
+                <div className={cx('description')}>
+                  {product.brand?.description || "Không có mô tả thương hiệu"}
+                </div>
+              </div>
+            ))}
+          </div>
+          
           {/* Description row */}
           <div className={cx('tableRow')}>
             <div className={cx('rowCell', 'featureCell')}>
-              <span>Mô tả</span>
+              <span>Mô tả sản phẩm</span>
             </div>
             
             {products.map((product) => (
@@ -354,16 +375,16 @@ const ComparePage = () => {
             ))}
           </div>
           
-          {/* Flash Sale row */}
+          {/* Sale status row */}
           <div className={cx('tableRow')}>
             <div className={cx('rowCell', 'featureCell')}>
-              <span>Khuyến mãi</span>
+              <span>Trạng thái khuyến mãi</span>
             </div>
             
             {products.map((product) => (
-              <div key={`flash-${product._id}`} className={cx('rowCell', 'dataCell')}>
-                <span className={cx('flashSale', { active: product.flashSale })}>
-                  {product.flashSale ? 'Đang giảm giá' : 'Không có khuyến mãi'}
+              <div key={`sale-${product._id}`} className={cx('rowCell', 'dataCell')}>
+                <span className={cx('saleStatus', { active: product.isOnSale })}>
+                  {product.isOnSale ? `Giảm ${product.flashSale}%` : 'Không có khuyến mãi'}
                 </span>
               </div>
             ))}
@@ -372,12 +393,12 @@ const ComparePage = () => {
           {/* Quantity/Stock row */}
           <div className={cx('tableRow')}>
             <div className={cx('rowCell', 'featureCell')}>
-              <span>Số lượng</span>
+              <span>Số lượng trong kho</span>
             </div>
             
             {products.map((product) => (
               <div key={`quantity-${product._id}`} className={cx('rowCell', 'dataCell')}>
-                <span>{product.quantity || 0}</span>
+                <span>{product.quantity || 0} sản phẩm</span>
               </div>
             ))}
           </div>

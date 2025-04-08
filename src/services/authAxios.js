@@ -114,6 +114,7 @@ const logoutAxios = async () => {
             localStorage.removeItem('access_token');
             localStorage.removeItem('admin_active_tab');
             localStorage.removeItem('staff_active_tab');
+            localStorage.removeItem('confirmedAddress');
             localStorage.setItem('user', 'null');  // Set to 'null' string instead of removing
             localStorage.setItem('cartItems', 'null');
             localStorage.setItem('favoriteItems', 'null');

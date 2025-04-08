@@ -26,7 +26,7 @@ const Payment = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  
+
   // User address and phone states
   const [userAddress, setUserAddress] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -35,7 +35,7 @@ const Payment = () => {
   const [tempPhone, setTempPhone] = useState("");
   const [isUpdatingPhone, setIsUpdatingPhone] = useState(false);
   const [phoneError, setPhoneError] = useState("");
-  
+
   // Address state
   const [addressData, setAddressData] = useState({
     region: "",
@@ -44,14 +44,22 @@ const Payment = () => {
     formattedAddress: ""
   });
   const [isAddressUpdating, setIsAddressUpdating] = useState(false);
-  
+
   // New states for order mode
   const [orderForOther, setOrderForOther] = useState(false);
   const [recipientInfo, setRecipientInfo] = useState({
     name: "",
     email: "",
-    address: "",
-    phone: ""
+    address: "", // This will store the formatted address string
+    phone: "",
+    // Add new address data structure
+    addressData: {
+      region: "",
+      district: "",
+      ward: "",
+      streetAddress: "",
+      formattedAddress: ""
+    }
   });
   const [orderNote, setOrderNote] = useState(""); // Order note available for both modes
   const [recipientErrors, setRecipientErrors] = useState({
@@ -60,19 +68,19 @@ const Payment = () => {
     address: "",
     phone: ""
   });
-  
+
   // Format price functions and other utility functions (unchanged)
   const formatPrice = (price) => new Intl.NumberFormat("vi-VN").format(price) + " ₫";
-  
+
   const getSubtotal = () => {
     return cartItems.reduce((total, item) => {
-      const originalPrice = item.isOnSale && item.discountedPrice ? 
-        (item.price) : 
+      const originalPrice = item.isOnSale && item.discountedPrice ?
+        (item.price) :
         (item.price);
       return total + (originalPrice * item.quantity);
     }, 0);
   };
-  
+
   const getTotalDiscount = () => {
     return cartItems.reduce((total, item) => {
       if (item.isOnSale && item.discountedPrice) {
@@ -82,16 +90,16 @@ const Payment = () => {
       return total;
     }, 0);
   };
-  
+
   const getFinalTotal = () => {
     return cartItems.reduce((total, item) => {
-      const priceToUse = item.isOnSale && item.discountedPrice ? 
-        item.discountedPrice : 
+      const priceToUse = item.isOnSale && item.discountedPrice ?
+        item.discountedPrice :
         item.price;
       return total + (priceToUse * item.quantity);
     }, 0);
   };
-  
+
   // Fetch user data when component mounts (unchanged)
   useEffect(() => {
     const fetchUserData = async () => {
@@ -140,7 +148,7 @@ const Payment = () => {
       ...prev,
       [name]: value
     }));
-    
+
     // Clear error when typing
     if (recipientErrors[name]) {
       setRecipientErrors(prev => ({
@@ -149,125 +157,125 @@ const Payment = () => {
       }));
     }
   };
-  
+
   // Update the validateRecipientInfo function
-const validateRecipientInfo = () => {
-  const errors = {};
-  
-  if (!recipientInfo.name.trim()) {
-    errors.name = "Vui lòng nhập tên người nhận";
-  }
-  
-  if (!recipientInfo.address.trim()) {
-    errors.address = "Vui lòng nhập địa chỉ người nhận";
-  }
-  
-  if (!recipientInfo.phone.trim()) {
-    errors.phone = "Vui lòng nhập số điện thoại người nhận";
-  } else if (!/^\d{10}$/.test(recipientInfo.phone.trim())) {
-    errors.phone = "Số điện thoại phải có đúng 10 chữ số";
-  }
-  
-  if (!recipientInfo.email.trim()) {
-    errors.email = "Vui lòng nhập email người nhận";
-  } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(recipientInfo.email.trim())) {
-    errors.email = "Email không hợp lệ";
-  }
-  
-  setRecipientErrors(errors);
-  return Object.keys(errors).length === 0;
-};
-  
+  const validateRecipientInfo = () => {
+    const errors = {};
+
+    if (!recipientInfo.name.trim()) {
+      errors.name = "Vui lòng nhập tên người nhận";
+    }
+
+    if (!recipientInfo.address.trim()) {
+      errors.address = "Vui lòng nhập địa chỉ người nhận";
+    }
+
+    if (!recipientInfo.phone.trim()) {
+      errors.phone = "Vui lòng nhập số điện thoại người nhận";
+    } else if (!/^\d{10}$/.test(recipientInfo.phone.trim())) {
+      errors.phone = "Số điện thoại phải có đúng 10 chữ số";
+    }
+
+    if (!recipientInfo.email.trim()) {
+      errors.email = "Vui lòng nhập email người nhận";
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(recipientInfo.email.trim())) {
+      errors.email = "Email không hợp lệ";
+    }
+
+    setRecipientErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
   // Modified Create Cart function to use the new API format
-const createCartRecord = async (paymentMethod) => {
-  try {
-    setLoading(true);
-    setError("");
+  const createCartRecord = async (paymentMethod) => {
+    try {
+      setLoading(true);
+      setError("");
 
-    // Format cart items for API
-    const formattedItems = cartItems.map(item => ({
-      itemId: item._id,
-      quantity: item.quantity,
-      price: item.isOnSale && item.discountedPrice ? item.discountedPrice : item.price
-    }));
+      // Format cart items for API
+      const formattedItems = cartItems.map(item => ({
+        itemId: item._id,
+        quantity: item.quantity,
+        price: item.isOnSale && item.discountedPrice ? item.discountedPrice : item.price
+      }));
 
-    // Set status based on payment method
-    // When cod -> pending, when credit_card -> done
-    const orderStatus = paymentMethod === "bank" ? "done" : "pending";
+      // Set status based on payment method
+      // When cod -> pending, when credit_card -> done
+      const orderStatus = paymentMethod === "bank" ? "done" : "pending";
 
-    // Build the request data - same format for both self and other
-    const cartData = {
-      items: formattedItems,
-      totalAmount: getFinalTotal(),
-      paymentMethod: paymentMethod === "bank" ? "credit_card" : "cod",
-      status: orderStatus, // Add status field based on payment method
-      orderNote: orderNote.trim() ? orderNote : "Không có" // Default to "Không có" when empty
-    };
-    
-    let response;
-    
-    if (orderForOther) {
-      // Add recipient information when ordering for someone else
-      if (!validateRecipientInfo()) {
-        setLoading(false);
-        return false;
+      // Build the request data - same format for both self and other
+      const cartData = {
+        items: formattedItems,
+        totalAmount: getFinalTotal(),
+        paymentMethod: paymentMethod === "bank" ? "credit_card" : "cod",
+        status: orderStatus, // Add status field based on payment method
+        orderNote: orderNote.trim() ? orderNote : "Không có" // Default to "Không có" when empty
+      };
+
+      let response;
+
+      if (orderForOther) {
+        // Add recipient information when ordering for someone else
+        if (!validateRecipientInfo()) {
+          setLoading(false);
+          return false;
+        }
+
+        // Add recipient fields
+        cartData.recipientName = recipientInfo.name;
+        cartData.recipientEmail = recipientInfo.email;
+        cartData.recipientAddress = recipientInfo.address;
+        cartData.recipientPhone = recipientInfo.phone;
+
+        // Use the create-for-other endpoint
+        response = await createCartForOtherAxios(cartData);
+      } else {
+        // For ordering for self, get user's own information
+        // Get user data from localStorage or context to populate recipient fields
+        const userData = JSON.parse(localStorage.getItem('user') || '{}');
+
+        // Verify required fields are present
+        if (!userAddress) {
+          setError("Vui lòng thêm địa chỉ giao hàng trước khi tiếp tục");
+          setLoading(false);
+          return false;
+        }
+
+        if (!phone) {
+          setError("Vui lòng cập nhật số điện thoại trước khi tiếp tục");
+          setLoading(false);
+          return false;
+        }
+
+        // Add recipient fields with user's own information
+        cartData.recipientName = userData.name || "Không có tên";
+        cartData.recipientEmail = userData.email || "không có";
+        cartData.recipientAddress = userAddress;
+        cartData.recipientPhone = phone;
+
+        // Use the regular create endpoint
+        response = await createCartAxios(cartData);
       }
-      
-      // Add recipient fields
-      cartData.recipientName = recipientInfo.name;
-      cartData.recipientEmail = recipientInfo.email;
-      cartData.recipientAddress = recipientInfo.address;
-      cartData.recipientPhone = recipientInfo.phone;
-      
-      // Use the create-for-other endpoint
-      response = await createCartForOtherAxios(cartData);
-    } else {
-      // For ordering for self, get user's own information
-      // Get user data from localStorage or context to populate recipient fields
-      const userData = JSON.parse(localStorage.getItem('user') || '{}');
-      
-      // Verify required fields are present
-      if (!userAddress) {
-        setError("Vui lòng thêm địa chỉ giao hàng trước khi tiếp tục");
-        setLoading(false);
-        return false;
+
+      // Rest of function remains the same...
+      // Check if the response contains an error
+      if (response.error) {
+        throw new Error(response.message || "Failed to create cart record");
       }
-      
-      if (!phone) {
-        setError("Vui lòng cập nhật số điện thoại trước khi tiếp tục");
-        setLoading(false);
-        return false;
-      }
-      
-      // Add recipient fields with user's own information
-      cartData.recipientName = userData.name || "Không có tên";
-      cartData.recipientEmail = userData.email || "không có";
-      cartData.recipientAddress = userAddress;
-      cartData.recipientPhone = phone;
-      
-      // Use the regular create endpoint
-      response = await createCartAxios(cartData);
+
+      // Success! Clear cart items
+      clearCart();
+      return true;
+
+    } catch (error) {
+      console.error("Error creating cart record:", error);
+      setError(error.message || "Failed to process payment. Please try again later.");
+      return false;
+    } finally {
+      setLoading(false);
     }
+  };
 
-    // Rest of function remains the same...
-    // Check if the response contains an error
-    if (response.error) {
-      throw new Error(response.message || "Failed to create cart record");
-    }
-
-    // Success! Clear cart items
-    clearCart();
-    return true;
-
-  } catch (error) {
-    console.error("Error creating cart record:", error);
-    setError(error.message || "Failed to process payment. Please try again later.");
-    return false;
-  } finally {
-    setLoading(false);
-  }
-};
-  
   // Handle Order Mode Toggle
   const toggleOrderMode = () => {
     setOrderForOther(!orderForOther);
@@ -277,7 +285,14 @@ const createCartRecord = async (paymentMethod) => {
         name: "",
         email: "",
         address: "",
-        phone: ""
+        phone: "",
+        addressData: {
+          region: "",
+          district: "",
+          ward: "",
+          streetAddress: "",
+          formattedAddress: ""
+        }
       });
       setRecipientErrors({
         name: "",
@@ -287,7 +302,7 @@ const createCartRecord = async (paymentMethod) => {
       });
     }
   };
-  
+
   // ✅ Handle All Payment Success (modified)
   const handlePayment = async () => {
     // Check if delivery address is provided
@@ -301,9 +316,9 @@ const createCartRecord = async (paymentMethod) => {
       setError("Vui lòng cập nhật số điện thoại trước khi tiếp tục");
       return;
     }
-    
+
     // For recipient order, validation happens in createCartRecord
-    
+
     if (selectedPayment === "bank") {
       try {
         // First create cart record
@@ -362,12 +377,12 @@ const createCartRecord = async (paymentMethod) => {
     if (!phone) {
       return { isValid: false, message: 'Vui lòng nhập số điện thoại' };
     }
-    
+
     const phoneRegex = /^\d{10}$/;
     if (!phoneRegex.test(phone)) {
       return { isValid: false, message: 'Vui lòng nhập số điện thoại đúng 10 chữ số' };
     }
-    
+
     return { isValid: true, message: '' };
   };
 
@@ -377,18 +392,190 @@ const createCartRecord = async (paymentMethod) => {
     setPhoneError('');
   };
 
+  // Function to update phone number
   const updatePhone = async () => {
-    // Existing phone update functionality
-    // ...
+    const validation = validatePhoneNumber(tempPhone);
+    if (!validation.isValid) {
+      setPhoneError(validation.message);
+      return;
+    }
+
+    setIsUpdatingPhone(true);
+    setPhoneError('');
+
+    try {
+      const response = await updatePhoneAxios({ phone: tempPhone });
+
+      if (response && response.error) {
+        throw new Error(response.message || "Không thể cập nhật số điện thoại");
+      }
+
+      // Update localStorage
+      try {
+        const userData = JSON.parse(localStorage.getItem('user') || '{}');
+        userData.phone = tempPhone;
+        localStorage.setItem('user', JSON.stringify(userData));
+      } catch (err) {
+        console.error("Error updating localStorage:", err);
+      }
+
+      // Update state
+      setPhone(tempPhone);
+
+      // Close modal
+      setShowPhoneModal(false);
+    } catch (error) {
+      console.error("Error updating phone:", error);
+      setPhoneError(error.message || "Không thể cập nhật số điện thoại. Vui lòng thử lại.");
+    } finally {
+      setIsUpdatingPhone(false);
+    }
   };
 
   const handleAddressChange = (newAddressData) => {
     setAddressData(newAddressData);
   };
 
+  const handleRecipientAddressChange = (newAddressData) => {
+    setRecipientInfo(prev => ({
+      ...prev,
+      address: newAddressData.formattedAddress, // Update the formatted address string
+      addressData: newAddressData // Store the complete address data
+    }));
+
+    // Clear address error when address is updated
+    if (recipientErrors.address) {
+      setRecipientErrors(prev => ({
+        ...prev,
+        address: ""
+      }));
+    }
+    
+    // If ordering for self, make sure to update the shared address too
+    if (!orderForOther) {
+      try {
+        // Get user data from localStorage
+        const userData = JSON.parse(localStorage.getItem('user') || '{}');
+        
+        // Update the address
+        if (userData) {
+          userData.address = newAddressData.formattedAddress;
+          localStorage.setItem('user', JSON.stringify(userData));
+          localStorage.setItem('confirmedAddress', newAddressData.formattedAddress);
+          
+          // Dispatch events to notify other components
+          window.dispatchEvent(new StorageEvent('storage', {
+            key: 'user',
+            newValue: JSON.stringify(userData)
+          }));
+          
+          window.dispatchEvent(new StorageEvent('storage', {
+            key: 'confirmedAddress',
+            newValue: newAddressData.formattedAddress
+          }));
+          
+          // Dispatch custom event for same-tab updates
+          window.dispatchEvent(new Event('addressUpdated'));
+        }
+      } catch (error) {
+        console.error('Error updating address in localStorage:', error);
+      }
+    }
+  };
+
+  // Function to save address from modal
   const handleSaveAddress = async () => {
-    // Existing address save functionality
-    // ...
+    if (!addressData.formattedAddress) {
+      // Show some error that address is incomplete
+      return;
+    }
+
+    setIsAddressUpdating(true);
+
+    try {
+      // Get user data from localStorage
+      const userData = JSON.parse(localStorage.getItem('user') || '{}');
+
+      // Check if we have the necessary user data
+      if (!userData || !userData.email) {
+        throw new Error('Không tìm thấy thông tin email người dùng');
+      }
+
+      try {
+        // Call the API to update address with both email and address fields
+        const response = await updateAddressAxios({
+          email: userData.email,
+          address: addressData.formattedAddress
+        });
+
+        console.log("Address updated successfully via API");
+
+        // Update user data in localStorage
+        userData.address = addressData.formattedAddress;
+        localStorage.setItem('user', JSON.stringify(userData));
+
+        // Also store in confirmedAddress for persistence
+        localStorage.setItem('confirmedAddress', addressData.formattedAddress);
+        
+        // Dispatch storage events to notify other tabs
+        window.dispatchEvent(new StorageEvent('storage', {
+          key: 'user',
+          newValue: JSON.stringify(userData),
+          url: window.location.href
+        }));
+        
+        window.dispatchEvent(new StorageEvent('storage', {
+          key: 'confirmedAddress',
+          newValue: addressData.formattedAddress,
+          url: window.location.href
+        }));
+        
+        // Dispatch custom event for same-tab updates
+        window.dispatchEvent(new Event('addressUpdated'));
+
+        // Update local state for UI
+        setUserAddress(addressData.formattedAddress);
+
+      } catch (apiError) {
+        console.error("API address update failed:", apiError);
+
+        // Even if API fails, update in localStorage as fallback
+        userData.address = addressData.formattedAddress;
+        localStorage.setItem('user', JSON.stringify(userData));
+        
+        // Also update in confirmedAddress
+        localStorage.setItem('confirmedAddress', addressData.formattedAddress);
+        
+        // Dispatch the same events for the fallback case
+        window.dispatchEvent(new StorageEvent('storage', {
+          key: 'user',
+          newValue: JSON.stringify(userData),
+          url: window.location.href
+        }));
+        
+        window.dispatchEvent(new StorageEvent('storage', {
+          key: 'confirmedAddress',
+          newValue: addressData.formattedAddress,
+          url: window.location.href
+        }));
+        
+        // Dispatch custom event for same-tab updates
+        window.dispatchEvent(new Event('addressUpdated'));
+
+        console.log("Address updated in localStorage as fallback");
+
+        // Update local state for UI
+        setUserAddress(addressData.formattedAddress);
+      }
+
+      // Close modal
+      setShowAddressModal(false);
+    } catch (error) {
+      console.error("Error in address update process:", error);
+      alert("Không thể cập nhật địa chỉ. Vui lòng thử lại sau.");
+    } finally {
+      setIsAddressUpdating(false);
+    }
   };
 
   const getPaymentIcon = () => {
@@ -504,29 +691,26 @@ const createCartRecord = async (paymentMethod) => {
                     </div>
 
                     <div className={cx('form-group')}>
-  <label>Email <span className={cx('required')}>*</span></label>
-  <input
-    type="email"
-    name="email"
-    value={recipientInfo.email}
-    onChange={handleRecipientChange}
-    placeholder="Nhập email người nhận"
-    className={cx({ 'error': recipientErrors.email })}
-  />
-  {recipientErrors.email && (
-    <div className={cx('error-message')}>{recipientErrors.email}</div>
-  )}
-</div>
+                      <label>Email <span className={cx('required')}>*</span></label>
+                      <input
+                        type="email"
+                        name="email"
+                        value={recipientInfo.email}
+                        onChange={handleRecipientChange}
+                        placeholder="Nhập email người nhận"
+                        className={cx({ 'error': recipientErrors.email })}
+                      />
+                      {recipientErrors.email && (
+                        <div className={cx('error-message')}>{recipientErrors.email}</div>
+                      )}
+                    </div>
 
+                    {/* Replace the textarea with AddressSelector */}
                     <div className={cx('form-group')}>
                       <label>Địa chỉ <span className={cx('required')}>*</span></label>
-                      <textarea
-                        name="address"
-                        value={recipientInfo.address}
-                        onChange={handleRecipientChange}
-                        placeholder="Nhập địa chỉ giao hàng"
-                        className={cx({ 'error': recipientErrors.address })}
-                        rows="3"
+                      <AddressSelector
+                        initialAddress={recipientInfo.address}
+                        onAddressChange={handleRecipientAddressChange}
                       />
                       {recipientErrors.address && (
                         <div className={cx('error-message')}>{recipientErrors.address}</div>
@@ -585,7 +769,7 @@ const createCartRecord = async (paymentMethod) => {
                 {cartItems.map((item) => {
                   const hasDiscount = item.isOnSale && item.discountedPrice;
                   const displayPrice = hasDiscount ? item.discountedPrice : item.price;
-                  
+
                   return (
                     <div key={item._id} className={cx("order-item")}>
                       <div className={cx("item-image-container")}>
@@ -627,12 +811,12 @@ const createCartRecord = async (paymentMethod) => {
                 className={cx('order-button')}
                 onClick={handlePayment}
                 disabled={loading ||
-                  (!orderForOther && !userAddress) || 
+                  (!orderForOther && !userAddress) ||
                   (!orderForOther && !phone)}
               >
                 {loading ? "Đang xử lý..." : "Đặt hàng"}
               </button>
-              
+
               {/* Error messages */}
               {!orderForOther && !userAddress && (
                 <p className={cx('address-required-message')}>
@@ -649,13 +833,13 @@ const createCartRecord = async (paymentMethod) => {
                   {error}
                 </p>
               )}
-              
+
               <p className={cx('order-agreement')}>
                 Nhấn "Đặt hàng" đồng nghĩa việc bạn đồng ý tuân theo
                 <a href="#"> Chính sách xử lý dữ liệu cá nhân </a> &
                 <a href="#"> Điều khoản BeautySkin</a>
               </p>
-              
+
               {/* Order Summary */}
               <div className={cx('order-summary')}>
                 <h3 className={cx('order-summary-title')}>
@@ -735,8 +919,8 @@ const createCartRecord = async (paymentMethod) => {
             </div>
 
             <div className={cx('address-form')}>
-              <AddressSelector 
-                initialAddress={userAddress} 
+              <AddressSelector
+                initialAddress={userAddress}
                 onAddressChange={handleAddressChange}
               />
             </div>
