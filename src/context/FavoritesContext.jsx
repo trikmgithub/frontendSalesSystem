@@ -55,25 +55,32 @@ export const FavoritesProvider = ({ children }) => {
 
     const addToFavorites = async (item) => {
         if (!isLoggedIn()) {
-            toast.error('Vui lòng đăng nhập để thêm vào danh sách yêu thích');
-            return false;
+          toast.error('Vui lòng đăng nhập để thêm vào danh sách yêu thích');
+          return false;
         }
-
+      
         try {
-            const response = await addToFavoritesAxios(item._id);
-
-            if (!response.error) {
-                setFavoriteItems(prev => [...prev, item]);
-                return true;
-            } else {
-                toast.error(response.message || 'Không thể thêm vào danh sách yêu thích');
-                return false;
-            }
-        } catch (error) {
-            toast.error('Không thể thêm vào danh sách yêu thích');
+          // Check if we have user data in localStorage
+          const userData = JSON.parse(localStorage.getItem('user') || '{}');
+          if (!userData._id) {
+            toast.error('Không tìm thấy thông tin người dùng. Vui lòng đăng nhập lại.');
             return false;
+          }
+      
+          const response = await addToFavoritesAxios(item._id);
+      
+          if (!response.error) {
+            setFavoriteItems(prev => [...prev, item]);
+            return true;
+          } else {
+            toast.error(response.message || 'Không thể thêm vào danh sách yêu thích');
+            return false;
+          }
+        } catch (error) {
+          toast.error('Không thể thêm vào danh sách yêu thích');
+          return false;
         }
-    };
+      };
 
     const removeFromFavorites = async (itemId) => {
         if (!isLoggedIn()) {
