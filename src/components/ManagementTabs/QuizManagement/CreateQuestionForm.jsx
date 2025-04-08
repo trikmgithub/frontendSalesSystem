@@ -250,11 +250,6 @@ function CreateQuestionForm({ skinTypes, initialQuestion, onClose, onSuccess }) 
                       <option value="3">3 Points</option>
                       <option value="4">4 Points</option>
                       <option value="5">5 Points</option>
-                      <option value="6">6 Point</option>
-                      <option value="7">7 Points</option>
-                      <option value="8">8 Points</option>
-                      <option value="9">9 Points</option>
-                      <option value="10">10 Points</option>
                     </select>
                     {formErrors.options?.[index]?.points && (
                       <div className={cx('error-message')}>

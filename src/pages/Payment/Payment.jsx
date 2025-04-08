@@ -8,7 +8,7 @@ import { CartContext } from "~/context/CartContext";
 import { useNavigate } from "react-router-dom";
 import { payosPayAxios } from "~/services/paymentAxios";
 import { updateAddressAxios, getUserByIdAxios, updatePhoneAxios } from "~/services/userAxios";
-import { createCartAxios, createCartForOtherAxios } from "~/services/cartAxios";
+import { createCartAxios, createCartForOtherAxios, updateCartStatusAxios } from "~/services/cartAxios";
 import AddressSelector from '~/components/AddressSelector';
 import { X, MessageSquare } from 'lucide-react';
 
@@ -199,9 +199,8 @@ const Payment = () => {
         price: item.isOnSale && item.discountedPrice ? item.discountedPrice : item.price
       }));
 
-      // Set status based on payment method
-      // When cod -> pending, when credit_card -> done
-      const orderStatus = paymentMethod === "bank" ? "done" : "pending";
+      // Always set initial status as "pending" regardless of payment method
+      const orderStatus = "pending";
 
       // Build the request data - same format for both self and other
       const cartData = {
@@ -265,7 +264,7 @@ const Payment = () => {
 
       // Success! Clear cart items
       clearCart();
-      return true;
+      return response;
 
     } catch (error) {
       console.error("Error creating cart record:", error);
@@ -303,48 +302,73 @@ const Payment = () => {
     }
   };
 
-  // ✅ Handle All Payment Success (modified)
+  // ✅ Modified Handle Payment function with correct status update flow
   const handlePayment = async () => {
-    // Check if delivery address is provided
+    // Validation checks remain the same
     if (!orderForOther && !userAddress) {
       setError("Vui lòng thêm địa chỉ giao hàng trước khi tiếp tục");
       return;
     }
 
-    // Check if phone is provided when ordering for self
     if (!orderForOther && !phone) {
       setError("Vui lòng cập nhật số điện thoại trước khi tiếp tục");
       return;
     }
 
-    // For recipient order, validation happens in createCartRecord
+    // Set loading state
+    setLoading(true);
 
-    if (selectedPayment === "bank") {
-      try {
-        // First create cart record
+    try {
+      if (selectedPayment === "bank") {
+        // Step 1: Create cart with pending status
         const cartCreated = await createCartRecord("bank");
 
-        if (cartCreated) {
-          // Cart has been cleared in createCartRecord
-          // Then process payment via PayOS
-          await payosPayAxios(cartItems, getFinalTotal());
-          // The redirect happens in the payosPayAxios function
+        if (!cartCreated || !cartCreated.data || !cartCreated.data._id) {
+          throw new Error("Không thể tạo đơn hàng. Vui lòng thử lại.");
         }
-      } catch (error) {
-        console.error("Bank Transfer Payment Error:", error);
-        setError("Could not connect to payment gateway. Please try again.");
-      }
-    } else {
-      // COD flow
-      const cartCreated = await createCartRecord("cod");
 
-      if (cartCreated) {
-        // Cart has been cleared in createCartRecord
-        setShowSuccessMessage(true);
-        setTimeout(() => {
-          navigate(routes.home);
-        }, 3000);
+        // Step 2: Get the cart ID for later status update
+        const cartId = cartCreated.data._id;
+        
+        // Step 3: Store cart ID in localStorage
+        localStorage.setItem('pendingPaymentCartId', cartId);
+        
+        // Step 4: Set initial status to "done" before redirecting
+        // This ensures the order shows as completed even if user doesn't return to site
+        try {
+          await updateCartStatusAxios(cartId, 'done');
+          console.log("Cart status updated to done successfully");
+        } catch (statusError) {
+          console.error("Failed to update cart status:", statusError);
+          // Continue with payment even if status update fails
+        }
+        
+        // Step 5: Redirect to payment gateway
+        const paymentResult = await payosPayAxios(cartItems, getFinalTotal());
+
+        if (paymentResult.error) {
+          setError(paymentResult.message || "Lỗi cổng thanh toán");
+          setLoading(false);
+          return;
+        }
+        
+        // Payment gateway handles redirection
+      } else {
+        // COD flow remains the same
+        const cartCreated = await createCartRecord("cod");
+
+        if (cartCreated) {
+          setShowSuccessMessage(true);
+          setTimeout(() => {
+            navigate(routes.home);
+          }, 3000);
+        }
       }
+    } catch (error) {
+      console.error("Payment Error:", error);
+      setError(error.message || "Có lỗi xảy ra. Vui lòng thử lại sau.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -595,6 +619,29 @@ const Payment = () => {
         return 'Thanh toán khi nhận hàng (COD)';
     }
   };
+
+  useEffect(() => {
+    // Check if we're returning from payment gateway with success status
+    const params = new URLSearchParams(window.location.search);
+    const paymentStatus = params.get('status');
+    const pendingCartId = localStorage.getItem('pendingPaymentCartId');
+    
+    if (paymentStatus === 'success' && pendingCartId) {
+      // We've already set the status to "done" before redirecting, so just show success message
+      setShowSuccessMessage(true);
+      
+      // Clear the pending cart ID from storage
+      localStorage.removeItem('pendingPaymentCartId');
+      
+      // Remove status parameter from URL
+      navigate(window.location.pathname, { replace: true });
+      
+      // Redirect to homepage after delay
+      setTimeout(() => {
+        navigate(routes.home);
+      }, 3000);
+    }
+  }, [navigate]);
 
   return (
     <div className={cx('payment-container')}>
