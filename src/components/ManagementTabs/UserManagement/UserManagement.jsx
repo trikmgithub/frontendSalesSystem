@@ -26,6 +26,7 @@ import {
   deleteUserAxios
 } from '~/services/userAxios';
 import { getRoleByIdAxios } from '~/services/roleAxios';
+import AddressSelector from '~/components/AddressSelector/AddressSelector';
 
 const cx = classNames.bind(styles);
 
@@ -61,7 +62,14 @@ function UserManagement() {
     gender: '',
     dateOfBirth: '',
     address: '',
-    confirmPassword: ''
+    confirmPassword: '',
+    addressData: {
+      streetAddress: '',
+      region: '',
+      district: '',
+      ward: '',
+      formattedAddress: ''
+    }
   });
 
   // State for form validation
@@ -271,6 +279,26 @@ function UserManagement() {
       errors.role = 'Role is required';
     }
 
+    // Add validation for address
+    if (!formData.address || !formData.addressData?.formattedAddress) {
+      errors.address = "Please enter a complete address";
+    }
+
+    // Add validation for gender
+    if (formData.gender === '') {
+      errors.gender = 'Please select a gender';
+    }
+
+    // Updated Date of Birth validation - now checks if field is empty
+    if (!formData.dateOfBirth || formData.dateOfBirth.trim() === '') {
+      errors.dateOfBirth = 'Date of Birth is required';
+    } else {
+      const date = new Date(formData.dateOfBirth);
+      if (isNaN(date.getTime())) {
+        errors.dateOfBirth = 'Invalid date format';
+      }
+    }
+
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
   };
@@ -279,6 +307,23 @@ function UserManagement() {
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  // Function to handle address changes from AddressSelector
+  const handleAddressChange = (addressData) => {
+    setFormData(prev => ({
+      ...prev,
+      address: addressData.formattedAddress, // Update the formatted address string
+      addressData: addressData // Store the complete address data
+    }));
+
+    // Clear address error if it exists
+    if (formErrors.address) {
+      setFormErrors(prev => ({
+        ...prev,
+        address: ''
+      }));
+    }
   };
 
   // Function to reset form
@@ -291,7 +336,14 @@ function UserManagement() {
       gender: '',
       dateOfBirth: '',
       address: '',
-      confirmPassword: ''
+      confirmPassword: '',
+      addressData: {
+        streetAddress: '',
+        region: '',
+        district: '',
+        ward: '',
+        formattedAddress: ''
+      }
     });
     setCurrentUser(null);
     setFormErrors({});
@@ -329,7 +381,14 @@ function UserManagement() {
         dateOfBirth: userData.dateOfBirth ? new Date(userData.dateOfBirth).toISOString().split('T')[0] : '',
         address: userData.address || '',
         password: '',
-        confirmPassword: ''
+        confirmPassword: '',
+        addressData: userData.addressData || {
+          streetAddress: '',
+          region: '',
+          district: '',
+          ward: '',
+          formattedAddress: ''
+        }
       });
 
       setShowEditModal(true);
@@ -362,15 +421,29 @@ function UserManagement() {
         email: formData.email,
         password: formData.password,
         role: formData.role, // Send role name directly
-        gender: formData.gender,
-        dateOfBirth: formData.dateOfBirth,
-        address: formData.address
+        gender: formData.gender || undefined,
+        dateOfBirth: formData.dateOfBirth || undefined,
+        address: formData.addressData.formattedAddress // Use formatted address
       };
 
       const response = await createUserAxios(userData);
 
       if (response.error) {
-        throw new Error(response.message || 'Failed to create user');
+        // Handle backend validation errors
+        const errorMsg = response.message || 'Failed to create user';
+
+        // Parse backend error message to set appropriate field errors
+        if (errorMsg.includes('gender')) {
+          setFormErrors(prev => ({ ...prev, gender: 'Invalid gender selection' }));
+        }
+
+        if (errorMsg.includes('date of birth') || errorMsg.includes('dateOfBirth')) {
+          setFormErrors(prev => ({ ...prev, dateOfBirth: 'Invalid date of birth' }));
+        }
+
+        // Generic error handling for other fields
+        setError(errorMsg);
+        return;
       }
 
       // Success - refresh user list and close modal
@@ -403,7 +476,8 @@ function UserManagement() {
         role: formData.role, // Send role name directly
         gender: formData.gender,
         dateOfBirth: formData.dateOfBirth,
-        address: formData.address
+        address: formData.address,
+        addressData: formData.addressData
       };
 
       // Only include password if it was changed
@@ -710,14 +784,8 @@ function UserManagement() {
         <div className={cx('modal-overlay')}>
           <div className={cx('modal')}>
             <div className={cx('modal-header')}>
-              <h3>Create New User</h3>
-              <button
-                className={cx('close-button')}
-                onClick={() => {
-                  resetForm();
-                  setShowCreateModal(false);
-                }}
-              >
+              <h2>Create New User</h2>
+              <button className={cx('close-button')} onClick={() => setShowCreateModal(false)}>
                 <FaTimes />
               </button>
             </div>
@@ -776,7 +844,6 @@ function UserManagement() {
                     </div>
                   )}
                 </div>
-
                 <div className={cx('form-group', 'half')}>
                   <label htmlFor="confirmPassword">Confirm Password</label>
                   <input
@@ -796,28 +863,29 @@ function UserManagement() {
                 </div>
               </div>
 
-              <div className={cx('form-row')}>
-                <div className={cx('form-group', 'half')}>
-                  <label htmlFor="role">User Role</label>
-                  <select
-                    id="role"
-                    name="role"
-                    value={formData.role}
-                    onChange={handleInputChange}
-                    className={cx({ 'error-input': formErrors.role })}
-                  >
-                    <option value="user">User</option>
-                    <option value="staff">Staff</option>
-                    <option value="admin">Admin</option>
-                    <option value="manager">Manager</option>
-                  </select>
-                  {formErrors.role && (
-                    <div className={cx('error-message')}>
-                      <FaExclamationTriangle /> {formErrors.role}
-                    </div>
-                  )}
-                </div>
+              <div className={cx('form-group')}>
+                <label htmlFor="role">Role</label>
+                <select
+                  id="role"
+                  name="role"
+                  value={formData.role}
+                  onChange={handleInputChange}
+                  className={cx({ 'error-input': formErrors.role })}
+                  required
+                >
+                  <option value="">Select Role</option>
+                  <option value="user">User</option>
+                  <option value="staff">Staff</option>
+                  <option value="admin">Admin</option>
+                </select>
+                {formErrors.role && (
+                  <div className={cx('error-message')}>
+                    <FaExclamationTriangle /> {formErrors.role}
+                  </div>
+                )}
+              </div>
 
+              <div className={cx('form-row')}>
                 <div className={cx('form-group', 'half')}>
                   <label htmlFor="gender">Gender</label>
                   <select
@@ -825,34 +893,49 @@ function UserManagement() {
                     name="gender"
                     value={formData.gender}
                     onChange={handleInputChange}
+                    className={cx({ 'error-input': formErrors.gender })}
                   >
                     <option value="">Select Gender</option>
                     <option value="male">Male</option>
                     <option value="female">Female</option>
+                    <option value="other">Other</option>
                   </select>
+                  {formErrors.gender && (
+                    <div className={cx('error-message')}>
+                      <FaExclamationTriangle /> {formErrors.gender}
+                    </div>
+                  )}
+                </div>
+                <div className={cx('form-group', 'half')}>
+                  <label htmlFor="dateOfBirth">Date of Birth</label>
+                  <input
+                    type="date"
+                    id="dateOfBirth"
+                    name="dateOfBirth"
+                    value={formData.dateOfBirth}
+                    onChange={handleInputChange}
+                    className={cx({ 'error-input': formErrors.dateOfBirth })}
+                  />
+                  {formErrors.dateOfBirth && (
+                    <div className={cx('error-message')}>
+                      <FaExclamationTriangle /> {formErrors.dateOfBirth}
+                    </div>
+                  )}
                 </div>
               </div>
 
               <div className={cx('form-group')}>
-                <label htmlFor="dateOfBirth">Date of Birth</label>
-                <input
-                  type="date"
-                  id="dateOfBirth"
-                  name="dateOfBirth"
-                  value={formData.dateOfBirth}
-                  onChange={handleInputChange}
-                />
-              </div>
-
-              <div className={cx('form-group')}>
                 <label htmlFor="address">Address</label>
-                <textarea
-                  id="address"
-                  name="address"
-                  value={formData.address}
-                  onChange={handleInputChange}
-                  rows="3"
+                <AddressSelector
+                  initialAddress={formData.address}
+                  onAddressChange={handleAddressChange}
+                  className={cx({ 'error-input': formErrors.address })}
                 />
+                {formErrors.address && (
+                  <div className={cx('error-message')}>
+                    <FaExclamationTriangle /> {formErrors.address}
+                  </div>
+                )}
               </div>
             </div>
             <div className={cx('modal-footer')}>
@@ -959,11 +1042,18 @@ function UserManagement() {
                     name="gender"
                     value={formData.gender}
                     onChange={handleInputChange}
+                    className={cx({ 'error-input': formErrors.gender })}
                   >
                     <option value="">Select Gender</option>
                     <option value="male">Male</option>
                     <option value="female">Female</option>
+                    <option value="other">Other</option>
                   </select>
+                  {formErrors.gender && (
+                    <div className={cx('error-message')}>
+                      <FaExclamationTriangle /> {formErrors.gender}
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -975,18 +1065,27 @@ function UserManagement() {
                   name="dateOfBirth"
                   value={formData.dateOfBirth}
                   onChange={handleInputChange}
+                  className={cx({ 'error-input': formErrors.dateOfBirth })}
                 />
+                {formErrors.dateOfBirth && (
+                  <div className={cx('error-message')}>
+                    <FaExclamationTriangle /> {formErrors.dateOfBirth}
+                  </div>
+                )}
               </div>
 
               <div className={cx('form-group')}>
                 <label htmlFor="edit-address">Address</label>
-                <textarea
-                  id="edit-address"
-                  name="address"
-                  value={formData.address}
-                  onChange={handleInputChange}
-                  rows="3"
+                <AddressSelector
+                  initialAddress={formData.address}
+                  onAddressChange={handleAddressChange}
+                  className={cx({ 'error-input': formErrors.address })}
                 />
+                {formErrors.address && (
+                  <div className={cx('error-message')}>
+                    <FaExclamationTriangle /> {formErrors.address}
+                  </div>
+                )}
               </div>
             </div>
             <div className={cx('modal-footer')}>
