@@ -1,6 +1,31 @@
 import * as axiosConfig from '~/utils/axiosConfig';
 
 /**
+ * Create a cart/order for someone else
+ * @param {Object} cartData - Cart data for recipient
+ * @returns {Promise} - API response
+ */
+const createCartForOtherAxios = async (cartData) => {
+  try {
+    const response = await axiosConfig.post('cart/create-for-other', cartData);
+    return response;
+  } catch (error) {
+    console.error('Create cart for other error:', error);
+
+    // Return the error response data if available
+    if (error.response && error.response.data) {
+      return {
+        error: true,
+        ...error.response.data
+      };
+    }
+
+    // If there's no structured error response, throw a generic error
+    throw new Error('Failed to create cart record for recipient');
+  }
+};
+
+/**
  * Create a new cart/order record
  * @param {Object} cartData - Cart data including userId, items, totalAmount, etc.
  * @returns {Promise} - API response
@@ -518,6 +543,7 @@ const sendInvoiceEmailAxios = async (cartId, email) => {
 
 export {
   createCartAxios,
+  createCartForOtherAxios,
   getAllCartsAxios,
   getPendingOrdersAxios,
   getCompletedOrdersAxios,
