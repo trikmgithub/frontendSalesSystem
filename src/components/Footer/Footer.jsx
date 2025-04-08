@@ -1,8 +1,6 @@
 import { Link } from 'react-router-dom';
 import classNames from 'classnames/bind';
 import styles from './Footer.module.scss';
-import { FaPhone } from 'react-icons/fa';
-import { IoLocationSharp } from 'react-icons/io5';
 import freeship from '~/assets/2.jpg';
 import brand from '~/assets/4.jpg';
 import payment from '~/assets/1.jpg';
@@ -55,30 +53,30 @@ function Footer() {
                             <p className={cx('note')}>(miễn phí , 08-22h kể cả T7, CN)</p>
                         </div>
                         <ul>
-                            <li><Link to="/cau-hoi-thuong-gap">Các câu hỏi thường gặp</Link></li>
-                            <li><Link to="/gui-yeu-cau">Gửi yêu cầu hỗ trợ</Link></li>
-                            <li><Link to="/huong-dan-dat-hang">Hướng dẫn đặt hàng</Link></li>
-                            <li><Link to="/phuong-thuc-van-chuyen">Phương thức vận chuyển</Link></li>
-                            <li><Link to="/chinh-sach-doi-tra">Chính sách đổi trả</Link></li>
+                            <li><Link to="/#">Các câu hỏi thường gặp</Link></li>
+                            <li><Link to="/#">Gửi yêu cầu hỗ trợ</Link></li>
+                            <li><Link to="/#">Hướng dẫn đặt hàng</Link></li>
+                            <li><Link to="/#">Phương thức vận chuyển</Link></li>
+                            <li><Link to="/#">Chính sách đổi trả</Link></li>
                         </ul>
                     </div>
 
                     <div className={cx('footerSection')}>
                         <h3>VỀ BEAUTYSKIN</h3>
                         <ul>
-                            <li><Link to="/gioi-thieu">Giới thiệu BeautySkin</Link></li>
-                            <li><Link to="/tuyen-dung">Tuyển Dụng</Link></li>
-                            <li><Link to="/chinh-sach-bao-mat">Chính sách bảo mật</Link></li>
-                            <li><Link to="/dieu-khoan">Điều khoản sử dụng</Link></li>
-                            <li><Link to="/lien-he">Liên hệ</Link></li>
+                            <li><Link to="/#">Giới thiệu BeautySkin</Link></li>
+                            <li><Link to="/#">Tuyển Dụng</Link></li>
+                            <li><Link to="/#">Chính sách bảo mật</Link></li>
+                            <li><Link to="/#">Điều khoản sử dụng</Link></li>
+                            <li><Link to="/#">Liên hệ</Link></li>
                         </ul>
                     </div>
 
                     <div className={cx('footerSection')}>
                         <h3>HỢP TÁC & LIÊN KẾT</h3>
                         <ul>
-                            <li><Link to="/clinic">https://beautyskin.vn/clinic</Link></li>
-                            <li><Link to="/cam-nang">BeautySkin cẩm nang</Link></li>
+                            <li><Link to="/#">https://www.kieuminhtri.site/</Link></li>
+                            <li><Link to="/#">BeautySkin cẩm nang</Link></li>
                         </ul>
                         <h3>THANH TOÁN</h3>
                     </div>

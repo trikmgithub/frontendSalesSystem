@@ -33,15 +33,42 @@ const Cart = () => {
     };
 
     const calculateSubtotal = () => {
-        return cartItems.reduce((total, item) => total + item.price * item.quantity, 0);
+        return cartItems.reduce((total, item) => {
+            // Use the original price for subtotal calculation
+            const itemOriginalPrice = item.isOnSale ? item.price : item.price;
+            return total + itemOriginalPrice * item.quantity;
+        }, 0);
     };
 
     const calculateDiscount = () => {
-        return 0; // If you have discount logic, implement it here
+        return cartItems.reduce((total, item) => {
+            // Calculate discount if the item is on sale
+            if (item.isOnSale && item.discountedPrice) {
+                const discount = (item.price - item.discountedPrice) * item.quantity;
+                return total + discount;
+            }
+            return total;
+        }, 0);
     };
 
     const calculateTotal = () => {
         return calculateSubtotal() - calculateDiscount();
+    };
+    
+    // Calculate discount amount for a single item
+    const calculateItemDiscount = (item) => {
+        if (item.isOnSale && item.discountedPrice) {
+            return (item.price - item.discountedPrice) * item.quantity;
+        }
+        return 0;
+    };
+
+    // Calculate discount amount per unit
+    const calculateItemDiscountPerUnit = (item) => {
+        if (item.isOnSale && item.discountedPrice) {
+            return (item.price - item.discountedPrice);
+        }
+        return 0;
     };
 
     const handleQuantityChange = (item, newQuantity) => {
@@ -129,7 +156,8 @@ const Cart = () => {
                         <div className={cx('cart-items-container')}>
                             <div className={cx('cart-header')}>
                                 <div className={cx('product-column')}>Sản phẩm</div>
-                                <div className={cx('price-column')}>Giá tiền</div>
+                                <div className={cx('price-column')}>Giá gốc</div>
+                                <div className={cx('discount-column')}>Giảm giá</div>
                                 <div className={cx('quantity-column')}>Số lượng</div>
                                 <div className={cx('total-column')}>Thành tiền</div>
                             </div>
@@ -192,12 +220,22 @@ const Cart = () => {
 
                                         <div className={cx('price-column')}>
                                             <div className={cx('price')}>
-                                                {formatPrice(item.price)}
+                                                {formatPrice(item.price * item.quantity)}
                                             </div>
-                                            {item.originalPrice && item.originalPrice > item.price && (
-                                                <div className={cx('original-price')}>
-                                                    {formatPrice(item.originalPrice)}
-                                                </div>
+                                        </div>
+                                        
+                                        <div className={cx('discount-column')}>
+                                            {item.isOnSale && item.discountedPrice ? (
+                                                <>
+                                                    <div className={cx('discount-amount')}>
+                                                        {formatPrice(calculateItemDiscount(item))}
+                                                    </div>
+                                                    <div className={cx('discount-percentage')}>
+                                                        ({item.flashSale}%)
+                                                    </div>
+                                                </>
+                                            ) : (
+                                                <span>-</span>
                                             )}
                                         </div>
 
@@ -224,7 +262,11 @@ const Cart = () => {
 
                                         <div className={cx('total-column')}>
                                             <div className={cx('item-total')}>
-                                                {formatPrice(item.price * item.quantity)}
+                                                {item.isOnSale && item.discountedPrice ? (
+                                                    formatPrice(item.discountedPrice * item.quantity)
+                                                ) : (
+                                                    formatPrice(item.price * item.quantity)
+                                                )}
                                             </div>
                                         </div>
                                     </div>
@@ -248,7 +290,7 @@ const Cart = () => {
                                     <span>Tạm tính:</span>
                                     <span>{formatPrice(calculateSubtotal())}</span>
                                 </div>
-                                <div className={cx('summary-row')}>
+                                <div className={cx('summary-row', 'discount-row')}>
                                     <span>Giảm giá:</span>
                                     <span>-{formatPrice(calculateDiscount())}</span>
                                 </div>

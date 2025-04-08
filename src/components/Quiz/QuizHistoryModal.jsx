@@ -97,7 +97,7 @@ const QuizHistoryModal = ({ isOpen, onClose, history, getSkinTypeName }) => {
                       <p>
                         <strong>Điểm số:</strong>{' '}
                         <span className={cx('score')}>
-                          {Math.round(entry.scorePercentage)}
+                          {Math.round(entry.scorePercentage)} %
                         </span>
                       </p>
                     </div>

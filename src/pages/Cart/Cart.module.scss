@@ -58,7 +58,7 @@ $green-text: #2B7B60;
 
 .cart-header {
   display: grid;
-  grid-template-columns: 6fr 2fr 2fr 2fr;
+  grid-template-columns: 5fr 2fr 2fr 2fr 2fr;
   padding: 12px 16px;
   background-color: $light-gray;
   font-weight: 600;
@@ -66,7 +66,7 @@ $green-text: #2B7B60;
   color: #333;
   text-align: left;
   
-  .price-column, .quantity-column, .total-column {
+  .price-column, .discount-column, .quantity-column, .total-column {
     text-align: center;
   }
 }
@@ -77,7 +77,7 @@ $green-text: #2B7B60;
 
 .cart-item {
   display: grid;
-  grid-template-columns: 6fr 2fr 2fr 2fr;
+  grid-template-columns: 5fr 2fr 2fr 2fr 2fr;
   padding: 16px;
   border-bottom: 1px solid $border-color;
   align-items: center;
@@ -232,14 +232,25 @@ $green-text: #2B7B60;
   .price {
     font-weight: 600;
     font-size: 15px;
-    color: $primary-color;
+    color: #333;
+  }
+}
+
+.discount-column {
+  text-align: center;
+  display: flex;
+  flex-direction: row;
+  gap: 5px;
+  
+  .discount-amount {
+    font-size: 14px;
+    color: #2B7B60;
+    font-weight: 600;
   }
   
-  .original-price {
-    font-size: 13px;
-    color: $discount-gray;
-    text-decoration: line-through;
-    margin-top: 4px;
+  .discount-percentage {
+    font-size: 12px;
+    color: #2B7B60;
   }
 }
 
@@ -390,12 +401,17 @@ $green-text: #2B7B60;
     font-size: 16px;
     color: $primary-color;
   }
+  
+  &.discount-row {
+    color: #2B7B60;
+    font-weight: 500;
+  }
 }
 
 .vat-info {
   color: $text-gray;
   font-size: 12px;
-  text-align: center;
+  text-align: left;
   margin-bottom: 20px;
 }
 
@@ -536,5 +552,33 @@ $green-text: #2B7B60;
   100% {
     transform: translate(-50%, -50%) scale(30);
     opacity: 0;
+  }
+}
+
+/* Responsive adjustments for mobile */
+@media (max-width: 768px) {
+  .cart-header, .cart-item {
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  
+  .cart-header {
+    display: none;
+  }
+  
+  .product-column {
+    grid-column: span 2;
+  }
+  
+  .price-column, .discount-column, .quantity-column, .total-column {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    
+    &::before {
+      content: attr(data-label);
+      font-weight: 600;
+      color: #333;
+    }
   }
 }
